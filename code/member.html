@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <title>สมัครสมาชิก | Dom inn</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="member.css">
+</head>
+
+<body>
+  <div class="register-container">
+    <div class="register-logo">
+      <span class="dom">Dom</span><span class="inn">inn</span>
+    </div>
+    <form class="register-form" action="#" method="post">
+      <h2>สมัครสมาชิก</h2>
+      <div class="input-group">
+        <label for="fullname">ชื่อ-นามสกุล</label>
+        <input type="text" id="fullname" name="fullname" required>
+      </div>
+      <div class="input-group">
+        <label for="email">อีเมล</label>
+        <input type="email" id="email" name="email" required autocomplete="email">
+      </div>
+      <div class="input-group">
+        <label for="phone">เบอร์โทรศัพท์</label>
+        <input type="tel" id="phone" name="phone" pattern="[0-9]{10}" required autocomplete="tel"
+          placeholder="เช่น 0812345678">
+      </div>
+      <div class="input-group">
+        <label for="username">ชื่อผู้ใช้</label>
+        <input type="text" id="username" name="username" required autocomplete="username">
+      </div>
+      <div class="input-group">
+        <label for="password">รหัสผ่าน</label>
+        <input type="password" id="password" name="password" required autocomplete="new-password">
+      </div>
+      <div class="input-group">
+        <label for="confirm-password">ยืนยันรหัสผ่าน</label>
+        <input type="password" id="confirm-password" name="confirm-password" required autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-register">สมัครสมาชิก</button>
+      <div class="register-footer">
+        <span>มีบัญชีอยู่แล้ว?</span>
+        <a href="login.html">เข้าสู่ระบบ</a>
+      </div>
+    </form>
+  </div>
+</body>
+
+</html>

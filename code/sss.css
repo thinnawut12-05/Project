@@ -1,0 +1,207 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #3e588f;
+  padding: 10px 20px;
+}
+
+nav a {
+  margin: 0 10px;
+  text-decoration: none;
+  color: white;
+}
+
+.booking-form {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  gap: 10px;
+}
+
+.room-gallery {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+.room-gallery img {
+  width: 400px;
+  height: auto;
+  border-radius: 10px;
+}
+
+.hotel-description {
+  text-align: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.btn {
+  background-color: red;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.logo {
+  max-width: 50px;
+  height: 50px;
+}
+
+.guest-selector {
+  background: #f6f6fa;
+  border-radius: 8px;
+  padding: 16px 12px;
+  margin: 12px 0 16px 0;
+}
+
+.guest-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.guest-group span {
+  min-width: 48px;
+  display: inline-block;
+}
+
+.guest-group button {
+  margin: 0 8px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #2a5d9f;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.guest-group button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.guest-summary input {
+  width: 100%;
+  background: #e3f0ff;
+  border: none;
+  border-radius: 5px;
+  padding: 7px 10px;
+  color: #19426b;
+  font-size: 1em;
+  margin-top: 8px;
+}
+
+.guest-selector {
+  background: #f6f6fa;
+  border-radius: 8px;
+  padding: 16px 12px;
+  margin: 12px 0 16px 0;
+}
+
+.guest-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.guest-group span {
+  min-width: 48px;
+  display: inline-block;
+}
+
+.guest-group button {
+  margin: 0 8px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #2a5d9f;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.guest-group button:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.guest-summary input {
+  width: 100%;
+  background: #e3f0ff;
+  border: none;
+  border-radius: 5px;
+  padding: 7px 10px;
+  color: #19426b;
+  font-size: 1em;
+  margin-top: 8px;
+}
+
+/* POPUP calendar styles */
+#calendarPopup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 15px; /* ลดจาก 20px */
+  border: 2px solid #ccc;
+  z-index: 1001;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+}
+
+.calendar-container {
+  max-width: 500px; /* ลดจาก 1000px */
+  text-align: center;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem; /* ลดระยะห่าง */
+  margin-bottom: 0.5rem;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px; /* ลด gap */
+}
+
+.calendar-day,
+.calendar-date {
+  border: 1px solid #ccc;
+  padding: 6px 0; /* ลด padding */
+  min-width: 40px; /* ลดขนาดช่อง */
+  text-align: center;
+  font-size: 0.9rem; /* ลดตัวอักษร */
+}
+
+.nav-btn {
+  font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid #aaa;
+  border-radius: 50%;
+  padding: 4px 8px;
+}
+
+

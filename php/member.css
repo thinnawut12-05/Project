@@ -1,0 +1,118 @@
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Prompt', Arial, sans-serif;
+  background: linear-gradient(135deg, #2B8BC9 70%, #FFD600 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.register-container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(44,139,201,0.12);
+  padding: 2em 2em 1em 2em;
+  max-width: 440px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.register-logo {
+  font-size: 2.3em;
+  font-weight: bold;
+  margin-bottom: 1em;
+  letter-spacing: 2px;
+}
+
+.dom {
+  color: #2B8BC9;
+}
+.inn {
+  color: #FFD600;
+}
+
+.register-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.register-form h2 {
+  text-align: center;
+  color: #2B8BC9;
+  margin-bottom: 1.2em;
+}
+
+.input-group {
+  margin-bottom: 1.2em;
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  margin-bottom: 0.4em;
+  color: #222;
+  font-size: 1em;
+}
+
+.input-group input {
+  padding: 0.8em;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  font-size: 1em;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-group input:focus {
+  border-color: #2B8BC9;
+}
+
+.btn-register {
+  background: #FFD600;
+  color: #2B8BC9;
+  border: none;
+  padding: 0.9em 0;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 0.5em;
+  transition: background 0.2s;
+}
+
+.btn-register:hover {
+  background: #f7c800;
+}
+
+.register-footer {
+  margin-top: 1.1em;
+  text-align: center;
+  font-size: 0.98em;
+  color: #666;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45em;
+}
+
+.register-footer a {
+  color: #2B8BC9;
+  text-decoration: none;
+  transition: text-decoration 0.2s;
+}
+
+.register-footer a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 520px) {
+  .register-container {
+    padding: 1.2em 0.4em 0.8em 0.4em;
+    max-width: 98vw;
+  }
+}

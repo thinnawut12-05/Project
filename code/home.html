@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Dom Inn Hotel</title>
+  <link rel="icon" type="image/png" href="./src/images/logo.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x"
+    crossorigin="anonymous" />
+
+  <style>
+   
+  </style>
+</head>
+
+<body>
+  <header>
+    <section class="logo">
+      <img src="./src/images/4.png" width="50" height="50" />
+    </section>
+    <nav>
+      <a href="./type.html">ประเภทห้องพัก</a>
+      <a href="#">สาขาโรงแรมดอม อินน์</a>
+      <a href="./details.html">รายละเอียดต่างๆ</a>
+      <a href="#">การจองของฉัน</a>
+      <a href="#">คะแนน</a>
+    </nav>
+    
+
+  </header>
+
+  <section class="booking-form">
+    <select id="region" onchange="updateBranches()">
+      <option disabled selected value>เลือกภูมิภาค</option>
+      <option value="north">ดอมอินน์ ภูมิภาคเหนือ</option>
+      <option value="central">ดอมอินน์ ภูมิภาคกลาง</option>
+      <option value="northeast">ดอมอินน์ ภูมิภาคตะวันออกเฉียงเหนือ</option>
+      <option value="west">ดอมอินน์ ภูมิภาคตะวันตก</option>
+      <option value="south">ดอมอินน์ ภูมิภาคใต้</option>
+    </select>
+
+    <select id="branch">
+      <option disabled selected value>เลือกสาขา</option>
+    </select>
+
+    <input id="date-range" type="text" placeholder="วันที่เช็คอิน - วันที่เช็คเอ้าท์" readonly onclick="openCalendar()" />
+
+    <div class="guest-selector">
+      <label>จำนวนผู้เข้าพัก</label>
+      <div class="guest-group">
+        <span>ผู้ใหญ่</span>
+        <button type="button" onclick="changeGuest('adult', -1)">–</button>
+        <span id="adult-count">0</span>
+        <button type="button" onclick="changeGuest('adult', 1)">+</button>
+      </div>
+      <div class="guest-group">
+        <span>เด็ก</span>
+        <button type="button" onclick="changeGuest('child', -1)">–</button>
+        <span id="child-count">0</span>
+        <button type="button" onclick="changeGuest('child', 1)">+</button>
+      </div>
+      <div id="child-age-container" style="display:none; margin-top:8px;">
+        <label>อายุของเด็กแต่ละคน (ปี):</label>
+        <div id="child-age-list"></div>
+      </div>
+      <div class="guest-summary">
+        <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ 1, เด็ก 0 คน" />
+      </div>
+    </div>
+
+    <button class="btn">จองเลย</button>
+  </section>
+
+  <section class="room-gallery">
+    <img src="./src/images/1.jpg" alt="Room 1" />
+    <img src="./src/images/2.jpg" alt="Room 2" />
+  </section>
+
+  <section class="hotel-description">
+    <h2>CONSISTENCY IS YOURS</h2>
+    <p>เรามุ่งมั่นที่จะสร้างเครือข่ายโรงแรมที่มอบความสะดวกสบายด้วยราคาที่เป็นมิตร
+      ความแน่วแน่ เพื่อคุณภาพที่สม่ำเสมอในทุกสาขาทั่วภูมิภาคเอเชียแปซิฟิก
+      คือหัวใจของทุกสิ่งที่เราทำ
+      เราต้องการให้ลูกค้าทุกคนสัมผัสความสุขและความพึงพอใจ
+      เพราะสามารถไว้วางใจเราได้ทุกครั้ง
+      ความสุขของคุณคือคำมั่นสัญญาของเรา
+      เพราะความสม่ำเสมอของเราคือความสะดวกสบายของคุณ </p>
+    <p>"ความสม่ำเสมอเป็นของคุณ"</p>
+  </section>
+
+
+
+  <!-- POPUP CALENDAR -->
+  <div id="calendarOverlay" onclick="closeCalendar()"></div>
+  <div id="calendarPopup">
+    <span class="close-calendar" onclick="closeCalendar()">×</span>
+    <div class="calendar-container">
+      <div class="calendar-header">
+        <span class="nav-btn" onclick="changeMonth(-1)">&#8249;</span>
+        <div class="calendar-month">
+          <h2 id="month-label">Loading...</h2>
+        </div>
+        <span class="nav-btn" onclick="changeMonth(1)">&#8250;</span>
+      </div>
+      <div class="calendar-grid" id="calendar-days"></div>
+      <div class="calendar-grid" id="calendar-dates"></div>
+      <button class="btn" onclick="confirmDate()">ยืนยันวันเข้าพัก</button>
+    </div>
+  </div>
+
+  
+    
+  <script src="script.js"></script>
+</body>
+
+</html>
