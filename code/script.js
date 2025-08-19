@@ -7,22 +7,22 @@ function updateBranches() {
 
   branchSelect.innerHTML = '<option disabled selected value>เลือกสาขา</option>';
 
-  const branches = {
-    north: ["เชียงใหม่", "พะเยา"],
-    central: ["กรุงเทพฯ", "อ่างทอง"],
-    northeast: ["ขอนแก่น", "นครราชสีมา"],
-    west: ["กาญจนบุรี", "เพชรบุรี"],
-    south: ["สุราษฎร์ธานี", "นครศรีธรรมราช"]
-  };
+  // const branches = {
+  //   north: ["เชียงใหม่", "พะเยา"],
+  //   central: ["กรุงเทพฯ", "อ่างทอง"],
+  //   northeast: ["ขอนแก่น", "นครราชสีมา"],
+  //   west: ["กาญจนบุรี", "เพชรบุรี"],
+  //   south: ["สุราษฎร์ธานี", "นครศรีธรรมราช"]
+  // };
 
-  if (branches[selectedRegion]) {
-    branches[selectedRegion].forEach(branch => {
-      const option = document.createElement("option");
-      option.value = branch;
-      option.textContent = `ดอมอินน์ สาขา ${branch}`;
-      branchSelect.appendChild(option);
-    });
-  }
+  // if (branches[selectedRegion]) {
+  //   branches[selectedRegion].forEach(branch => {
+  //     const option = document.createElement("option");
+  //     option.value = branch;
+  //     option.textContent = `ดอมอินน์ สาขา ${branch}`;
+  //     branchSelect.appendChild(option);
+  //   });
+  // }
 }
 
 // เปลี่ยนจำนวนผู้เข้าพัก พร้อมจำกัดจำนวนและแสดงช่องเลือกอายุเด็ก

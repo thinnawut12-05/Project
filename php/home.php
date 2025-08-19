@@ -44,8 +44,8 @@ $full_name = trim($First_name . ' ' . $Last_name);
       <a href="#">รายละเอียดต่างๆ</a>
       <a href="#">การจองของฉัน</a>
       <a href="./score.php">คะแนน</a>
-
     </nav>
+
     <?php if ($full_name): ?>
       <div class="user-display">
         <?= htmlspecialchars($full_name) ?>
@@ -68,32 +68,36 @@ $full_name = trim($First_name . ' ' . $Last_name);
 
     <input id="date-range" type="text" placeholder="วันที่เช็คอิน - วันที่เช็คเอ้าท์" readonly onclick="openCalendar()" />
 
-    <div class="guest-selector">
-      <label>จำนวนผู้เข้าพัก</label>
+    <div id="rooms-container">
+      <div class="room" data-room="1">
+        <h4>ห้องที่ 1</h4>
 
-      <div class="guest-group">
-        <span>ผู้ใหญ่</span>
-        <button type="button" onclick="changeGuest('adult', -1)">–</button>
-        <span id="adult-count">0</span>
-        <button type="button" onclick="changeGuest('adult', 1)">+</button>
+        <div class="guest-group">
+          <span>ผู้ใหญ่</span>
+          <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
+          <span class="adult-count">1</span>
+          <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
+        </div>
+
+        <div class="guest-group">
+          <span>เด็ก</span>
+          <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
+          <span class="child-count">0</span>
+          <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
+        </div>
+
+
+        <div class="child-age-container" style="display:none; margin-top:8px;">
+          <label>อายุของเด็กแต่ละคน (ปี):</label>
+          <div class="child-age-list"></div>
+        </div>
       </div>
-
-      <div class="guest-group">
-        <span>เด็ก</span>
-        <button type="button" onclick="changeGuest('child', -1)">–</button>
-        <span id="child-count">0</span>
-        <button type="button" onclick="changeGuest('child', 1)">+</button>
-      </div>
-
-      <div id="child-age-container" style="display:none; margin-top:8px;">
-        <label>อายุของเด็กแต่ละคน (ปี):</label>
-        <div id="child-age-list"></div>
-      </div>
-
+      <button type="button" id="add-room-btn" onclick="addRoom()">+ เพิ่มห้อง</button>
       <div class="guest-summary">
         <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ 1, เด็ก 0 คน" />
       </div>
     </div>
+
 
     <button class="btn">จองเลย</button>
   </section>
@@ -133,7 +137,7 @@ $full_name = trim($First_name . ' ' . $Last_name);
     </div>
   </div>
 
-  <script src="sc.js"></script>
+  <script src="./test.js"></script>
 </body>
 
 </html>
