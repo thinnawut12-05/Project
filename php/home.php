@@ -2,22 +2,42 @@
 include 'db.php'; // เชื่อมต่อฐานข้อมูล
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 session_start();
+
 $First_name = $_SESSION['First_name'] ?? '';
 $Last_name = $_SESSION['Last_name'] ?? '';
 $full_name = trim($First_name . ' ' . $Last_name);
 
-// include 'db.php'; // เปิดใช้งานเมื่อมีไฟล์เชื่อมต่อ DB
+// --- START: ดึงข้อมูลจากฐานข้อมูล ---
 
-// ดึงข้อมูลภูมิภาคจากฐานข้อมูล (ตัวอย่างจำลอง)
-// ตัวอย่างข้อมูลจำลอง หากเชื่อมต่อจริงให้ใช้ mysqli หรือ PDO
-// $regions = [
-//     ['id' => 'north', 'name' => 'ดอมอินน์ ภูมิภาคเหนือ'],
-//     ['id' => 'central', 'name' => 'ดอมอินน์ ภูมิภาคกลาง'],
-//     ['id' => 'northeast', 'name' => 'ดอมอินน์ ภูมิภาคตะวันออกเฉียงเหนือ'],
-//     ['id' => 'west', 'name' => 'ดอมอินน์ ภูมิภาคตะวันตก'],
-//     ['id' => 'south', 'name' => 'ดอมอินน์ ภูมิภาคใต้'],
-// ];
+// ตั้งค่าการเชื่อมต่อให้รองรับภาษาไทย
+// สมมติว่าตัวแปรเชื่อมต่อใน db.php ชื่อ $conn
+if (isset($conn)) {
+  $conn->set_charset("utf8");
+}
+
+// 1. ดึงข้อมูลภูมิภาค (Region)
+$regions = [];
+$sql_regions = "SELECT Region_Id, Region_name FROM region ORDER BY Region_Id ASC";
+if ($result_regions = $conn->query($sql_regions)) {
+  while ($row = $result_regions->fetch_assoc()) {
+    $regions[] = $row;
+  }
+  $result_regions->free();
+}
+
+// 2. ดึงข้อมูลสาขา/จังหวัด (Province)
+$provinces = [];
+$sql_provinces = "SELECT Province_Id, Province_name, Region_Id FROM province ORDER BY Province_name ASC";
+if ($result_provinces = $conn->query($sql_provinces)) {
+  while ($row = $result_provinces->fetch_assoc()) {
+    $provinces[] = $row;
+  }
+  $result_provinces->free();
+}
+
+// --- END: ดึงข้อมูลจากฐานข้อมูล ---
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -31,6 +51,27 @@ $full_name = trim($First_name . ' ' . $Last_name);
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x"
     crossorigin="anonymous" />
+ <!-- สำหรับโปรไฟล์เท่านั้น -->
+  <style>
+    .profile-link,
+    .profile-link:visited {
+      text-decoration: none;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .profile-link:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .profile-link:active {
+      color: #ffffff;
+    }
+  </style>
+   <!-- สำหรับโปรไฟล์เท่านั้น End-->
 </head>
 
 <body>
@@ -46,24 +87,35 @@ $full_name = trim($First_name . ' ' . $Last_name);
       <a href="./score.php">คะแนน</a>
     </nav>
 
-    <?php if ($full_name): ?>
+    <?php if ($full_name && $full_name !== ' '): ?>
       <div class="user-display">
-        <?= htmlspecialchars($full_name) ?>
+        <a href="profile.php" class="profile-link"><?= htmlspecialchars($full_name) ?></a>
       </div>
     <?php endif; ?>
 
   </header>
 
   <section class="booking-form">
+    <!-- Dropdown ภูมิภาค -->
     <select id="region" onchange="updateBranches()">
       <option disabled selected value>เลือกภูมิภาค</option>
       <?php foreach ($regions as $region): ?>
-        <option value="<?= $region['id'] ?>"><?= $region['name'] ?></option>
+        <option value="<?= htmlspecialchars($region['Region_Id']) ?>">
+          <?= htmlspecialchars($region['Region_name']) ?>
+        </option>
       <?php endforeach; ?>
     </select>
 
+    <!-- Dropdown สาขา -->
     <select id="branch">
       <option disabled selected value>เลือกสาขา</option>
+      <?php foreach ($provinces as $province): ?>
+        <option value="<?= htmlspecialchars($province['Province_Id']) ?>"
+          data-region-id="<?= htmlspecialchars($province['Region_Id']) ?>"
+          style="display:none;">
+          <?= htmlspecialchars($province['Province_name']) ?>
+        </option>
+      <?php endforeach; ?>
     </select>
 
     <input id="date-range" type="text" placeholder="วันที่เช็คอิน - วันที่เช็คเอ้าท์" readonly onclick="openCalendar()" />
@@ -102,6 +154,8 @@ $full_name = trim($First_name . ' ' . $Last_name);
     <button class="btn">จองเลย</button>
   </section>
 
+  <!-- ... (ส่วนที่เหลือของ HTML ไม่เปลี่ยนแปลง) ... -->
+
   <section class="room-gallery">
     <img src="./src/images/1.jpg" alt="Room 1" />
     <img src="./src/images/2.jpg" alt="Room 2" />
@@ -138,6 +192,42 @@ $full_name = trim($First_name . ' ' . $Last_name);
   </div>
 
   <script src="./test.js"></script>
+
+  <!-- START: JAVASCRIPT for dynamic dropdown -->
+  <script>
+    function updateBranches() {
+      const regionSelect = document.getElementById('region');
+      const branchSelect = document.getElementById('branch');
+      const selectedRegionId = regionSelect.value;
+
+      // รีเซ็ต dropdown สาขาให้กลับไปที่ค่าเริ่มต้น "เลือกสาขา"
+      branchSelect.selectedIndex = 0;
+
+      // ดึง option ทั้งหมดใน dropdown สาขา
+      const branchOptions = branchSelect.getElementsByTagName('option');
+
+      // วนลูปเพื่อตรวจสอบทีละ option
+      for (let i = 0; i < branchOptions.length; i++) {
+        const option = branchOptions[i];
+        const regionIdOfBranch = option.getAttribute('data-region-id');
+
+        // ถ้า option มี data-region-id ตรงกับภูมิภาคที่เลือก ให้แสดง option นั้น
+        if (regionIdOfBranch === selectedRegionId) {
+          option.style.display = '';
+        } else {
+          // ถ้าไม่ตรง ให้ซ่อนไว้
+          option.style.display = 'none';
+        }
+      }
+
+      // ทำให้ option แรก "เลือกสาขา" แสดงผลเสมอ
+      if (branchOptions.length > 0) {
+        branchOptions[0].style.display = '';
+      }
+    }
+  </script>
+  <!-- END: JAVASCRIPT for dynamic dropdown -->
+
 </body>
 
 </html>
