@@ -51,7 +51,7 @@ if ($result_provinces = $conn->query($sql_provinces)) {
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x"
     crossorigin="anonymous" />
- <!-- สำหรับโปรไฟล์เท่านั้น -->
+  <!-- สำหรับโปรไฟล์เท่านั้น -->
   <style>
     .profile-link,
     .profile-link:visited {
@@ -71,7 +71,7 @@ if ($result_provinces = $conn->query($sql_provinces)) {
       color: #ffffff;
     }
   </style>
-   <!-- สำหรับโปรไฟล์เท่านั้น End-->
+  <!-- สำหรับโปรไฟล์เท่านั้น End-->
 </head>
 
 <body>
@@ -150,8 +150,15 @@ if ($result_provinces = $conn->query($sql_provinces)) {
       </div>
     </div>
 
+    <form action="./hotel_rooms.php" method="get">
+      <!-- ส่งค่าที่จำเป็น -->
+      <input type="hidden" name="hotel_name" value="HOP INN AYUTTHAYA">
+      <input type="hidden" name="checkin_date" id="checkin_date" value="">
+      <input type="hidden" name="adults" id="adults" value="1">
+      <input type="hidden" name="children" id="children" value="0">
 
-    <button class="btn">จองเลย</button>
+      <button type="submit" class="btn">จองเลย</button>
+    </form>
   </section>
 
   <!-- ... (ส่วนที่เหลือของ HTML ไม่เปลี่ยนแปลง) ... -->

@@ -1,0 +1,197 @@
+/* --- General Styles --- */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5; /* A light grey background to see the modal clearly */
+}
+
+/* --- Modal Overlay --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+/* --- Modal Container --- */
+.modal-container {
+    background-color: #fff;
+    width: 90%;
+    max-width: 1100px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    padding: 40px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    border-radius: 8px;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2em;
+    color: #666;
+    cursor: pointer;
+    line-height: 1;
+}
+
+/* --- Modal Content Layout --- */
+.modal-content {
+    display: flex;
+    gap: 30px;
+}
+
+.modal-left {
+    flex: 2; /* Takes 2/3 of the space */
+}
+
+.modal-right {
+    flex: 1; /* Takes 1/3 of the space */
+    padding-top: 20px;
+}
+
+/* --- Left Column Details --- */
+.room-title {
+    color: #0077c0;
+    font-size: 2.5em;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+.room-description {
+    line-height: 1.6;
+    color: #555;
+    margin-bottom: 30px;
+}
+
+.room-features {
+    display: flex;
+    gap: 40px;
+    color: #333;
+    font-size: 1.1em;
+    margin-bottom: 30px;
+}
+.feature-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.feature-item i {
+    color: #0077c0;
+    font-size: 1.2em;
+}
+
+/* --- Image Gallery --- */
+.gallery-container {
+    position: relative;
+    margin-bottom: 20px;
+}
+.gallery-slide {
+    display: none;
+}
+.gallery-slide.active {
+    display: block;
+}
+.gallery-container img {
+    width: 100%;
+    height: auto;
+    border-radius: 5px;
+}
+.gallery-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+.gallery-arrow {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 1.5em;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.gallery-dots {
+    text-align: center;
+    margin-top: 15px;
+}
+.dot {
+    height: 12px;
+    width: 12px;
+    margin: 0 5px;
+    background-color: #bbb;
+    border-radius: 50%;
+    display: inline-block;
+    cursor: pointer;
+}
+.dot.active {
+    background-color: #717171;
+}
+.amenities-link {
+    color: #0077c0;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* --- Right Column (Booking Box) --- */
+.booking-box {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.booking-details {
+    padding: 20px;
+}
+.booking-details h3 {
+    margin-top: 0;
+    font-size: 1.2em;
+}
+.rate-info {
+    font-size: 1.1em;
+    margin-bottom: 20px;
+}
+.rate-info a {
+    color: #e53935;
+    text-decoration: none;
+    font-weight: bold;
+    margin-left: 5px;
+}
+.rate-price {
+    font-size: 1.1em;
+    color: #555;
+    margin-bottom: 20px;
+}
+.booking-total {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-top: 20px;
+}
+.booking-button {
+    background-color: #d90429;
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 15px;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.booking-button:hover {
+    background-color: #b02a37;
+}
