@@ -14,50 +14,52 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   $Password = $_POST["password"];
   $confirmPassword = $_POST["confirm-password"];
   
-// เงื่อนไขเพศ
-if (
-  ($Title_name === 'นาย' && $Gender !== 'ชาย') ||
-  (($Title_name === 'นาง' || $Title_name === 'นางสาว') && $Gender !== 'หญิง')
-) {
-  $error = "คำนำหน้า {$Title_name} ต้องเลือกเพศให้ถูกต้อง";
-}
-
-// เงื่อนไขอื่น ๆ ...
-if (!preg_match("/^[ก-๙\s]+$/u", $First_name) || !preg_match("/^[ก-๙\s]+$/u", $Last_name)) {
-  $error = "ชื่อและนามสกุลต้องเป็นภาษาไทยเท่านั้น";
-} elseif (!preg_match("/^[0-9]{10}$/", $Phone_Number)) {
-  $error = "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักเท่านั้น";
-} elseif ($Password !== $confirmPassword) {
-  $error = "รหัสผ่านไม่ตรงกัน";
-}
-
-// ✨ ตรวจสอบว่ามี error หรือไม่ก่อน insert
-if (empty($error)) {
-  // เช็คอีเมลซ้ำ
-  $stmt_check = $conn->prepare("SELECT Email_member FROM member WHERE Email_member = ?");
-  $stmt_check->bind_param("s", $Email_member);
-  $stmt_check->execute();
-  $stmt_check->store_result();
-
-  if ($stmt_check->num_rows > 0) {
-    $error = "มีอีเมลนี้ในระบบแล้ว";
-    $stmt_check->close();
-  } else {
-    $stmt_check->close();
-    $hashedPassword = password_hash($Password, PASSWORD_DEFAULT);
-    $stmt = $conn->prepare("INSERT INTO member (First_name, Last_name, Email_member, Phone_Number, Title_name, Gender, password) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssssss", $First_name, $Last_name, $Email_member, $Phone_Number, $Title_name, $Gender, $hashedPassword);
-
-    if ($stmt->execute()) {
-      $success = "สมัครสมาชิกสำเร็จแล้ว!";
-    } else {
-      $error = "เกิดข้อผิดพลาด: " . $stmt->error;
-    }
-
-    $stmt->close();
+  // ======== ✨ โค้ดที่แก้ไขแล้ว ========
+  // เงื่อนไขเพศ: อนุญาตให้ นาย, นาง, นางสาว เลือกเพศ "อื่นๆ" ได้
+  if (
+    ($Title_name === 'นาย' && $Gender === 'หญิง') ||
+    (($Title_name === 'นาง' || $Title_name === 'นางสาว') && $Gender === 'ชาย')
+  ) {
+    $error = "คำนำหน้า {$Title_name} ไม่สามารถเลือกเพศ {$Gender} ได้";
   }
-  $conn->close();
-}
+  // ======== จบส่วนที่แก้ไข ========
+
+  // เงื่อนไขอื่น ๆ ...
+  if (empty($error) && (!preg_match("/^[ก-๙\s]+$/u", $First_name) || !preg_match("/^[ก-๙\s]+$/u", $Last_name))) {
+    $error = "ชื่อและนามสกุลต้องเป็นภาษาไทยเท่านั้น";
+  } elseif (empty($error) && !preg_match("/^[0-9]{10}$/", $Phone_Number)) {
+    $error = "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักเท่านั้น";
+  } elseif (empty($error) && $Password !== $confirmPassword) {
+    $error = "รหัสผ่านไม่ตรงกัน";
+  }
+
+  // ✨ ตรวจสอบว่ามี error หรือไม่ก่อน insert
+  if (empty($error)) {
+    // เช็คอีเมลซ้ำ
+    $stmt_check = $conn->prepare("SELECT Email_member FROM member WHERE Email_member = ?");
+    $stmt_check->bind_param("s", $Email_member);
+    $stmt_check->execute();
+    $stmt_check->store_result();
+
+    if ($stmt_check->num_rows > 0) {
+      $error = "มีอีเมลนี้ในระบบแล้ว";
+      $stmt_check->close();
+    } else {
+      $stmt_check->close();
+      $hashedPassword = password_hash($Password, PASSWORD_DEFAULT);
+      $stmt = $conn->prepare("INSERT INTO member (First_name, Last_name, Email_member, Phone_Number, Title_name, Gender, password) VALUES (?, ?, ?, ?, ?, ?, ?)");
+      $stmt->bind_param("sssssss", $First_name, $Last_name, $Email_member, $Phone_Number, $Title_name, $Gender, $hashedPassword);
+
+      if ($stmt->execute()) {
+        $success = "สมัครสมาชิกสำเร็จแล้ว!";
+      } else {
+        $error = "เกิดข้อผิดพลาด: " . $stmt->error;
+      }
+
+      $stmt->close();
+    }
+    $conn->close();
+  }
 
 }
 ?>
@@ -107,13 +109,13 @@ if (empty($error)) {
         <?php if ($error): ?>
           <script>
             window.onload = function() {
-              showPopup("<?= $error ?>", "red");
+              showPopup("<?= addslashes($error) ?>", "red");
             }
           </script>
         <?php elseif ($success): ?>
           <script>
             window.onload = function() {
-              showPopup("<?= $success ?>", "green");
+              showPopup("<?= addslashes($success) ?>", "green");
             }
           </script>
         <?php endif; ?>

@@ -1,12 +1,12 @@
 // รอให้หน้าเว็บโหลดเสร็จก่อนเริ่มทำงาน
 document.addEventListener('DOMContentLoaded', () => {
-    updateGuestSummary();
-    document.querySelectorAll('.room').forEach(room => {
-        const childCount = parseInt(room.querySelector('.child-count').textContent);
-        if (childCount > 0) {
-            generateChildAgeSelectors(room);
-        }
-    });
+  updateGuestSummary();
+  document.querySelectorAll('.room').forEach(room => {
+    const childCount = parseInt(room.querySelector('.child-count').textContent);
+    if (childCount > 0) {
+      generateChildAgeSelectors(room);
+    }
+  });
 });
 
 // นับจำนวนห้องเริ่มต้นจาก HTML ที่มีอยู่จริง
@@ -16,16 +16,20 @@ let roomCount = document.querySelectorAll('.room').length;
  * ฟังก์ชันเพิ่มห้องใหม่
  */
 function addRoom() {
-    roomCount++;
-    const container = document.getElementById('rooms-container');
+  roomCount++;
+  const container = document.getElementById('rooms-container');
+  const addRoomButton = document.getElementById('add-room-btn'); // อ้างอิงปุ่มเพิ่มห้อง
 
-    const newRoom = document.createElement('div');
-    newRoom.classList.add('room');
-    newRoom.setAttribute('data-room', roomCount);
-    
-    // *** แก้ไข HTML ตรงนี้ให้เหมือนกับห้องที่ 1 ***
-    newRoom.innerHTML = `
-        <h4>ห้องที่ ${roomCount}</h4>
+  const newRoom = document.createElement('div');
+  newRoom.classList.add('room');
+  newRoom.setAttribute('data-room', roomCount);
+
+  // *** แก้ไข HTML ตรงนี้เพื่อเพิ่มปุ่มลบห้อง ***
+  newRoom.innerHTML = `
+        <div class="room-header">
+            <h4>ห้องที่ ${roomCount}</h4>
+            <button type="button" class="delete-room-btn" onclick="deleteRoom(this)">ลบ</button>
+        </div>
         <div class="guest-group">
             <span>ผู้ใหญ่</span>
             <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
@@ -43,10 +47,47 @@ function addRoom() {
             <div class="child-age-list"></div>
         </div>
     `;
+
+  // แทรกห้องใหม่เข้าไปใน container (ก่อนปุ่ม "เพิ่มห้อง")
+  container.insertBefore(newRoom, addRoomButton);
+  updateGuestSummary();
+}
+
+/**
+ * (ใหม่) ฟังก์ชันสำหรับลบห้อง
+ */
+function deleteRoom(button) {
+  // ตรวจสอบว่ามีห้องเหลือมากกว่า 1 ห้องหรือไม่
+  if (document.querySelectorAll('.room').length <= 1) {
+    alert("ไม่สามารถลบห้องสุดท้ายได้");
+    return;
+  }
+  
+  // หา div.room ที่เป็นแม่ของปุ่มที่ถูกคลิก
+  const roomToDelete = button.closest('.room');
+  
+  // ลบห้องนั้นออกจาก DOM
+  roomToDelete.remove();
+  
+  // หลังจากลบแล้ว ให้อัปเดตหมายเลขห้องและสรุปรวมใหม่
+  updateRoomNumbers();
+  updateGuestSummary();
+}
+
+/**
+ * (ใหม่) ฟังก์ชันสำหรับอัปเดตหมายเลขห้องให้เรียงกันถูกต้อง
+ */
+function updateRoomNumbers() {
+    const allRooms = document.querySelectorAll('.room');
+    roomCount = allRooms.length; // อัปเดตจำนวนห้องทั้งหมด
     
-    // แทรกห้องใหม่เข้าไปใน container
-    container.appendChild(newRoom);
-    updateGuestSummary();
+    allRooms.forEach((room, index) => {
+        const roomNumber = index + 1;
+        // อัปเดตเลขห้องใน h4
+        room.querySelector('h4').textContent = `ห้องที่ ${roomNumber}`;
+        // อัปเดต data-room attribute
+        room.setAttribute('data-room', roomNumber);
+    });
 }
 
 
@@ -54,27 +95,27 @@ function addRoom() {
  * ฟังก์ชันเปลี่ยนจำนวนผู้เข้าพัก (ผู้ใหญ่/เด็ก)
  */
 function changeGuest(button, type, delta) {
-    const room = button.closest('.room');
-    const countElement = room.querySelector(`.${type}-count`);
-    let count = parseInt(countElement.textContent);
-    let newCount = count + delta;
+  const room = button.closest('.room');
+  const countElement = room.querySelector(`.${type}-count`);
+  let count = parseInt(countElement.textContent);
+  let newCount = count + delta;
 
-    if (type === 'adult') {
-        if (newCount < 1) newCount = 1;
-        if (newCount > 2) newCount = 2; // จำกัดผู้ใหญ่ 4 คน
-    }
-    if (type === 'child') {
-        if (newCount < 0) newCount = 0;
-        if (newCount > 2) newCount = 2; // จำกัดเด็ก 3 คน
-    }
+  if (type === 'adult') {
+    if (newCount < 1) newCount = 1;
+    if (newCount > 2) newCount = 2; // จำกัดผู้ใหญ่ไม่เกิน 2 คน
+  }
+  if (type === 'child') {
+    if (newCount < 0) newCount = 0;
+    if (newCount > 1) newCount = 1; // จำกัดเด็กไม่เกิน 1 คน
+  }
 
-    countElement.textContent = newCount;
+  countElement.textContent = newCount;
 
-    if (type === 'child') {
-        generateChildAgeSelectors(room);
-    }
-    
-    updateGuestSummary();
+  if (type === 'child') {
+    generateChildAgeSelectors(room);
+  }
+
+  updateGuestSummary();
 }
 
 
@@ -82,27 +123,27 @@ function changeGuest(button, type, delta) {
  * ฟังก์ชันสร้าง Dropdown สำหรับเลือกอายุเด็ก
  */
 function generateChildAgeSelectors(room) {
-    const childCount = parseInt(room.querySelector('.child-count').textContent);
-    const childAgeContainer = room.querySelector('.child-age-container');
-    const childAgeList = room.querySelector('.child-age-list');
-    
-    childAgeList.innerHTML = ''; 
+  const childCount = parseInt(room.querySelector('.child-count').textContent);
+  const childAgeContainer = room.querySelector('.child-age-container');
+  const childAgeList = room.querySelector('.child-age-list');
 
-    if (childCount > 0) {
-        childAgeContainer.style.display = 'block';
-        for (let i = 0; i < childCount; i++) {
-            const select = document.createElement('select');
-            select.name = `child-age-room${room.dataset.room}-${i}`;
-            let options = '<option value="">อายุ</option>';
-            for (let age = 1; age <= 12; age++) {
-                options += `<option value="${age}">${age} ปี</option>`;
-            }
-            select.innerHTML = options;
-            childAgeList.appendChild(select);
-        }
-    } else {
-        childAgeContainer.style.display = 'none';
+  childAgeList.innerHTML = '';
+
+  if (childCount > 0) {
+    childAgeContainer.style.display = 'block';
+    for (let i = 0; i < childCount; i++) {
+      const select = document.createElement('select');
+      select.name = `child-age-room${room.dataset.room}-${i}`;
+      let options = '<option value="">อายุ</option>';
+      for (let age = 1; age <= 12; age++) {
+        options += `<option value="${age}">${age} ปี</option>`;
+      }
+      select.innerHTML = options;
+      childAgeList.appendChild(select);
     }
+  } else {
+    childAgeContainer.style.display = 'none';
+  }
 }
 
 
@@ -110,22 +151,22 @@ function generateChildAgeSelectors(room) {
  * ฟังก์ชันอัปเดตข้อมูลสรุปรวมจำนวนผู้เข้าพักทั้งหมด
  */
 function updateGuestSummary() {
-    let totalAdults = 0;
-    let totalChildren = 0;
+  let totalAdults = 0;
+  let totalChildren = 0;
 
-    document.querySelectorAll('.room').forEach(room => {
-        totalAdults += parseInt(room.querySelector('.adult-count').textContent);
-        totalChildren += parseInt(room.querySelector('.child-count').textContent);
-    });
-    
-    const summaryText = `ผู้ใหญ่ ${totalAdults}, เด็ก ${totalChildren} คน`;
-    const summaryInput = document.getElementById('guest-summary-input');
-    if (summaryInput) {
-        summaryInput.value = summaryText;
-    }
+  document.querySelectorAll('.room').forEach(room => {
+    totalAdults += parseInt(room.querySelector('.adult-count').textContent);
+    totalChildren += parseInt(room.querySelector('.child-count').textContent);
+  });
+
+  const summaryText = `ผู้ใหญ่ ${totalAdults}, เด็ก ${totalChildren} คน`;
+  const summaryInput = document.getElementById('guest-summary-input');
+  if (summaryInput) {
+    summaryInput.value = summaryText;
+  }
 }
 
-//ปฏิทิน
+// โค้ดปฏิทิน (เหมือนเดิม)
 const monthNames = [
   "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
   "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"

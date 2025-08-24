@@ -1,13 +1,13 @@
 <?php
-// เริ่มต้น session (ถ้าต้องการใช้ในระบบ login)
-session_start();
+// --- ส่วนที่แก้ไข: เริ่มการเชื่อมต่อและดึงข้อมูล ---
+include 'db.php'; // ไฟล์สำหรับเชื่อมต่อฐานข้อมูลของคุณ
+$conn->set_charset("utf8"); // ตั้งค่าให้รองรับภาษาไทย
 
-// ถ้าต้องการเชื่อมฐานข้อมูล ก็ include ได้
-// include 'db.php';
+// เตรียมคำสั่ง SQL เพื่อดึงข้อมูลห้องพัก
+$sql = "SELECT room_type_id, Room_type_name FROM room_type ORDER BY room_type_id ASC";
+$result = $conn->query($sql);
+// --- จบส่วนที่แก้ไข ---
 
-// ตัวอย่างการดึงข้อมูลห้องพักจากฐานข้อมูล (ถ้ามี)
-// $sql = "SELECT * FROM rooms";
-// $result = $conn->query($sql);
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -32,55 +32,37 @@ session_start();
     <div class="room-grid">
 
       <?php
-      // ถ้าใช้ฐานข้อมูล
-      /*
-      while($row = $result->fetch_assoc()) {
-          echo '<div class="room-card">';
-          echo '<img src="' . $row['image'] . '" alt="' . $row['name'] . '">';
-          echo '<div class="info">';
-          echo '<h3>' . $row['name'] . '</h3>';
-          echo '<p>' . $row['location'] . '</p>';
-          echo '<p class="price">฿ ' . number_format($row['price']) . ' / คืน</p>';
-          echo '</div>';
-          echo '<a href="booking.php?id=' . $row['id'] . '" class="btn-book">เลือกวันที่ต้องการ</a>';
-          echo '</div>';
+      // --- ส่วนที่แก้ไข: วนลูปแสดงผลจากฐานข้อมูล ---
+      if ($result && $result->num_rows > 0) {
+          // วนลูปแสดงข้อมูลทีละแถว
+          while($row = $result->fetch_assoc()) {
+              // --- ข้อมูลตัวอย่างที่เราจะกำหนดเอง เนื่องจากไม่มีในตาราง ---
+              $location = 'โรงแรมในเครือดอมอินน์'; // ข้อความตัวอย่าง
+              $price = 930; // ราคาตัวอย่าง
+              $image_path = './src/images/' . $row['room_type_id'] . '.jpg'; // สร้างชื่อไฟล์รูปจาก id เช่น 1.jpg, 2.jpg
+              $link_url = 'hotel_rooms.php?id=' . $row['room_type_id']; // สร้างลิงก์ไปยังหน้ารายละเอียด
+              
+              echo '<div class="room-card">';
+              echo '<img src="' . htmlspecialchars($image_path) . '" alt="' . htmlspecialchars($row['Room_type_name']) . '">';
+              echo '<div class="info">';
+              echo '<h3>' . htmlspecialchars($row['Room_type_name']) . '</h3>'; // ดึงชื่อจากฐานข้อมูล
+              echo '<p>' . htmlspecialchars($location) . '</p>';
+              echo '<p class="price">฿ ' . number_format($price) . ' / คืน</p>';
+              echo '</div>';
+              echo '<a href="' . htmlspecialchars($link_url) . '" class="btn-book">ดูรายละเอียด</a>';
+              echo '</div>';
+          }
+      } else {
+          echo "<p>ไม่พบข้อมูลประเภทห้องพัก</p>";
       }
-      */
-
-      // ตัวอย่างแบบข้อมูลคงที่
-      $rooms = [
-        [
-          'image' => './src/images/1.jpg',
-          'name' => 'โรงแรมดอมอินน์ ตัวอย่าง ห้องพัก1',
-          'location' => 'จังหวัดกระบี่ ประเทศไทย',
-          'price' => 1500,
-          'link' => 'room1.php'
-        ],
-        [
-          'image' => './src/images/2.jpg',
-          'name' => 'โรงแรมดอมอินน์ ตัวอย่าง ห้องพัก2',
-          'location' => 'จังหวัดเชียงราย ประเทศไทย',
-          'price' => 1700,
-          'link' => '#'
-        ]
-      ];
-
-      foreach ($rooms as $room) {
-          echo '<div class="room-card">';
-          echo '<img src="' . $room['image'] . '" alt="' . $room['name'] . '">';
-          echo '<div class="info">';
-          echo '<h3>' . $room['name'] . '</h3>';
-          echo '<p>' . $room['location'] . '</p>';
-          echo '<p class="price">฿ ' . number_format($room['price']) . ' / คืน</p>';
-          echo '</div>';
-          echo '<a href="' . $room['link'] . '" class="btn-book">ดูรายละเอียด</a>';
-          echo '</div>';
-      }
+      
+      // ปิดการเชื่อมต่อฐานข้อมูล
+      $conn->close();
+      // --- จบส่วนที่แก้ไข ---
       ?>
 
     </div>
   </section>
 
-  
 </body>
 </html>

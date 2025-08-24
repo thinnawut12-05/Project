@@ -1,0 +1,88 @@
+/* --- File: details.css --- */
+
+/* ตั้งค่าฟอนต์และพื้นฐานของหน้า */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.7;
+    background-color: #f4f4f9; /* สีพื้นหลังเทาอ่อน */
+    color: #333;
+    margin: 0;
+    padding: 20px;
+}
+
+/* กล่องเนื้อหาหลัก */
+.details-container {
+    max-width: 900px;
+    margin: 20px auto; /* จัดให้อยู่กึ่งกลาง */
+    padding: 40px;
+    background-color: #ffffff;
+    border-radius: 10px; /* ทำให้ขอบมน */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); /* เพิ่มเงาให้ดูมีมิติ */
+}
+
+/* หัวข้อหลัก */
+h1 {
+    color: #0056b3; /* สีน้ำเงินเข้ม */
+    text-align: center;
+    border-bottom: 2px solid #0056b3;
+    padding-bottom: 15px;
+    margin-bottom: 30px;
+}
+
+/* หัวข้อย่อย */
+h2 {
+    color: #004a99;
+    margin-top: 40px;
+    border-left: 5px solid #0056b3;
+    padding-left: 10px;
+}
+
+/* ย่อหน้า */
+p {
+    font-size: 16px;
+    color: #555;
+    text-align: justify; /* จัดข้อความให้เต็มบรรทัดสวยงาม */
+}
+
+/* รายการสิ่งอำนวยความสะดวก */
+.amenities-list {
+    list-style-type: none; /* เอา bullet point ออก */
+    padding: 0;
+    margin-top: 20px;
+}
+
+.amenities-list li {
+    display: flex; /* จัดไอคอนกับข้อความให้อยู่ในแถวเดียวกัน */
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+
+.amenities-list i {
+    color: #28a745; /* สีเขียวสำหรับไอคอน */
+    font-size: 20px;
+    width: 35px; /* กำหนดความกว้างเพื่อให้ข้อความตรงกัน */
+    text-align: center;
+    margin-right: 10px;
+}
+
+/* ส่วนคำถามที่พบบ่อย (FAQ) */
+.faq-section {
+    margin-top: 20px;
+}
+
+.faq-item {
+    margin-bottom: 25px;
+}
+
+.faq-item h4 {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+/* รายการในส่วนคำถามที่พบบ่อย */
+.faq-item ul {
+    list-style-position: inside;
+    padding-left: 5px;
+}
