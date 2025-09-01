@@ -9,6 +9,7 @@ $First_name = $_SESSION['First_name'] ?? '';
 $Last_name = $_SESSION['Last_name'] ?? '';
 $full_name = trim($First_name . ' ' . $Last_name);
 
+
 // --- START: ดึงข้อมูลจากฐานข้อมูล ---
 
 // ตั้งค่าการเชื่อมต่อให้รองรับภาษาไทย
@@ -120,7 +121,13 @@ if ($result_provinces = $conn->query($sql_provinces)) {
 
     <input id="date-range" type="text" placeholder="วันที่เช็คอิน - วันที่เช็คเอ้าท์" readonly onclick="openCalendar()" />
 
+
+
     <div id="rooms-container">
+      <div class="room-input-group">
+        <label for="num-rooms">จำนวนห้อง:</label>
+        <input type="number" id="num-rooms" value="1" min="1" max="5" onchange="updateRoomsFromInput()">
+      </div>
       <div class="room" data-room="1">
         <h4>ห้องที่ 1</h4>
 
@@ -144,7 +151,8 @@ if ($result_provinces = $conn->query($sql_provinces)) {
           <div class="child-age-list"></div>
         </div>
       </div>
-      <button type="button" id="add-room-btn" onclick="addRoom()">+ เพิ่มห้อง</button>
+
+
       <div class="guest-summary">
         <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ 1, เด็ก 0 คน" />
       </div>

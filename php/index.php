@@ -53,7 +53,7 @@ $conn->close();
   <link rel="stylesheet" href="./in.css" />
   <link rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-    integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x"
+    integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x5l5x"
     crossorigin="anonymous" />
 </head>
 
@@ -106,33 +106,40 @@ $conn->close();
     <input id="date-range" type="text" placeholder="วันที่เช็คอิน - วันที่เช็คเอ้าท์" readonly onclick="openCalendar()" />
 
     <div id="rooms-container">
-      <div class="room" data-room="1">
-        <h4>ห้องที่ 1</h4>
-
-        <div class="guest-group">
-          <span>ผู้ใหญ่</span>
-          <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
-          <span class="adult-count">1</span>
-          <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
+        <!-- ช่องกรอกจำนวนห้องพัก -->
+        <div class="room-input-group">
+            <label for="num-rooms">จำนวนห้อง:</label>
+            <input type="number" id="num-rooms" value="1" min="1" max="5" onchange="updateRoomsFromInput()">
         </div>
 
-        <div class="guest-group">
-          <span>เด็ก</span>
-          <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
-          <span class="child-count">0</span>
-          <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
-        </div>
+        <!-- ห้องแรก (จะถูกสร้างหรืออัปเดตด้วย JavaScript) -->
+        <div class="room" data-room="1">
+            <h4>ห้องที่ 1</h4>
+
+            <div class="guest-group">
+                <span>ผู้ใหญ่</span>
+                <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
+                <span class="adult-count">1</span>
+                <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
+            </div>
+
+            <div class="guest-group">
+                <span>เด็ก</span>
+                <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
+                <span class="child-count">0</span>
+                <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
+            </div>
 
 
-        <div class="child-age-container" style="display:none; margin-top:8px;">
-          <label>อายุของเด็กแต่ละคน (ปี):</label>
-          <div class="child-age-list"></div>
+            <div class="child-age-container" style="display:none; margin-top:8px;">
+                <label>อายุของเด็กแต่ละคน (ปี):</label>
+                <div class="child-age-list"></div>
+            </div>
         </div>
-      </div>
-      <button type="button" id="add-room-btn" onclick="addRoom()">+ เพิ่มห้อง</button>
-      <div class="guest-summary">
-        <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ 1, เด็ก 0 คน" />
-      </div>
+        <!-- ปุ่มเพิ่มห้องจะถูกลบออกไป และควบคุมด้วยช่องกรอกตัวเลขแทน -->
+        <div class="guest-summary">
+            <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ 1, เด็ก 0 คน" />
+        </div>
     </div>
 
     <button class="btn">จองเลย</button>

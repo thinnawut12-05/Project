@@ -49,7 +49,7 @@ $result = $conn->query($sql);
               echo '<p>' . htmlspecialchars($location) . '</p>';
               echo '<p class="price">฿ ' . number_format($price) . ' / คืน</p>';
               echo '</div>';
-              echo '<a href="' . htmlspecialchars($link_url) . '" class="btn-book">ดูรายละเอียด</a>';
+              echo '<a href="' . htmlspecialchars($link_url) . '" class="btn-book">จองเลย</a>';
               echo '</div>';
           }
       } else {
