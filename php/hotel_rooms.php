@@ -1,4 +1,4 @@
-<?php
+<?php 
 include 'db.php';
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -45,8 +45,11 @@ $children = $_GET['children'] ?? 0;
 
 $rooms = [];
 if ($province_id) {
-    // ดึงเฉพาะ 2 room_type: 1 (เตียงใหญ่) และ 2 (เตียงคู่) ของสาขาที่เลือก
-    $sql_rooms = "SELECT * FROM room WHERE Province_Id = ? AND (Room_type_Id = 1 OR Room_type_Id = 2) ORDER BY Room_type_Id ASC";
+    $sql_rooms = "SELECT Room_Id, Price, Room_number, Room_type_Id, Number_of_people_staying 
+                  FROM room 
+                  WHERE Province_Id = ? 
+                  AND (Room_type_Id = 1 OR Room_type_Id = 2) 
+                  ORDER BY Room_type_Id ASC";
     $stmt = $conn->prepare($sql_rooms);
     $stmt->bind_param('i', $province_id);
     $stmt->execute();
@@ -200,13 +203,13 @@ if ($province_id) {
                         <button class="details-btn" onclick='openRoomDetailsModal(<?= json_encode($room) ?>)'>รายละเอียดห้อง</button>
                     </div>
                 </div>
-                <div class="booking-action"><button class="btn-book">จอง</button></div>
+                <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1" class="btn-book">จอง</a>
             </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </main>
 
-    <!-- ปฏิทินและ Modal (เหมือนเดิม) -->
+    <!-- ปฏิทินและ Modal -->
     <div id="calendarOverlay" onclick="closeCalendar()"></div>
     <div id="calendarPopup">
         <span class="close-calendar" onclick="closeCalendar()">×</span>
@@ -243,7 +246,7 @@ if ($province_id) {
                         <p class="rate-price" id="modal-price"></p>
                         <hr>
                         <div class="booking-total" id="modal-total"></div>
-                        <button class="booking-button">จอง</button>
+                        <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1" class="btn-book">จอง</a>
                     </div>
                 </div>
             </div>

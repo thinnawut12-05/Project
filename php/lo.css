@@ -2,7 +2,7 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Prompt', Arial, sans-serif;
-  background: linear-gradient(135deg, #2B8BC9 70%, #FFD600 100%);
+  /* background: linear-gradient(135deg, #2B8BC9 70%, #FFD600 100%); */
   min-height: 100vh;
   display: flex;
   align-items: center;
