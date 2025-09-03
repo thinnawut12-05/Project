@@ -1,4 +1,4 @@
-<?php 
+<?php
 include 'db.php';
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -80,6 +80,25 @@ if ($province_id) {
 ?>
 <!DOCTYPE html>
 <html lang="th">
+<!-- สำหรับปุ่มจองเท่านั้น  -->
+<style>
+    .btn-book {
+        display: inline-block;
+        /* หรือ block */
+        padding: 8px 16px;
+        background-color: #f05a28;
+        color: #fff;
+        border-radius: 5px;
+        text-decoration: none;
+        text-align: center;
+        transition: background-color 0.3s;
+    }
+
+    .btn-book:hover {
+        background-color: #d94a1f;
+    }
+</style>
+<!-- สำหรับปุ่มจองเท่านั้น End-->
 
 <head>
     <meta charset="UTF-8" />
@@ -90,15 +109,23 @@ if ($province_id) {
     <link rel="stylesheet" href="hotel_rooms.css" />
     <link rel="stylesheet" href="modal_style.css" />
     <style>
-        .profile-link, .profile-link:visited {
+        .profile-link,
+        .profile-link:visited {
             text-decoration: none;
             color: #ffffff;
             padding: 8px 12px;
             border-radius: 5px;
             transition: background-color 0.3s ease;
         }
-        .profile-link:hover { background-color: rgba(255,255,255,0.2); color: #fff; }
-        .profile-link:active { color: #fff; }
+
+        .profile-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .profile-link:active {
+            color: #fff;
+        }
     </style>
 </head>
 
@@ -115,9 +142,9 @@ if ($province_id) {
             <a href="./score.php">คะแนน</a>
         </nav>
         <?php if ($full_name && $full_name !== ' '): ?>
-        <div class="user-display">
-            <a href="profile.php" class="profile-link"><?= htmlspecialchars($full_name) ?></a>
-        </div>
+            <div class="user-display">
+                <a href="profile.php" class="profile-link"><?= htmlspecialchars($full_name) ?></a>
+            </div>
         <?php endif; ?>
     </header>
 
@@ -126,19 +153,19 @@ if ($province_id) {
             <select id="region" onchange="updateBranches()">
                 <option disabled selected value>เลือกภูมิภาค</option>
                 <?php foreach ($regions as $region): ?>
-                <option value="<?= htmlspecialchars($region['Region_Id']) ?>">
-                    <?= htmlspecialchars($region['Region_name']) ?>
-                </option>
+                    <option value="<?= htmlspecialchars($region['Region_Id']) ?>">
+                        <?= htmlspecialchars($region['Region_name']) ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
             <select id="branch" name="province_id">
                 <option disabled selected value>เลือกสาขา</option>
                 <?php foreach ($provinces as $province): ?>
-                <option value="<?= htmlspecialchars($province['Province_Id']) ?>"
-                    data-region-id="<?= htmlspecialchars($province['Region_Id']) ?>"
-                    style="display:none;" <?= ($province_id == $province['Province_Id']) ? 'selected' : '' ?>>
-                    <?= htmlspecialchars($province['Province_name']) ?>
-                </option>
+                    <option value="<?= htmlspecialchars($province['Province_Id']) ?>"
+                        data-region-id="<?= htmlspecialchars($province['Region_Id']) ?>"
+                        style="display:none;" <?= ($province_id == $province['Province_Id']) ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($province['Province_name']) ?>
+                    </option>
                 <?php endforeach; ?>
             </select>
 
@@ -186,25 +213,27 @@ if ($province_id) {
             <div style="color:#888;text-align:center;padding:2rem;font-size:1.2rem;">ไม่พบข้อมูลห้องพักสำหรับสาขานี้</div>
         <?php else: ?>
             <?php foreach ($rooms as $room): ?>
-            <div class="room-card">
-                <div class="card-content">
-                    <div class="room-image"><img src="<?= htmlspecialchars($room['images'][0]) ?>" alt="<?= htmlspecialchars($room['name']) ?>"></div>
-                    <div class="room-info">
-                        <div class="info-header">
-                            <h2><?= htmlspecialchars($room['name']) ?></h2>
-                            <div class="room-price">฿ <?= htmlspecialchars($room['price']) ?>*</div>
+                <div class="room-card">
+                    <div class="card-content">
+                        <div class="room-image"><img src="<?= htmlspecialchars($room['images'][0]) ?>" alt="<?= htmlspecialchars($room['name']) ?>"></div>
+                        <div class="room-info">
+                            <div class="info-header">
+                                <h2><?= htmlspecialchars($room['name']) ?></h2>
+                                <div class="room-price">฿ <?= htmlspecialchars($room['price']) ?>*</div>
+                            </div>
+                            <div class="room-icons">
+                                <div class="icon-group"><i class="fas fa-users"></i> <?= htmlspecialchars($room['capacity']) ?></div>
+                                <div class="icon-group"><i class="fas fa-user-friends"></i> <?= htmlspecialchars($room['guests']) ?></div>
+                                <div class="icon-group"><i class="fas fa-bed"></i> <?= htmlspecialchars($room['bed_type']) ?></div>
+                            </div>
+                            <p class="room-description"><?= nl2br(htmlspecialchars($room['description'])) ?></p>
+                            <button class="details-btn" onclick='openRoomDetailsModal(<?= json_encode($room) ?>)'>รายละเอียดห้อง</button>
                         </div>
-                        <div class="room-icons">
-                            <div class="icon-group"><i class="fas fa-users"></i> <?= htmlspecialchars($room['capacity']) ?></div>
-                            <div class="icon-group"><i class="fas fa-user-friends"></i> <?= htmlspecialchars($room['guests']) ?></div>
-                            <div class="icon-group"><i class="fas fa-bed"></i> <?= htmlspecialchars($room['bed_type']) ?></div>
-                        </div>
-                        <p class="room-description"><?= nl2br(htmlspecialchars($room['description'])) ?></p>
-                        <button class="details-btn" onclick='openRoomDetailsModal(<?= json_encode($room) ?>)'>รายละเอียดห้อง</button>
+                    </div>
+                    <div class="booking-action">
+                        <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1" class="btn-book">จอง</a>
                     </div>
                 </div>
-                <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1" class="btn-book">จอง</a>
-            </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </main>
@@ -246,7 +275,9 @@ if ($province_id) {
                         <p class="rate-price" id="modal-price"></p>
                         <hr>
                         <div class="booking-total" id="modal-total"></div>
-                        <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1" class="btn-book">จอง</a>
+                        <div class="booking-action">
+                            <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1" class="btn-book">จอง</a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -277,4 +308,5 @@ if ($province_id) {
         }
     </script>
 </body>
+
 </html>
