@@ -105,7 +105,7 @@ if ($province_id) {
     <title>เลือกห้องพัก - <?= htmlspecialchars($hotel_name) ?></title>
     <link rel="icon" type="image/png" href="./src/images/logo.png" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="stylesheet" href="./in.css" />
+    <link rel="stylesheet" href="./ino.css" />
     <link rel="stylesheet" href="hotel_rooms.css" />
     <link rel="stylesheet" href="modal_style.css" />
     <style>
