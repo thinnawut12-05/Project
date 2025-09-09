@@ -1,0 +1,45 @@
+body {
+    font-family: "Prompt", sans-serif;
+    background: #f4f6f9;
+    margin: 0;
+    padding: 0;
+}
+
+.header {
+    background: #2c4a8a;
+    padding: 20px;
+    text-align: center;
+    color: white;
+}
+
+.container {
+    width: 70%;
+    margin: 30px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.branch-card {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.branch-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 6px 15px rgba(0,0,0,0.15);
+}
+
+.branch-card h2 {
+    margin: 0;
+    color: #2c4a8a;
+    font-size: 20px;
+}
+
+.branch-card p {
+    margin: 5px 0;
+    color: #555;
+}

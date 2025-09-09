@@ -64,7 +64,7 @@ $conn->close();
     </section>
     <nav>
       <a href="./type.php">ประเภทห้องพัก</a>
-      <a href="#">สาขาโรงแรมดอม อินน์</a>
+      <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
       <a href="./details.php">รายละเอียดต่างๆ</a>
       <a href="#">การจองของฉัน</a>
       <a href="./score.php">คะแนน</a>
