@@ -1,4 +1,4 @@
-<?php
+<?php 
 session_start();
 include 'db.php';
 
@@ -6,20 +6,34 @@ $First_name = $_SESSION['First_name'] ?? '';
 $Last_name = $_SESSION['Last_name'] ?? '';
 $full_name = trim($First_name . ' ' . $Last_name);
 
-$room_id = $_GET['room_id'] ?? null;
-$price = $_GET['price'] ?? 0;
+$room_id   = $_GET['room_id'] ?? null;
+$price     = $_GET['price'] ?? 0;
 $num_rooms = $_GET['num_rooms'] ?? 1;
+
+$checkin_date = $_GET['checkin_date'] ?? date("Y-m-d");
+$adults       = $_GET['adults'] ?? 1;
+$children     = $_GET['children'] ?? 0;
 
 $total_price = $price * $num_rooms;
 
-// กำหนดเวลาหมดอายุ 24 ชั่วโมง
-$expire_time = time() + (24 * 60 * 60);
+// เก็บค่าไว้ใน Session สำหรับ insert ทีหลัง
+$_SESSION['num_rooms']   = $num_rooms;
+$_SESSION['adults']      = $adults;
+$_SESSION['children']    = $children;
+$_SESSION['checkin_date']= $checkin_date;
+$_SESSION['room_id']     = $room_id;
+$_SESSION['total_price'] = $total_price;
+
+$expire_time = time() + (24 * 60 * 60); // 24 ชั่วโมง
 $_SESSION['expire_time'] = $expire_time;
 ?>
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
+    <meta charset="UTF-8">
+    <title>ชำระเงิน</title>
+    <link rel="stylesheet" href="in.css">
+    <head>
     <meta charset="UTF-8">
     <title>ชำระเงิน</title>
     <link rel="stylesheet" href="in.css">
@@ -69,13 +83,14 @@ $_SESSION['expire_time'] = $expire_time;
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <h2>หน้าชำระเงิน</h2>
         <p>สวัสดีคุณ <b><?= htmlspecialchars($full_name) ?></b></p>
         <p>คุณได้จองห้องพัก จำนวน <b><?= $num_rooms ?></b> ห้อง</p>
         <p class="price">ยอดที่ต้องชำระ: ฿ <?= number_format($total_price, 2) ?></p>
+        <p>วันเข้าพัก: <b><?= htmlspecialchars($checkin_date)?></b></p>
+        <p>จำนวนผู้เข้าพัก: <b><?= htmlspecialchars($adults) ?> ผู้ใหญ่, <?= htmlspecialchars($children) ?> เด็ก</b></p>
 
         <div class="countdown">
             เวลาที่เหลือในการชำระ: <span id="timer"></span>
@@ -87,9 +102,7 @@ $_SESSION['expire_time'] = $expire_time;
         <form action="upload_slip.php" method="post" enctype="multipart/form-data">
             <label>อัพโหลดสลิปการชำระเงิน:</label><br>
             <input type="file" name="slip" accept="image/*" required><br>
-            <input type="hidden" name="amount" value="<?= $total_price ?>">
-            <input type="hidden" name="room_id" value="<?= $room_id ?>">
-            <button type="submit">ยืนยันการชำระ</button>
+            <button type="submit">ชำระเงิน</button>
         </form>
     </div>
 
@@ -118,5 +131,4 @@ $_SESSION['expire_time'] = $expire_time;
         updateTimer();
     </script>
 </body>
-
 </html>

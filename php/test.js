@@ -325,8 +325,10 @@ function confirmDate() {
     .sort((a, b) => +a - +b);
   const start = days[0];
   const end = days[days.length - 1];
-  document.getElementById("date-range").value =
-    `วันที่ ${start} ${monthNames[currentMonth]} - ${end} ${monthNames[currentMonth]} ${currentYear}`;
+  document.getElementById("start-date").value =
+    `วันที่ ${start} ${monthNames[currentMonth]}`;
+  document.getElementById("end-date").value =
+    `วันที่ ${end} ${monthNames[currentMonth]} ${currentYear}`;
   closeCalendar();
 }
 renderDaysOfWeek();

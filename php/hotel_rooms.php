@@ -4,6 +4,8 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 session_start();
+$checkin_date = $_POST['checkin_date'] ?? '';
+$checkout_date = $_POST['checkout_date'] ?? '';
 
 $First_name = $_SESSION['First_name'] ?? '';
 $Last_name = $_SESSION['Last_name'] ?? '';
@@ -40,6 +42,7 @@ $province_id = isset($_GET['province_id']) ? intval($_GET['province_id']) : null
 
 // รับค่าผู้เข้าพักและวันที่ จาก GET
 $checkin_date = $_GET['checkin_date'] ?? '';
+$checkout_date = $_GET['checkout_date'] ?? '';
 $adults = $_GET['adults'] ?? 1;
 $children = $_GET['children'] ?? 0;
 
@@ -136,7 +139,7 @@ if ($province_id) {
         </section>
         <nav>
             <a href="./type.php">ประเภทห้องพัก</a>
-            <a href="#">สาขาโรงแรมดอม อินน์</a>
+            <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
             <a href="./details.php">รายละเอียดต่างๆ</a>
             <a href="#">การจองของฉัน</a>
             <a href="./score.php">คะแนน</a>
@@ -170,7 +173,8 @@ if ($province_id) {
             </select>
 
             <!-- ส่วนของวันที่และผู้เข้าพัก -->
-            <input id="date-range" name="checkin_date" type="text" placeholder="วันที่เช็คอิน - วันที่เช็คเอ้าท์" readonly value="<?= htmlspecialchars($checkin_date) ?>" onclick="openCalendar()" />
+            <input id="start-date" name="checkin_date" type="text" placeholder="วันที่เช็คอิน" readonly value="<?= htmlspecialchars($checkin_date) ?>" onclick="openCalendar()" />
+            <input id="end-date" name="checkout_date" type="text" placeholder="วันที่เช็คเอ้าท์" readonly value="<?= htmlspecialchars($checkout_date) ?>" onclick="openCalendar()" />
 
             <div id="rooms-container">
                 <div class="room" data-room="1">
