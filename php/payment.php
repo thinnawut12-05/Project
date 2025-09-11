@@ -11,6 +11,7 @@ $price     = $_GET['price'] ?? 0;
 $num_rooms = $_GET['num_rooms'] ?? 1;
 
 $checkin_date = $_GET['checkin_date'] ?? date("Y-m-d");
+$checkout_date = $_GET['checkout_date'] ?? date("Y-m-d");
 $adults       = $_GET['adults'] ?? 1;
 $children     = $_GET['children'] ?? 0;
 
@@ -21,6 +22,7 @@ $_SESSION['num_rooms']   = $num_rooms;
 $_SESSION['adults']      = $adults;
 $_SESSION['children']    = $children;
 $_SESSION['checkin_date']= $checkin_date;
+$_SESSION['checkout_date']= $checkout_date;
 $_SESSION['room_id']     = $room_id;
 $_SESSION['total_price'] = $total_price;
 
@@ -89,14 +91,15 @@ $_SESSION['expire_time'] = $expire_time;
         <p>สวัสดีคุณ <b><?= htmlspecialchars($full_name) ?></b></p>
         <p>คุณได้จองห้องพัก จำนวน <b><?= $num_rooms ?></b> ห้อง</p>
         <p class="price">ยอดที่ต้องชำระ: ฿ <?= number_format($total_price, 2) ?></p>
-        <p>วันเข้าพัก: <b><?= htmlspecialchars($checkin_date)?></b></p>
+        <p>วันเข้าพัก: <b><?= htmlspecialchars($checkin_date) ?></b></p>
+        <p>วันเช็คเอ้าท์: <b><?= htmlspecialchars($checkout_date) ?></b></p>
         <p>จำนวนผู้เข้าพัก: <b><?= htmlspecialchars($adults) ?> ผู้ใหญ่, <?= htmlspecialchars($children) ?> เด็ก</b></p>
 
         <div class="countdown">
             เวลาที่เหลือในการชำระ: <span id="timer"></span>
         </div>
         <section class="room-gallery">
-            <img src="./src/images/77.jpg" alt="Room 1" />
+            <img src="./src/images/930.jpg" alt="Room 1" />
         </section>
 
         <form action="upload_slip.php" method="post" enctype="multipart/form-data">

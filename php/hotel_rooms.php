@@ -235,7 +235,7 @@ if ($province_id) {
                         </div>
                     </div>
                     <div class="booking-action">
-                        <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1" class="btn-book">จอง</a>
+                        <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1&checkin_date=<?= $checkin_date ?>&checkout_date=<?= $checkout_date ?>&adults=<?= $adults ?>&children=<?= $children ?>" class="btn-book">จอง</a>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -280,7 +280,7 @@ if ($province_id) {
                         <hr>
                         <div class="booking-total" id="modal-total"></div>
                         <div class="booking-action">
-                            <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1" class="btn-book">จอง</a>
+                           <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1&checkin_date=<?= $checkin_date ?>&checkout_date=<?= $checkout_date ?>&adults=<?= $adults ?>&children=<?= $children ?>" class="btn-book">จอง</a>
                         </div>
                     </div>
                 </div>
