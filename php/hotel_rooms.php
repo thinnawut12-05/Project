@@ -4,8 +4,6 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 session_start();
-$checkin_date = $_POST['checkin_date'] ?? '';
-$checkout_date = $_POST['checkout_date'] ?? '';
 
 $First_name = $_SESSION['First_name'] ?? '';
 $Last_name = $_SESSION['Last_name'] ?? '';
@@ -43,15 +41,22 @@ $province_id = isset($_GET['province_id']) ? intval($_GET['province_id']) : null
 // รับค่าผู้เข้าพักและวันที่ จาก GET
 $checkin_date = $_GET['checkin_date'] ?? '';
 $checkout_date = $_GET['checkout_date'] ?? '';
-$adults = $_GET['adults'] ?? 1;
-$children = $_GET['children'] ?? 0;
+$num_rooms = $_GET['num_rooms'] ?? 1;
+
+// ดึงค่าผู้เข้าพักจากแต่ละห้อง และตรวจสอบให้แน่ใจว่าเป็น array
+$adults_per_room = isset($_GET['adults']) && is_array($_GET['adults']) ? $_GET['adults'] : (isset($_GET['adults']) ? [$_GET['adults']] : [1]);
+$children_per_room = isset($_GET['children']) && is_array($_GET['children']) ? $_GET['children'] : (isset($_GET['children']) ? [$_GET['children']] : [0]);
+
+// คำนวณจำนวนผู้เข้าพักรวมทั้งหมด
+$total_adults = array_sum($adults_per_room);
+$total_children = array_sum($children_per_room);
 
 $rooms = [];
 if ($province_id) {
-    $sql_rooms = "SELECT Room_Id, Price, Room_number, Room_type_Id, Number_of_people_staying 
-                  FROM room 
-                  WHERE Province_Id = ? 
-                  AND (Room_type_Id = 1 OR Room_type_Id = 2) 
+    $sql_rooms = "SELECT Room_Id, Price, Room_number, Room_type_Id, Number_of_people_staying
+                  FROM room
+                  WHERE Province_Id = ?
+                  AND (Room_type_Id = 1 OR Room_type_Id = 2)
                   ORDER BY Room_type_Id ASC";
     $stmt = $conn->prepare($sql_rooms);
     $stmt->bind_param('i', $province_id);
@@ -83,11 +88,9 @@ if ($province_id) {
 ?>
 <!DOCTYPE html>
 <html lang="th">
-<!-- สำหรับปุ่มจองเท่านั้น  -->
 <style>
     .btn-book {
         display: inline-block;
-        /* หรือ block */
         padding: 8px 16px;
         background-color: #f05a28;
         color: #fff;
@@ -95,14 +98,14 @@ if ($province_id) {
         text-decoration: none;
         text-align: center;
         transition: background-color 0.3s;
+        border: none;
+        cursor: pointer;
     }
 
     .btn-book:hover {
         background-color: #d94a1f;
     }
 </style>
-<!-- สำหรับปุ่มจองเท่านั้น End-->
-
 <head>
     <meta charset="UTF-8" />
     <title>เลือกห้องพัก - <?= htmlspecialchars($hotel_name) ?></title>
@@ -172,7 +175,6 @@ if ($province_id) {
                 <?php endforeach; ?>
             </select>
 
-            <!-- ส่วนของวันที่และผู้เข้าพัก -->
             <input id="start-date" name="checkin_date" type="text" placeholder="วันที่เช็คอิน" readonly value="<?= htmlspecialchars($checkin_date) ?>" onclick="openCalendar()" />
             <input id="end-date" name="checkout_date" type="text" placeholder="วันที่เช็คเอ้าท์" readonly value="<?= htmlspecialchars($checkout_date) ?>" onclick="openCalendar()" />
 
@@ -182,13 +184,13 @@ if ($province_id) {
                     <div class="guest-group">
                         <span>ผู้ใหญ่</span>
                         <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
-                        <span class="adult-count"><?= htmlspecialchars($adults) ?></span>
+                        <span class="adult-count"><?= htmlspecialchars($adults_per_room[0] ?? 1) ?></span>
                         <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
                     </div>
                     <div class="guest-group">
                         <span>เด็ก</span>
                         <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
-                        <span class="child-count"><?= htmlspecialchars($children) ?></span>
+                        <span class="child-count"><?= htmlspecialchars($children_per_room[0] ?? 0) ?></span>
                         <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
                     </div>
                     <div class="child-age-container" style="display:none; margin-top:8px;">
@@ -198,14 +200,14 @@ if ($province_id) {
                 </div>
                 <div class="room-input-group">
                     <label for="num-rooms">จำนวนห้อง:</label>
-                    <input type="number" id="num-rooms" value="1" min="1" max="5" onchange="updateRoomsFromInput()">
+                    <input type="number" id="num-rooms" value="<?= htmlspecialchars($num_rooms) ?>" min="1" max="5" onchange="updateRoomsFromInput()">
                 </div>
                 <div class="guest-summary">
-                    <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ <?= htmlspecialchars($adults) ?>, เด็ก <?= htmlspecialchars($children) ?> คน" />
+                    <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ <?= htmlspecialchars($total_adults) ?>, เด็ก <?= htmlspecialchars($total_children) ?> คน" />
                 </div>
             </div>
-            <input type="hidden" name="adults" id="adults" value="<?= htmlspecialchars($adults) ?>">
-            <input type="hidden" name="children" id="children" value="<?= htmlspecialchars($children) ?>">
+            <input type="hidden" name="adults" id="adults-hidden-input" value="<?= htmlspecialchars(implode(',', $adults_per_room)) ?>">
+            <input type="hidden" name="children" id="children-hidden-input" value="<?= htmlspecialchars(implode(',', $children_per_room)) ?>">
             <button type="submit" class="btn">ค้นหาห้องพัก</button>
         </form>
     </section>
@@ -235,14 +237,22 @@ if ($province_id) {
                         </div>
                     </div>
                     <div class="booking-action">
-                        <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1&checkin_date=<?= $checkin_date ?>&checkout_date=<?= $checkout_date ?>&adults=<?= $adults ?>&children=<?= $children ?>" class="btn-book">จอง</a>
+                        <form action="payment.php" method="get" class="booking-form-item">
+                            <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
+                            <input type="hidden" name="price" value="<?= $room['Price'] ?>">
+                            <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
+                            <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
+                            <input type="hidden" name="num_rooms" class="num-rooms-input" value="<?= htmlspecialchars($num_rooms) ?>">
+                            <input type="hidden" name="adults" class="adults-input" value="<?= htmlspecialchars(implode(',', $adults_per_room)) ?>">
+                            <input type="hidden" name="children" class="children-input" value="<?= htmlspecialchars(implode(',', $children_per_room)) ?>">
+                            <button type="submit" class="btn-book">จอง</button>
+                        </form>
                     </div>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </main>
 
-    <!-- ปฏิทินและ Modal -->
     <div id="calendarOverlay" onclick="closeCalendar()"></div>
     <div id="calendarPopup">
         <span class="close-calendar" onclick="closeCalendar()">×</span>
@@ -280,7 +290,16 @@ if ($province_id) {
                         <hr>
                         <div class="booking-total" id="modal-total"></div>
                         <div class="booking-action">
-                           <a href="payment.php?room_id=<?= $room['Room_Id'] ?>&price=<?= $room['Price'] ?>&num_rooms=1&checkin_date=<?= $checkin_date ?>&checkout_date=<?= $checkout_date ?>&adults=<?= $adults ?>&children=<?= $children ?>" class="btn-book">จอง</a>
+                            <form action="payment.php" method="get" class="modal-booking-form">
+                                <input type="hidden" name="room_id" id="modal-room-id">
+                                <input type="hidden" name="price" id="modal-room-price">
+                                <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
+                                <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
+                                <input type="hidden" name="num_rooms" class="num-rooms-input" value="<?= htmlspecialchars($num_rooms) ?>">
+                                <input type="hidden" name="adults" class="adults-input" value="<?= htmlspecialchars(implode(',', $adults_per_room)) ?>">
+                                <input type="hidden" name="children" class="children-input" value="<?= htmlspecialchars(implode(',', $children_per_room)) ?>">
+                                <button type="submit" class="btn-book">จอง</button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -310,6 +329,23 @@ if ($province_id) {
                 branchOptions[0].style.display = '';
             }
         }
+        
+        // เพิ่ม JavaScript สำหรับอัปเดตค่า num_rooms ในฟอร์มจองทั้งหมด
+        document.addEventListener('DOMContentLoaded', () => {
+            const numRoomsInput = document.getElementById('num-rooms');
+            const bookingForms = document.querySelectorAll('.booking-form-item, .modal-booking-form');
+
+            numRoomsInput.addEventListener('change', (event) => {
+                const newNumRooms = event.target.value;
+                bookingForms.forEach(form => {
+                    const hiddenInput = form.querySelector('.num-rooms-input');
+                    if (hiddenInput) {
+                        hiddenInput.value = newNumRooms;
+                    }
+                });
+            });
+        });
+
     </script>
 </body>
 
