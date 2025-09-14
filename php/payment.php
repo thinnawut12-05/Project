@@ -64,18 +64,60 @@ $_SESSION['expire_time'] = $expire_time;
 ?>
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <title>ชำระเงิน</title>
     <style>
-        body { font-family: Tahoma, sans-serif; background: #f9f9f9; }
-        .container { max-width: 600px; margin: 50px auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .price { font-size: 22px; font-weight: bold; color: green; }
-        .countdown { font-size: 18px; color: red; font-weight: bold; }
-        button { background: green; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
-        button:hover { background: darkgreen; }
+        body {
+            font-family: Tahoma, sans-serif;
+            background: #f9f9f9;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .price {
+            font-size: 22px;
+            font-weight: bold;
+            color: green;
+        }
+
+        .countdown {
+            font-size: 18px;
+            color: red;
+            font-weight: bold;
+        }
+
+        button {
+            background: green;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: darkgreen;
+        }
+
+        /* จัดกลาง QR */
+        .room-gallery {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h2>หน้าชำระเงิน</h2>
@@ -120,4 +162,5 @@ $_SESSION['expire_time'] = $expire_time;
         updateTimer();
     </script>
 </body>
+
 </html>
