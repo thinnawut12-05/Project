@@ -221,7 +221,7 @@ $_SESSION['expire_time'] = $expire_time;
         <p>คุณได้จองห้องพัก จำนวน <b><?= htmlspecialchars($num_rooms) ?></b> ห้อง</p>
         <p>สำหรับ <b><?= htmlspecialchars($num_nights) ?></b> คืน</p>
         <p class="price">ยอดที่ต้องชำระ: ฿ <?= number_format($total_price, 2) ?></p>
-        <p>วันเข้าพัก: <b><?= htmlspecialchars($checkin_date_str) ?></b></p>
+        <p>วันเช็คอิน: <b><?= htmlspecialchars($checkin_date_str) ?></b></p>
         <p>วันเช็คเอาท์: <b><?= htmlspecialchars($checkout_date_str) ?></b></p>
         <p>จำนวนผู้เข้าพักรวม: <b><?= htmlspecialchars($total_adults) ?></b> ผู้ใหญ่, <b><?= htmlspecialchars($total_children) ?></b> เด็ก</p>
 
