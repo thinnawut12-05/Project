@@ -25,7 +25,7 @@ $room_images = [
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <!-- Link to external CSS file -->
-    <link rel="stylesheet" href="modal_style.css">
+    <link rel="stylesheet" href="../CSS/css/modal_style.css">
 </head>
 <body>
 
@@ -87,7 +87,7 @@ $room_images = [
 </div>
 
 <!-- Link to external JavaScript file -->
-<script src="modal_script.js"></script>
+<script src="../JS/js/modal_script.js"></script>
 
 </body>
 </html>

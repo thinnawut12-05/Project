@@ -1,25 +1,11 @@
-<!-- <?php
-// include 'db.php'; // เปิดใช้งานเมื่อมีไฟล์เชื่อมต่อ DB
-
-// ดึงข้อมูลภูมิภาคจากฐานข้อมูล (ตัวอย่างจำลอง)
-// ตัวอย่างข้อมูลจำลอง หากเชื่อมต่อจริงให้ใช้ mysqli หรือ PDO
-// $regions = [
-//     ['id' => 'north', 'name' => 'ดอมอินน์ ภูมิภาคเหนือ'],
-//     ['id' => 'central', 'name' => 'ดอมอินน์ ภูมิภาคกลาง'],
-//     ['id' => 'northeast', 'name' => 'ดอมอินน์ ภูมิภาคตะวันออกเฉียงเหนือ'],
-//     ['id' => 'west', 'name' => 'ดอมอินน์ ภูมิภาคตะวันตก'],
-//     ['id' => 'south', 'name' => 'ดอมอินน์ ภูมิภาคใต้'],
-// ];
-?>
 <!DOCTYPE html>
-
 <html lang="th">
 
 <head>
   <meta charset="UTF-8" />
   <title>Dom Inn Hotel</title>
   <link rel="icon" type="image/png" href="./src/images/logo.png" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="../CSS/css/styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x" crossorigin="anonymous" />
 
@@ -35,15 +21,13 @@
     </section>
     <nav>
       <a href="./type.html">ประเภทห้องพัก</a>
-      <a href="./branch.html">สาขาโรงแรมดอม อินน์</a>
+      <a href="#">สาขาโรงแรมดอม อินน์</a>
       <a href="./details.html">รายละเอียดต่างๆ</a>
       <a href="#">การจองของฉัน</a>
       <a href="#">คะแนน</a>
     </nav>
-    <nav>
-      <a href="./member.html">สมัครสมาชิก</a>
-      <a href="./login.html">เข้าสู่ระบบ</a>
-    </nav>
+
+
   </header>
 
   <section class="booking-form">
@@ -65,12 +49,6 @@
 
     <div class="guest-selector">
       <label>จำนวนผู้เข้าพัก</label>
-      <div class="guest-group">
-        <span>ห้องพัก</span>
-        <button type="button" onclick="changeGuest('room', -1)">–</button>
-        <span id="room-count">1</span>
-        <button type="button" onclick="changeGuest('room', 1)">+</button>
-      </div>
       <div class="guest-group">
         <span>ผู้ใหญ่</span>
         <button type="button" onclick="changeGuest('adult', -1)">–</button>
@@ -114,8 +92,8 @@
 
 
 
-  POPUP CALENDAR -->
-  <!-- <div id="calendarOverlay" onclick="closeCalendar()"></div>
+  <!-- POPUP CALENDAR -->
+  <div id="calendarOverlay" onclick="closeCalendar()"></div>
   <div id="calendarPopup">
     <span class="close-calendar" onclick="closeCalendar()">×</span>
     <div class="calendar-container">
@@ -134,7 +112,7 @@
 
 
 
-  <script src="./sc.js"></script>
+  <script src="./script.js"></script>
 </body>
 
-</html> -->
+</html>

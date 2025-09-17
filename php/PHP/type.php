@@ -15,14 +15,14 @@ $result = $conn->query($sql);
   <meta charset="UTF-8" />
   <title>ประเภทห้องพัก | Dom Inn Hotel</title>
   <link rel="icon" type="image/png" href="./src/images/logo.png" />
-  <link rel="stylesheet" href="./type.css" />
+  <link rel="stylesheet" href="../CSS/css/type.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 
   <header>
     <section class="logo">
-      <img src="./src/images/4.png" width="50" height="50" />
+      <img src="../src/images/4.png" width="50" height="50" />
     </section>
    
   </header>
@@ -39,7 +39,7 @@ $result = $conn->query($sql);
               // --- ข้อมูลตัวอย่างที่เราจะกำหนดเอง เนื่องจากไม่มีในตาราง ---
               $location = 'โรงแรมในเครือดอมอินน์'; // ข้อความตัวอย่าง
               $price = 930; // ราคาตัวอย่าง
-              $image_path = './src/images/' . $row['room_type_id'] . '.jpg'; // สร้างชื่อไฟล์รูปจาก id เช่น 1.jpg, 2.jpg
+              $image_path = '../src/images/' . $row['room_type_id'] . '.jpg'; // สร้างชื่อไฟล์รูปจาก id เช่น 1.jpg, 2.jpg
               $link_url = 'hotel_rooms.php?id=' . $row['room_type_id']; // สร้างลิงก์ไปยังหน้ารายละเอียด
               
               echo '<div class="room-card">';

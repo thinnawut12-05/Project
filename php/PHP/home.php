@@ -46,8 +46,8 @@ if ($result_provinces = $conn->query($sql_provinces)) {
 <head>
   <meta charset="UTF-8" />
   <title>Dom Inn Hotel</title>
-  <link rel="icon" type="image/png" href="./src/images/logo.png" />
-  <link rel="stylesheet" href="./ino.css" />
+  <link rel="icon" type="image/png" href="../src/images/logo.png" />
+  <link rel="stylesheet" href="../CSS/css/ino.css" />
   <link rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x"
@@ -78,7 +78,7 @@ if ($result_provinces = $conn->query($sql_provinces)) {
 <body>
   <header>
     <section class="logo">
-      <img src="./src/images/4.png" width="50" height="50" />
+      <img src="../src/images/4.png" width="50" height="50" />
     </section>
     <nav>
       <a href="./type.php">ประเภทห้องพัก</a>
@@ -172,8 +172,8 @@ if ($result_provinces = $conn->query($sql_provinces)) {
   <!-- ... (ส่วนที่เหลือของ HTML ไม่เปลี่ยนแปลง) ... -->
 
   <section class="room-gallery">
-    <img src="./src/images/1.jpg" alt="Room 1" />
-    <img src="./src/images/2.jpg" alt="Room 2" />
+    <img src="../src/images/1.jpg" alt="Room 1" />
+    <img src="../src/images/2.jpg" alt="Room 2" />
   </section>
 
   <section class="hotel-description">
@@ -206,7 +206,7 @@ if ($result_provinces = $conn->query($sql_provinces)) {
     </div>
   </div>
 
-  <script src="./test.js"></script>
+  <script src="../JS/js/test.js"></script>
 
   <!-- START: JAVASCRIPT for dynamic dropdown -->
   <script>

@@ -20,7 +20,7 @@ $result = $conn->query($sql);
 <head>
     <meta charset="UTF-8">
     <title>สาขาโรงแรม Dom inn</title>
-    <link rel="stylesheet" href="branch.css">
+    <link rel="stylesheet" href="../CSS/css/branch.css">
 </head>
 <body>
 

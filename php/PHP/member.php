@@ -71,7 +71,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <meta charset="UTF-8">
   <title>สมัครสมาชิก | Dom inn</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="member.css">
+  <link rel="stylesheet" href="../CSS/css/member.css">
   <script>
     function showPopup(message, color = 'red') {
       const popup = document.createElement('div');
@@ -264,7 +264,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       </div>
     </form>
   </div>
-  <script src="./me.js"></script>
+  <script src="../JS/js/me.js"></script>
 </body>
 
 </html>

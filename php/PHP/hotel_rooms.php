@@ -70,7 +70,7 @@ if ($province_id) {
             $row['capacity'] = $row['Number_of_people_staying'] . " คน";
             $row['guests'] = "2 ผู้ใหญ่, 1 เด็ก";
             $row['bed_type'] = "1 เตียงใหญ่";
-            $row['images'] = ["./src/images/1.jpg", "./src/images/6.avif"];
+            $row['images'] = ["../src/images/1.jpg", "../src/images/6.avif"];
         } elseif ($row['Room_type_Id'] == 2) {
             $row['name'] = "ห้องมาตรฐาน เตียงคู่";
             $row['description'] = "ห้องพักมาตรฐานเตียงคู่ขนาด 17.28 ตร.ม. ไม่มีระเบียงที่สร้างเคียงรบกวนจากถนน ทุกห้องมีสิ่งอำนวยความสะดวกครบครัน 
@@ -78,7 +78,7 @@ if ($province_id) {
             $row['capacity'] = $row['Number_of_people_staying'] . " คน";
             $row['guests'] = "2 ผู้ใหญ่, 1 เด็ก";
             $row['bed_type'] = "2 เตียงเดี่ยว";
-            $row['images'] = ["./src/images/2.jpg", "./src/images/6.avif"];
+            $row['images'] = ["../src/images/2.jpg", "../src/images/6.avif"];
         }
         $row['price'] = number_format($row['Price'], 2);
         $rooms[] = $row;
@@ -109,11 +109,11 @@ if ($province_id) {
 <head>
     <meta charset="UTF-8" />
     <title>เลือกห้องพัก - <?= htmlspecialchars($hotel_name) ?></title>
-    <link rel="icon" type="image/png" href="./src/images/logo.png" />
+    <link rel="icon" type="image/png" href="../src/images/logo.png" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    <link rel="stylesheet" href="./ino.css" />
-    <link rel="stylesheet" href="hotel_rooms.css" />
-    <link rel="stylesheet" href="modal_style.css" />
+    <link rel="stylesheet" href="../CSS/css/ino.css" />
+    <link rel="stylesheet" href="../CSS/css/hotel_rooms.css" />
+    <link rel="stylesheet" href="../CSS/css/modal_style.css" />
     <style>
         .profile-link,
         .profile-link:visited {
@@ -138,7 +138,7 @@ if ($province_id) {
 <body>
     <header>
         <section class="logo">
-            <img src="./src/images/4.png" width="50" height="50" />
+            <img src="../src/images/4.png" width="50" height="50" />
         </section>
         <nav>
             <a href="./type.php">ประเภทห้องพัก</a>
@@ -291,14 +291,15 @@ if ($province_id) {
                         <div class="booking-total" id="modal-total"></div>
                         <div class="booking-action">
                             <form action="payment.php" method="get" class="modal-booking-form">
-                                <input type="hidden" name="room_id" id="modal-room-id">
-                                <input type="hidden" name="price" id="modal-room-price">
-                                <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
-                                <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
-                                <input type="hidden" name="num_rooms" class="num-rooms-input" value="<?= htmlspecialchars($num_rooms) ?>">
-                                <input type="hidden" name="adults" class="adults-input" value="<?= htmlspecialchars(implode(',', $adults_per_room)) ?>">
-                                <input type="hidden" name="children" class="children-input" value="<?= htmlspecialchars(implode(',', $children_per_room)) ?>">
-                                <button type="submit" class="btn-book">จอง</button>
+                          <form action="payment.php" method="get" class="booking-form-item">
+                            <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
+                            <input type="hidden" name="price" value="<?= $room['Price'] ?>">
+                            <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
+                            <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
+                            <input type="hidden" name="num_rooms" class="num-rooms-input" value="<?= htmlspecialchars($num_rooms) ?>">
+                            <input type="hidden" name="adults" class="adults-input" value="<?= htmlspecialchars(implode(',', $adults_per_room)) ?>">
+                            <input type="hidden" name="children" class="children-input" value="<?= htmlspecialchars(implode(',', $children_per_room)) ?>">
+                            <button type="submit" class="btn-book">จอง</button>
                             </form>
                         </div>
                     </div>
@@ -307,8 +308,8 @@ if ($province_id) {
         </div>
     </div>
 
-    <script src="./test.js"></script>
-    <script src="modal_script.js"></script>
+    <script src="../JS/js/test.js"></script>
+    <script src="../JS/js/modal_script.js"></script>
     <script>
         function updateBranches() {
             const regionSelect = document.getElementById('region');

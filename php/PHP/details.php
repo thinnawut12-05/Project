@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     
     <!-- ลิงก์ไปยังไฟล์ CSS ภายนอก -->
-    <link rel="stylesheet" href="details.css">
+    <link rel="stylesheet" href="../CSS/css/details.css">
 
 </head>
 <body>
@@ -46,7 +46,7 @@
         <div class="faq-section">
             <div class="faq-item">
                 <h4>โรงแรมดอม อินน์ ประเทศไทย มีกี่สาขา?</h4>
-                <p>โรงแรมดอม อินน์ ประเทศไทย ให้บริการ ณ ปัจจุบัน 9 สาขาทั่วไทย</p>
+                <p>โรงแรมดอม อินน์ ประเทศไทย ให้บริการ ณ ปัจจุบัน 10 สาขาทั่วไทย</p>
             </div>
             
             <div class="faq-item">
@@ -64,7 +64,7 @@
                 <p>สามารถจองโรงแรมดอม อินน์ง่ายๆ ได้ทั้งหมด 3 ช่องทางด้วยกัน:</p>
                 <ul>
                     <li><strong>ทาง FB Messenger:</strong> DOM INN Hotel Thailand</li>
-                    <li><strong>ทาง Reservation Center:</strong> 0x-xxx-xxxx</li>
+                    <li><strong>ทาง Reservation Center:</strong> +66(0) 3090 4444</li>
                     <li><strong>ทางเว็บไซต์:</strong> www.dominnhotel.com</li>
                 </ul>
             </div>

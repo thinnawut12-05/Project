@@ -52,7 +52,7 @@ $stmt->close();
   <meta charset="UTF-8" />
   <title>เข้าสู่ระบบ | Dom inn</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="./lo.css" />
+  <link rel="stylesheet" href="../CSS/css/lo.css" />
   <script>
     function showPopup(message, color = 'red') {
       const popup = document.createElement('div');
@@ -140,7 +140,7 @@ $stmt->close();
       </div>
     </form>
   </div>
-  <script src="./me.js"></script>
+  <script src="../JS/js/me.js"></script>
 </body>
 
 </html>

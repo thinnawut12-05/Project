@@ -323,13 +323,26 @@ function confirmDate() {
   const days = selectedDates
     .map(el => el.textContent.trim())
     .sort((a, b) => +a - +b);
+
   const start = days[0];
   const end = days[days.length - 1];
-  document.getElementById("start-date").value =
-    `วันที่ ${start} ${monthNames[currentMonth]}`;
-  document.getElementById("end-date").value =
+
+  // format เป็น YYYY-MM-DD
+  const startDateISO = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(start).padStart(2, "0")}`;
+  const endDateISO   = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(end).padStart(2, "0")}`;
+
+  // เก็บค่าแบบ ISO ไว้ใน input (ส่งไป PHP)
+  document.getElementById("start-date").value = startDateISO;
+  document.getElementById("end-date").value = endDateISO;
+
+  // ถ้าอยากโชว์เป็นภาษาไทยให้ user เห็น (ทำ span แยก)
+  document.getElementById("start-date-display").textContent =
+    `วันที่ ${start} ${monthNames[currentMonth]} ${currentYear}`;
+  document.getElementById("end-date-display").textContent =
     `วันที่ ${end} ${monthNames[currentMonth]} ${currentYear}`;
+
   closeCalendar();
 }
 renderDaysOfWeek();
 renderCalendar();
+
