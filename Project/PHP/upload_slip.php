@@ -8,8 +8,8 @@ $Last_name    = $_SESSION['Last_name'] ?? '';
 $full_name    = trim($First_name . ' ' . $Last_name);
 
 $num_rooms    = $_SESSION['num_rooms'] ?? 1;
-$adults       = $_SESSION['adults'] ?? 1;
-$children     = $_SESSION['children'] ?? 0;
+$adults   = $_SESSION['total_adults'] ?? 1;
+$children = $_SESSION['total_children'] ?? 0;
 $checkin_date = $_SESSION['checkin_date'] ?? date("Y-m-d");
 $checkout_date= $_SESSION['checkout_date'] ?? date("Y-m-d");
 $total_price  = $_SESSION['total_price'] ?? 0;
