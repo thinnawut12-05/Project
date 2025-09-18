@@ -346,7 +346,32 @@ if ($province_id) {
                 });
             });
         });
+        /**
+ * ฟังก์ชันอัปเดตข้อมูลสรุปรวมจำนวนผู้เข้าพักทั้งหมด
+ */
+function updateGuestSummary() {
+  let totalAdults = 0;
+  let totalChildren = 0;
 
+  document.querySelectorAll('.room').forEach(room => {
+    totalAdults += parseInt(room.querySelector('.adult-count').textContent);
+    totalChildren += parseInt(room.querySelector('.child-count').textContent);
+  });
+
+  const summaryText = `ผู้ใหญ่ ${totalAdults}, เด็ก ${totalChildren} คน`;
+  const summaryInput = document.getElementById('guest-summary-input');
+  if (summaryInput) {
+    summaryInput.value = summaryText;
+  }
+
+  // ✅ เพิ่มตรงนี้: อัปเดต hidden input
+  document.querySelectorAll('.adults-input').forEach(input => {
+    input.value = totalAdults;
+  });
+  document.querySelectorAll('.children-input').forEach(input => {
+    input.value = totalChildren;
+  });
+}
     </script>
 </body>
 
