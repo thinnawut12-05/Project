@@ -58,6 +58,14 @@ include 'db.php';
       background: #0652dd;
     }
 
+    .btn-green {
+      background: #27ae60;
+    }
+
+    .btn-green:hover {
+      background: #1e8449;
+    }
+
     .error {
       color: #d63031;
       font-weight: bold;
@@ -72,7 +80,6 @@ include 'db.php';
 <body>
   <div class="container">
     <?php
-    // โค้ด PHP ของคุณวางตรงนี้เลย
     $First_name   = $_SESSION['First_name'] ?? '';
     $Last_name    = $_SESSION['Last_name'] ?? '';
     $full_name    = trim($First_name . ' ' . $Last_name);
@@ -96,7 +103,9 @@ include 'db.php';
         $targetFilePath = $targetDir . $fileName;
 
         if (move_uploaded_file($_FILES["slip"]["tmp_name"], $targetFilePath)) {
+            // ✅ สร้าง Reservation ID
             $reservation_id = time() . rand(100, 999);
+            $_SESSION['reservation_id'] = $reservation_id; // เก็บใน session
 
             $sql = "INSERT INTO reservation 
                     (Reservation_Id, Guest_name, Number_of_rooms, Booking_time, 
@@ -128,7 +137,12 @@ include 'db.php';
                 echo "<p>วันเข้าพัก: <span class='highlight'>$checkin_date</span> ถึง <span class='highlight'>$checkout_date</span></p>";
                 echo "<p>จำนวนผู้เข้าพัก: <span class='highlight'>$adults</span> ผู้ใหญ่, <span class='highlight'>$children</span> เด็ก</p>";
                 echo "<p>สถานะการจอง: <span class='highlight'>รอตรวจสอบการชำระเงิน</span></p>";
+
+                // ✅ ปุ่มกลับหน้าหลัก
                 echo "<a href='index.php'>กลับไปหน้าหลัก</a>";
+
+                // ✅ ปุ่มดูใบเสร็จ
+                echo "<a href='receipt.php?booking_id=$reservation_id' class='btn-green'>ดูใบเสร็จ</a>";
             } else {
                 echo "<p class='error'>❌ เกิดข้อผิดพลาด: " . $stmt->error . "</p>";
             }

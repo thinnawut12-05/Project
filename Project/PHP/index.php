@@ -23,7 +23,7 @@ $sql_regions = "SELECT Region_Id, Region_name FROM region ORDER BY Region_Id ASC
 $result_regions = $conn->query($sql_regions);
 $regions = [];
 if ($result_regions->num_rows > 0) {
-  while($row = $result_regions->fetch_assoc()) {
+  while ($row = $result_regions->fetch_assoc()) {
     $regions[] = $row;
   }
 }
@@ -33,7 +33,7 @@ $sql_provinces = "SELECT Province_Id, Province_name, Region_Id FROM province ORD
 $result_provinces = $conn->query($sql_provinces);
 $provinces = [];
 if ($result_provinces->num_rows > 0) {
-  while($row = $result_provinces->fetch_assoc()) {
+  while ($row = $result_provinces->fetch_assoc()) {
     $provinces[] = $row;
   }
 }
@@ -60,7 +60,9 @@ $conn->close();
 <body>
   <header>
     <section class="logo">
-      <img src="../src/images/4.png" width="50" height="50" />
+       <a href="./nextpage.php"> <!-- เปลี่ยน index.php เป็นหน้าที่คุณต้องการ -->
+        <img src="../src/images/4.png" width="50" height="50" alt="Dom Inn Logo" />
+      </a>
     </section>
     <nav>
       <a href="./type.php">ประเภทห้องพัก</a>
@@ -80,7 +82,7 @@ $conn->close();
     <select id="region" onchange="updateBranches()">
       <option disabled selected value>เลือกภูมิภาค</option>
       <?php
-        foreach ($regions as $region):
+      foreach ($regions as $region):
       ?>
         <option value="<?= htmlspecialchars($region['Region_Id']) ?>">
           <?= htmlspecialchars($region['Region_name']) ?>
@@ -92,12 +94,12 @@ $conn->close();
     <select id="branch">
       <option disabled selected value>เลือกสาขา</option>
       <?php
-        foreach ($provinces as $province):
+      foreach ($provinces as $province):
       ?>
         <!-- เพิ่ม data-region-id เพื่อให้ Javascript รู้ว่าสาขานี้อยู่ภูมิภาคไหน -->
-        <option value="<?= htmlspecialchars($province['Province_Id']) ?>" 
-                data-region-id="<?= htmlspecialchars($province['Region_Id']) ?>" 
-                style="display:none;"> <!-- ซ่อนไว้ก่อนเป็นค่าเริ่มต้น -->
+        <option value="<?= htmlspecialchars($province['Province_Id']) ?>"
+          data-region-id="<?= htmlspecialchars($province['Region_Id']) ?>"
+          style="display:none;"> <!-- ซ่อนไว้ก่อนเป็นค่าเริ่มต้น -->
           <?= htmlspecialchars($province['Province_name']) ?>
         </option>
       <?php endforeach; ?>
@@ -106,40 +108,40 @@ $conn->close();
     <input id="date-range" type="text" placeholder="วันที่เช็คอิน - วันที่เช็คเอ้าท์" readonly onclick="openCalendar()" />
 
     <div id="rooms-container">
-        <!-- ช่องกรอกจำนวนห้องพัก -->
-        <div class="room-input-group">
-            <label for="num-rooms">จำนวนห้อง:</label>
-            <input type="number" id="num-rooms" value="1" min="1" max="5" onchange="updateRoomsFromInput()">
+      <!-- ช่องกรอกจำนวนห้องพัก -->
+      <div class="room-input-group">
+        <label for="num-rooms">จำนวนห้อง:</label>
+        <input type="number" id="num-rooms" value="1" min="1" max="5" onchange="updateRoomsFromInput()">
+      </div>
+
+      <!-- ห้องแรก (จะถูกสร้างหรืออัปเดตด้วย JavaScript) -->
+      <div class="room" data-room="1">
+        <h4>ห้องที่ 1</h4>
+
+        <div class="guest-group">
+          <span>ผู้ใหญ่</span>
+          <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
+          <span class="adult-count">1</span>
+          <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
         </div>
 
-        <!-- ห้องแรก (จะถูกสร้างหรืออัปเดตด้วย JavaScript) -->
-        <div class="room" data-room="1">
-            <h4>ห้องที่ 1</h4>
-
-            <div class="guest-group">
-                <span>ผู้ใหญ่</span>
-                <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
-                <span class="adult-count">1</span>
-                <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
-            </div>
-
-            <div class="guest-group">
-                <span>เด็ก</span>
-                <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
-                <span class="child-count">0</span>
-                <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
-            </div>
-
-
-            <div class="child-age-container" style="display:none; margin-top:8px;">
-                <label>อายุของเด็กแต่ละคน (ปี):</label>
-                <div class="child-age-list"></div>
-            </div>
+        <div class="guest-group">
+          <span>เด็ก</span>
+          <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
+          <span class="child-count">0</span>
+          <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
         </div>
-        <!-- ปุ่มเพิ่มห้องจะถูกลบออกไป และควบคุมด้วยช่องกรอกตัวเลขแทน -->
-        <div class="guest-summary">
-            <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ 1, เด็ก 0 คน" />
+
+
+        <div class="child-age-container" style="display:none; margin-top:8px;">
+          <label>อายุของเด็กแต่ละคน (ปี):</label>
+          <div class="child-age-list"></div>
         </div>
+      </div>
+      <!-- ปุ่มเพิ่มห้องจะถูกลบออกไป และควบคุมด้วยช่องกรอกตัวเลขแทน -->
+      <div class="guest-summary">
+        <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ 1, เด็ก 0 คน" />
+      </div>
     </div>
 
     <button class="btn">จองเลย</button>
@@ -181,7 +183,7 @@ $conn->close();
       <button class="btn" onclick="confirmDate()">ยืนยันวันเข้าพัก</button>
     </div>
   </div>
-  
+
   <script src="../JS/js/test.js"></script>
 
   <!-- START: JAVASCRIPT for dynamic dropdown -->
@@ -220,4 +222,5 @@ $conn->close();
   <!-- END: JAVASCRIPT for dynamic dropdown -->
 
 </body>
+
 </html>
