@@ -156,3 +156,102 @@ function updateGuestSummary() {
 // ลบฟังก์ชัน toggleDate() เดิมออก ไม่ได้ใช้แล้ว
 // renderDaysOfWeek(); // ย้ายไปใน DOMContentLoaded
 // renderCalendar();   // ย้ายไปใน DOMContentLoaded
+  for (let i = 0; i < firstDay; i++) {
+    const blank = document.createElement("div");
+    calendarDatesEl.appendChild(blank);
+  }
+
+  for (let i = 1; i <= daysInMonth; i++) {
+    const dateEl = document.createElement("div");
+    dateEl.className = "calendar-date";
+    dateEl.textContent = i;
+
+    // *** เพิ่มการตรวจสอบและคลาสสำหรับวันที่ในอดีต ***
+    const dateToCheck = new Date(currentYear, currentMonth, i);
+    dateToCheck.setHours(0, 0, 0, 0); // ตั้งค่าเวลาเป็น 00:00:00
+
+    if (dateToCheck < today) {
+      dateEl.classList.add("past-date"); // เพิ่มคลาส "past-date"
+    }
+
+    dateEl.addEventListener("mousedown", () => {
+      isDragging = true;
+      toggleDate(dateEl);
+    });
+
+    dateEl.addEventListener("mouseover", () => {
+      if (isDragging) toggleDate(dateEl);
+    });
+
+    dateEl.addEventListener("mouseup", () => isDragging = false);
+
+    calendarDatesEl.appendChild(dateEl);
+  }
+
+
+function changeMonth(offset) {
+  // ไม่ให้ย้อนกลับไปเดือนในอดีต ถ้าเดือนปัจจุบันคือเดือนของวันนี้
+  const newMonth = currentMonth + offset;
+  const newDate = new Date(currentYear, newMonth, 1);
+
+  // ถ้าเดือนใหม่ย้อนไปก่อนเดือนปัจจุบัน และเป็นปีเดียวกัน
+  if (newDate < new Date(today.getFullYear(), today.getMonth(), 1)) {
+    return; // ไม่อนุญาตให้เปลี่ยน
+  }
+
+  currentMonth += offset;
+  if (currentMonth < 0) {
+    currentMonth = 11;
+    currentYear--;
+  } else if (currentMonth > 11) {
+    currentMonth = 0;
+    currentYear++;
+  }
+  renderCalendar();
+}
+
+function confirmDate() {
+  if (selectedDates.length === 0) {
+    alert("กรุณาเลือกวันก่อน");
+    return;
+  }
+  
+  // ตรวจสอบว่าวันที่เริ่มต้นไม่เป็นวันที่ในอดีต (ซ้ำซ้อนเพื่อความมั่นใจ)
+  const firstSelectedDateEl = selectedDates.sort((a,b) => +a.textContent - +b.textContent)[0];
+  const firstSelectedDay = parseInt(firstSelectedDateEl.textContent);
+  const checkInDate = new Date(currentYear, currentMonth, firstSelectedDay);
+  checkInDate.setHours(0,0,0,0);
+
+  if (checkInDate < today) {
+    alert("ไม่สามารถเลือกวันที่เช็คอินย้อนหลังได้ กรุณาเลือกวันที่ปัจจุบันหรืออนาคต");
+    selectedDates.forEach(el => el.classList.remove("selected")); // ลบการเลือกทั้งหมด
+    selectedDates = [];
+    return;
+  }
+
+  const days = selectedDates
+    .map(el => el.textContent.trim())
+    .sort((a, b) => +a - +b);
+
+  const start = days[0];
+  const end = days[days.length - 1];
+
+  // format เป็น YYYY-MM-DD
+  const startDateISO = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(start).padStart(2, "0")}`;
+  const endDateISO   = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(end).padStart(2, "0")}`;
+
+  // เก็บค่าแบบ ISO ไว้ใน input (ส่งไป PHP)
+  document.getElementById("start-date").value = startDateISO;
+  document.getElementById("end-date").value = endDateISO;
+
+  // ถ้าอยากโชว์เป็นภาษาไทยให้ user เห็น (ทำ span แยก)
+  document.getElementById("start-date-display").textContent =
+    `วันที่ ${start} ${monthNames[currentMonth]} ${currentYear}`;
+  document.getElementById("end-date-display").textContent =
+    `วันที่ ${end} ${monthNames[currentMonth]} ${currentYear}`;
+
+  closeCalendar();
+}
+renderDaysOfWeek();
+renderCalendar();
+

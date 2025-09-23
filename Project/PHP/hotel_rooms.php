@@ -436,38 +436,48 @@ if ($province_id) {
         }
         //อัพเทดจำนวนคนเข้าพัก
         //ฟังก์ชันนี้จะอัปเดต hidden input ในฟอร์มจองทุกอันตามค่าที่เลือก
-        function updateBookingFormHiddenInputs() {
-            const numRooms = document.getElementById('num-rooms').value;
-            let totalAdults = 0,
-                totalChildren = 0;
-            // รวมจำนวนผู้ใหญ่และเด็กจากทุกห้อง
-            document.querySelectorAll('.adult-count').forEach(el => totalAdults += parseInt(el.textContent));
-            document.querySelectorAll('.child-count').forEach(el => totalChildren += parseInt(el.textContent));
+        function updateGuestSummary() {
+            let totalAdults = 0;
+            let totalChildren = 0;
+            // ดึงจำนวนห้องปัจจุบันจาก input field ที่ผู้ใช้เลือก
+            const currentNumRooms = parseInt(document.getElementById('num-rooms').value);
 
-            // อัปเดต hidden input ในแต่ละฟอร์มจอง
+            document.querySelectorAll('.room').forEach(room => {
+                totalAdults += parseInt(room.querySelector('.adult-count').textContent);
+                totalChildren += parseInt(room.querySelector('.child-count').textContent);
+            });
+
+            const summaryText = `ผู้ใหญ่ ${totalAdults}, เด็ก ${totalChildren} คน`;
+            const summaryInput = document.getElementById('guest-summary-input');
+            if (summaryInput) {
+                summaryInput.value = summaryText;
+            }
+
+            // Update hidden inputs สำหรับฟอร์มค้นหาด้านบน (ที่จะรีโหลดหน้า hotel_rooms.php)
+            const totalAdultsSubmitInput = document.getElementById('total_adults_submit');
+            const totalChildrenSubmitInput = document.getElementById('total_children_submit');
+            const numRoomsSubmitInput = document.getElementById('num_rooms_submit');
+
+            if (totalAdultsSubmitInput) totalAdultsSubmitInput.value = totalAdults;
+            if (totalChildrenSubmitInput) totalChildrenSubmitInput.value = totalChildren;
+            if (numRoomsSubmitInput) numRoomsSubmitInput.value = currentNumRooms;
+
+            // ดึงค่าวันที่เช็คอิน/เช็คเอาท์ปัจจุบันจาก input fields
+            const checkinDateVal = document.getElementById('start-date').value;
+            const checkoutDateVal = document.getElementById('end-date').value;
+
+            // อัปเดต hidden inputs สำหรับฟอร์ม "จอง" ของแต่ละห้อง (ทั้งใน room-card และใน modal)
             document.querySelectorAll('form.booking-form-item').forEach(form => {
-                if (form.querySelector('input[name="num_rooms"]')) form.querySelector('input[name="num_rooms"]').value = numRooms;
+                // อัปเดตจำนวนห้อง, ผู้ใหญ่, เด็ก
+                if (form.querySelector('input[name="num_rooms"]')) form.querySelector('input[name="num_rooms"]').value = currentNumRooms;
                 if (form.querySelector('input[name="total_adults"]')) form.querySelector('input[name="total_adults"]').value = totalAdults;
                 if (form.querySelector('input[name="total_children"]')) form.querySelector('input[name="total_children"]').value = totalChildren;
-            });
 
-            // อัปเดตใน modal booking form ด้วย (ถ้ามี)
-            const modalForm = document.querySelector('form.modal-booking-form');
-            if (modalForm) {
-                if (modalForm.querySelector('input[name="num_rooms"]')) modalForm.querySelector('input[name="num_rooms"]').value = numRooms;
-                if (modalForm.querySelector('input[name="total_adults"]')) modalForm.querySelector('input[name="total_adults"]').value = totalAdults;
-                if (modalForm.querySelector('input[name="total_children"]')) modalForm.querySelector('input[name="total_children"]').value = totalChildren;
-            }
+                // อัปเดตวันที่เช็คอิน/เช็คเอาท์
+                if (form.querySelector('input[name="checkin_date"]')) form.querySelector('input[name="checkin_date"]').value = checkinDateVal;
+                if (form.querySelector('input[name="checkout_date"]')) form.querySelector('input[name="checkout_date"]').value = checkoutDateVal;
+            });
         }
-
-        // เรียกทุกครั้งที่มีการเปลี่ยนแปลงจำนวนห้อง หรือจำนวนผู้เข้าพัก
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('num-rooms').addEventListener('change', updateBookingFormHiddenInputs);
-            document.querySelectorAll('.guest-group button').forEach(btn => {
-                btn.addEventListener('click', updateBookingFormHiddenInputs);
-            });
-            updateBookingFormHiddenInputs(); // ให้แน่ใจว่าค่าเริ่มต้นถูกต้อง
-        });
     </script>
 </body>
 
