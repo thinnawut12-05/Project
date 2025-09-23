@@ -345,4 +345,3 @@ function confirmDate() {
 }
 renderDaysOfWeek();
 renderCalendar();
-

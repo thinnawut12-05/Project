@@ -92,7 +92,9 @@ include 'db.php';
     $total_price  = $_SESSION['total_price'] ?? 0;
     $room_id      = $_SESSION['room_id'] ?? null;
     $email_member = $_SESSION['email'] ?? 'guest@example.com';
-    $status_id = 1;
+
+    // ใช้ Booking_status_Id = 2 (ชำระเงินสำเร็จรอตรวจสอบ)
+    $status_id = 2;
 
     if (isset($_FILES['slip']) && $_FILES['slip']['error'] == 0) {
         $targetDir = "uploads/";
@@ -103,7 +105,7 @@ include 'db.php';
         $targetFilePath = $targetDir . $fileName;
 
         if (move_uploaded_file($_FILES["slip"]["tmp_name"], $targetFilePath)) {
-            // ✅ สร้าง Reservation ID
+            // สร้าง Reservation ID
             $reservation_id = time() . rand(100, 999);
             $_SESSION['reservation_id'] = $reservation_id; // เก็บใน session
 
@@ -136,12 +138,12 @@ include 'db.php';
                 echo "<p>ยอดเงินที่ต้องชำระ: <span class='highlight'>฿ " . number_format($total_price, 2) . "</span></p>";
                 echo "<p>วันเข้าพัก: <span class='highlight'>$checkin_date</span> ถึง <span class='highlight'>$checkout_date</span></p>";
                 echo "<p>จำนวนผู้เข้าพัก: <span class='highlight'>$adults</span> ผู้ใหญ่, <span class='highlight'>$children</span> เด็ก</p>";
-                echo "<p>สถานะการจอง: <span class='highlight'>รอตรวจสอบการชำระเงิน</span></p>";
+                echo "<p>สถานะการจอง: <span class='highlight'>ชำระเงินสำเร็จรอตรวจสอบ</span></p>";
 
-                // ✅ ปุ่มกลับหน้าหลัก
-                echo "<a href='index.php'>กลับไปหน้าหลัก</a>";
+                // ปุ่มกลับหน้าหลัก
+                echo "<a href='home.php'>กลับไปหน้าหลัก</a>";
 
-                // ✅ ปุ่มดูใบเสร็จ
+                // ปุ่มดูใบเสร็จ
                 echo "<a href='receipt.php?booking_id=$reservation_id' class='btn-green'>ดูใบเสร็จ</a>";
             } else {
                 echo "<p class='error'>❌ เกิดข้อผิดพลาด: " . $stmt->error . "</p>";

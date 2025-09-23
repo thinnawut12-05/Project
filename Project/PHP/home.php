@@ -8,6 +8,8 @@ session_start();
 $First_name = $_SESSION['First_name'] ?? '';
 $Last_name = $_SESSION['Last_name'] ?? '';
 $full_name = trim($First_name . ' ' . $Last_name);
+$checkin_date = $_GET['checkin_date'] ?? '';
+$checkout_date = $_GET['checkout_date'] ?? '';
 
 
 // --- START: ดึงข้อมูลจากฐานข้อมูล ---
@@ -84,7 +86,7 @@ if ($result_provinces = $conn->query($sql_provinces)) {
       <a href="./type.php">ประเภทห้องพัก</a>
       <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
       <a href="./details.php">รายละเอียดต่างๆ</a>
-      <a href="#">การจองของฉัน</a>
+      <a href="./booking_status_pending.php">การจองของฉัน</a>
       <a href="./score.php">คะแนน</a>
     </nav>
 
@@ -119,7 +121,8 @@ if ($result_provinces = $conn->query($sql_provinces)) {
       <?php endforeach; ?>
     </select>
 
-    <input id="date-range" type="text" placeholder="วันที่เช็คอิน - วันที่เช็คเอ้าท์" readonly onclick="openCalendar()" />
+    <input id="start-date" name="checkin_date" type="text" placeholder="วันที่เช็คอิน" readonly value="<?= htmlspecialchars($checkin_date) ?>" onclick="openCalendar()" />
+    <input id="end-date" name="checkout_date" type="text" placeholder="วันที่เช็คเอ้าท์" readonly value="<?= htmlspecialchars($checkout_date) ?>" onclick="openCalendar()" />
 
 
 
