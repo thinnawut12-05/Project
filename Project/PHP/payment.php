@@ -1,4 +1,4 @@
-<?php
+<?php 
 session_start();
 include 'db.php';
 
@@ -30,14 +30,9 @@ $num_rooms = intval($_GET['num_rooms'] ?? 1);
 $checkin_date_str = $_GET['checkin_date'] ?? date("Y-m-d");
 $checkout_date_str = $_GET['checkout_date'] ?? date("Y-m-d", strtotime($checkin_date_str . " +1 day"));
 
-$adults_str = $_GET['adults'] ?? '1';
-$children_str = $_GET['children'] ?? '0';
-
-$adults_arr = !empty($adults_str) ? array_map('intval', explode(',', $adults_str)) : [0];
-$children_arr = !empty($children_str) ? array_map('intval', explode(',', $children_str)) : [0];
-
-$total_adults = array_sum($adults_arr);
-$total_children = array_sum($children_arr);
+// ✅ ใช้ค่าที่ส่งมาจริงจาก hotel_rooms.php
+$total_adults = intval($_GET['total_adults'] ?? 1);
+$total_children = intval($_GET['total_children'] ?? 0);
 
 $num_nights = 1;
 try {
@@ -79,6 +74,7 @@ $_SESSION['expire_time'] = $expire_time;
 <head>
     <meta charset="UTF-8">
     <title>ชำระเงิน</title>
+    <link rel="icon" type="image/png" href="../src/images/logo.png" />
     <style>
         body {
             font-family: 'Tahoma', sans-serif;

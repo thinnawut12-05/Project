@@ -66,6 +66,7 @@ $conn->close();
 <head>
 <meta charset="UTF-8">
 <title>โปรไฟล์ของคุณ</title>
+ <link rel="icon" type="image/png" href="../src/images/logo.png" />
 <link rel="stylesheet" href="../CSS/css/profile.css">
 <style>
 input[type="password"], input[type="text"] {

@@ -50,11 +50,11 @@ $total_children = isset($_GET['total_children']) ? intval($_GET['total_children'
 // กำหนดค่าเริ่มต้นสำหรับแต่ละห้องในฟอร์มของ hotel_rooms.php
 // สมมติว่าห้องแรกมีผู้ใหญ่ = total_adults และเด็ก = total_children
 // หรือคุณอาจปรับ logic ตรงนี้ได้หากต้องการกระจายผู้เข้าพักไปแต่ละห้อง
-$adults_per_room_initial = [$total_adults]; 
+$adults_per_room_initial = [$total_adults];
 $children_per_room_initial = [$total_children];
 // หาก num_rooms มากกว่า 1 และคุณต้องการให้ห้องที่ 2 เป็นต้นไปมีผู้เข้าพักเริ่มต้นที่ 1 ผู้ใหญ่ 0 เด็ก
 for ($i = 1; $i < $num_rooms; $i++) {
-    $adults_per_room_initial[] = 1; 
+    $adults_per_room_initial[] = 1;
     $children_per_room_initial[] = 0;
 }
 
@@ -116,15 +116,20 @@ if ($province_id) {
 
     /* เพิ่มสไตล์สำหรับวันที่ที่ถูกเลือกในปฏิทิน */
     .calendar-date.selected {
-        background-color: #f05a28; /* สีส้ม */
+        background-color: #f05a28;
+        /* สีส้ม */
         color: white;
     }
+
     .calendar-date.past-date {
-        color: #cccccc; /* สีเทาอ่อนสำหรับวันที่ในอดีต */
+        color: #cccccc;
+        /* สีเทาอ่อนสำหรับวันที่ในอดีต */
         cursor: not-allowed;
     }
+
     .calendar-date.blank {
-        visibility: hidden; /* ซ่อนวันที่ว่าง */
+        visibility: hidden;
+        /* ซ่อนวันที่ว่าง */
     }
 </style>
 
@@ -180,7 +185,7 @@ if ($province_id) {
         <form action="" method="get">
             <select id="region" onchange="updateBranches()">
                 <option disabled selected value>เลือกภูมิภาค</option>
-                <?php 
+                <?php
                 $selected_region_id = '';
                 if ($province_id) {
                     $selected_province_obj = array_filter($provinces, fn($p) => $p['Province_Id'] == $province_id);
@@ -215,33 +220,33 @@ if ($province_id) {
                     <label for="num-rooms">จำนวนห้อง:</label>
                     <input type="number" id="num-rooms" value="<?= htmlspecialchars($num_rooms) ?>" min="1" max="5" onchange="updateRoomsFromInput()">
                 </div>
-                <?php 
+                <?php
                 // Loop เพื่อสร้าง div ของแต่ละห้องตามจำนวน num_rooms
-                for ($r = 1; $r <= $num_rooms; $r++): 
-                    $current_adults = $adults_per_room_initial[$r-1] ?? 1;
-                    $current_children = $children_per_room_initial[$r-1] ?? 0;
+                for ($r = 1; $r <= $num_rooms; $r++):
+                    $current_adults = $adults_per_room_initial[$r - 1] ?? 1;
+                    $current_children = $children_per_room_initial[$r - 1] ?? 0;
                 ?>
-                <div class="room" data-room="<?= $r ?>">
-                    <h4>ห้องที่ <?= $r ?></h4>
-                    <div class="guest-group">
-                        <span>ผู้ใหญ่</span>
-                        <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
-                        <span class="adult-count"><?= htmlspecialchars($current_adults) ?></span>
-                        <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
+                    <div class="room" data-room="<?= $r ?>">
+                        <h4>ห้องที่ <?= $r ?></h4>
+                        <div class="guest-group">
+                            <span>ผู้ใหญ่</span>
+                            <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
+                            <span class="adult-count"><?= htmlspecialchars($current_adults) ?></span>
+                            <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
+                        </div>
+                        <div class="guest-group">
+                            <span>เด็ก</span>
+                            <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
+                            <span class="child-count"><?= htmlspecialchars($current_children) ?></span>
+                            <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
+                        </div>
+                        <div class="child-age-container" style="display:none; margin-top:8px;">
+                            <label>อายุของเด็กแต่ละคน (ปี):</label>
+                            <div class="child-age-list"></div>
+                        </div>
                     </div>
-                    <div class="guest-group">
-                        <span>เด็ก</span>
-                        <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
-                        <span class="child-count"><?= htmlspecialchars($current_children) ?></span>
-                        <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
-                    </div>
-                    <div class="child-age-container" style="display:none; margin-top:8px;">
-                        <label>อายุของเด็กแต่ละคน (ปี):</label>
-                        <div class="child-age-list"></div>
-                    </div>
-                </div>
                 <?php endfor; ?>
-                
+
                 <div class="guest-summary">
                     <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ <?= htmlspecialchars($total_adults) ?>, เด็ก <?= htmlspecialchars($total_children) ?> คน" />
                 </div>
@@ -337,9 +342,9 @@ if ($province_id) {
                         <hr>
                         <div class="booking-total" id="modal-total"></div>
                         <div class="booking-action">
-                            <form action="payment.php" method="get" class="modal-booking-form">
-                                <input type="hidden" name="room_id" id="modal-room-id" value="">
-                                <input type="hidden" name="price" id="modal-room-price" value="">
+                            <form action="payment.php" method="get" class="booking-form-item">
+                                <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
+                                <input type="hidden" name="price" value="<?= $room['Price'] ?>">
                                 <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
                                 <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
                                 <input type="hidden" name="num_rooms" value="<?= htmlspecialchars($num_rooms) ?>">
@@ -357,12 +362,12 @@ if ($province_id) {
 
     <script src="../JS/js/test.js"></script>
     <script src="../JS/js/modal_script.js"></script>
-       <script src="../JS/js/calendar.js"></script>
+    <script src="../JS/js/calendar.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // เรียก updateBranches() ครั้งแรกเมื่อ DOM โหลดเสร็จ เพื่อตั้งค่าเริ่มต้น
             // หากต้องการให้ dropdown สาขาถูกกรองตามภูมิภาคที่ถูกเลือกไว้ก่อนหน้า (ถ้ามี)
-            updateBranches(); 
+            updateBranches();
 
             // เมื่อเลือกภูมิภาค
             document.getElementById('region').addEventListener('change', function() {
@@ -383,7 +388,7 @@ if ($province_id) {
                 branchSelect.value = initialProvinceId;
                 updateBranches(); // เรียกอีกครั้งเพื่อแสดงสาขาที่เลือก
                 document.getElementById('province_id_submit').value = initialProvinceId; // อัปเดต hidden input
-                
+
                 const selectedBranchOption = branchSelect.querySelector(`option[value="${initialProvinceId}"]`);
                 if (selectedBranchOption) {
                     const regionId = selectedBranchOption.getAttribute('data-region-id');
@@ -399,7 +404,6 @@ if ($province_id) {
             // เรียก updateGuestSummary() อีกครั้งเพื่อให้แน่ใจว่า hidden inputs ได้รับค่าที่ถูกต้องเมื่อ DOM โหลด
             updateGuestSummary();
         });
-
 
         function updateBranches() {
             const regionSelect = document.getElementById('region');
@@ -418,18 +422,52 @@ if ($province_id) {
                     option.style.display = 'none';
                 }
             }
-            
+
             const currentSelectedBranch = branchSelect.value;
             const currentSelectedBranchOption = branchSelect.querySelector(`option[value="${currentSelectedBranch}"][data-region-id="${selectedRegionId}"]`);
             if (!currentSelectedBranchOption && currentSelectedBranch !== "") {
-                branchSelect.value = ""; 
-                document.getElementById('province_id_submit').value = ''; 
+                branchSelect.value = "";
+                document.getElementById('province_id_submit').value = '';
             } else if (currentSelectedBranch === "") {
-                document.getElementById('province_id_submit').value = ''; 
+                document.getElementById('province_id_submit').value = '';
             } else {
                 document.getElementById('province_id_submit').value = currentSelectedBranch;
             }
         }
+        //อัพเทดจำนวนคนเข้าพัก
+        //ฟังก์ชันนี้จะอัปเดต hidden input ในฟอร์มจองทุกอันตามค่าที่เลือก
+        function updateBookingFormHiddenInputs() {
+            const numRooms = document.getElementById('num-rooms').value;
+            let totalAdults = 0,
+                totalChildren = 0;
+            // รวมจำนวนผู้ใหญ่และเด็กจากทุกห้อง
+            document.querySelectorAll('.adult-count').forEach(el => totalAdults += parseInt(el.textContent));
+            document.querySelectorAll('.child-count').forEach(el => totalChildren += parseInt(el.textContent));
+
+            // อัปเดต hidden input ในแต่ละฟอร์มจอง
+            document.querySelectorAll('form.booking-form-item').forEach(form => {
+                if (form.querySelector('input[name="num_rooms"]')) form.querySelector('input[name="num_rooms"]').value = numRooms;
+                if (form.querySelector('input[name="total_adults"]')) form.querySelector('input[name="total_adults"]').value = totalAdults;
+                if (form.querySelector('input[name="total_children"]')) form.querySelector('input[name="total_children"]').value = totalChildren;
+            });
+
+            // อัปเดตใน modal booking form ด้วย (ถ้ามี)
+            const modalForm = document.querySelector('form.modal-booking-form');
+            if (modalForm) {
+                if (modalForm.querySelector('input[name="num_rooms"]')) modalForm.querySelector('input[name="num_rooms"]').value = numRooms;
+                if (modalForm.querySelector('input[name="total_adults"]')) modalForm.querySelector('input[name="total_adults"]').value = totalAdults;
+                if (modalForm.querySelector('input[name="total_children"]')) modalForm.querySelector('input[name="total_children"]').value = totalChildren;
+            }
+        }
+
+        // เรียกทุกครั้งที่มีการเปลี่ยนแปลงจำนวนห้อง หรือจำนวนผู้เข้าพัก
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('num-rooms').addEventListener('change', updateBookingFormHiddenInputs);
+            document.querySelectorAll('.guest-group button').forEach(btn => {
+                btn.addEventListener('click', updateBookingFormHiddenInputs);
+            });
+            updateBookingFormHiddenInputs(); // ให้แน่ใจว่าค่าเริ่มต้นถูกต้อง
+        });
     </script>
 </body>
 
