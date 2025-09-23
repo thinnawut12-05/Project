@@ -14,6 +14,7 @@ $result = $conn->query($sql);
 <head>
   <meta charset="UTF-8" />
   <title>ประเภทห้องพัก | Dom Inn Hotel</title>
+  <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <link rel="icon" type="image/png" href="./src/images/logo.png" />
   <link rel="stylesheet" href="../CSS/css/type.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">

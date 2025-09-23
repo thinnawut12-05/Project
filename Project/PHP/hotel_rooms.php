@@ -38,18 +38,26 @@ $hotel_name = "HOP INN AYUTTHAYA";
 // รับ province_id จาก GET
 $province_id = isset($_GET['province_id']) ? intval($_GET['province_id']) : null;
 
-// รับค่าผู้เข้าพักและวันที่ จาก GET
+// รับค่าผู้เข้าพักและวันที่ จาก GET (จาก home.php)
 $checkin_date = $_GET['checkin_date'] ?? '';
 $checkout_date = $_GET['checkout_date'] ?? '';
-$num_rooms = $_GET['num_rooms'] ?? 1;
 
-// ดึงค่าผู้เข้าพักจากแต่ละห้อง และตรวจสอบให้แน่ใจว่าเป็น array
-$adults_per_room = isset($_GET['adults']) && is_array($_GET['adults']) ? $_GET['adults'] : (isset($_GET['adults']) ? [$_GET['adults']] : [1]);
-$children_per_room = isset($_GET['children']) && is_array($_GET['children']) ? $_GET['children'] : (isset($_GET['children']) ? [$_GET['children']] : [0]);
+// รับค่าจำนวนห้อง ผู้ใหญ่ และเด็ก (รวมทั้งหมด) จาก home.php
+$num_rooms = isset($_GET['num_rooms']) ? intval($_GET['num_rooms']) : 1;
+$total_adults = isset($_GET['total_adults']) ? intval($_GET['total_adults']) : 1;
+$total_children = isset($_GET['total_children']) ? intval($_GET['total_children']) : 0;
 
-// คำนวณจำนวนผู้เข้าพักรวมทั้งหมด
-$total_adults = array_sum($adults_per_room);
-$total_children = array_sum($children_per_room);
+// กำหนดค่าเริ่มต้นสำหรับแต่ละห้องในฟอร์มของ hotel_rooms.php
+// สมมติว่าห้องแรกมีผู้ใหญ่ = total_adults และเด็ก = total_children
+// หรือคุณอาจปรับ logic ตรงนี้ได้หากต้องการกระจายผู้เข้าพักไปแต่ละห้อง
+$adults_per_room_initial = [$total_adults]; 
+$children_per_room_initial = [$total_children];
+// หาก num_rooms มากกว่า 1 และคุณต้องการให้ห้องที่ 2 เป็นต้นไปมีผู้เข้าพักเริ่มต้นที่ 1 ผู้ใหญ่ 0 เด็ก
+for ($i = 1; $i < $num_rooms; $i++) {
+    $adults_per_room_initial[] = 1; 
+    $children_per_room_initial[] = 0;
+}
+
 
 $rooms = [];
 if ($province_id) {
@@ -105,7 +113,21 @@ if ($province_id) {
     .btn-book:hover {
         background-color: #d94a1f;
     }
+
+    /* เพิ่มสไตล์สำหรับวันที่ที่ถูกเลือกในปฏิทิน */
+    .calendar-date.selected {
+        background-color: #f05a28; /* สีส้ม */
+        color: white;
+    }
+    .calendar-date.past-date {
+        color: #cccccc; /* สีเทาอ่อนสำหรับวันที่ในอดีต */
+        cursor: not-allowed;
+    }
+    .calendar-date.blank {
+        visibility: hidden; /* ซ่อนวันที่ว่าง */
+    }
 </style>
+
 <head>
     <meta charset="UTF-8" />
     <title>เลือกห้องพัก - <?= htmlspecialchars($hotel_name) ?></title>
@@ -144,7 +166,7 @@ if ($province_id) {
             <a href="./type.php">ประเภทห้องพัก</a>
             <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
             <a href="./details.php">รายละเอียดต่างๆ</a>
-            <a href="#">การจองของฉัน</a>
+            <a href="./booking_status_pending.php">การจองของฉัน</a>
             <a href="./score.php">คะแนน</a>
         </nav>
         <?php if ($full_name && $full_name !== ' '): ?>
@@ -158,8 +180,17 @@ if ($province_id) {
         <form action="" method="get">
             <select id="region" onchange="updateBranches()">
                 <option disabled selected value>เลือกภูมิภาค</option>
-                <?php foreach ($regions as $region): ?>
-                    <option value="<?= htmlspecialchars($region['Region_Id']) ?>">
+                <?php 
+                $selected_region_id = '';
+                if ($province_id) {
+                    $selected_province_obj = array_filter($provinces, fn($p) => $p['Province_Id'] == $province_id);
+                    if (!empty($selected_province_obj)) {
+                        $selected_region_id = array_values($selected_province_obj)[0]['Region_Id'];
+                    }
+                }
+                foreach ($regions as $region): ?>
+                    <option value="<?= htmlspecialchars($region['Region_Id']) ?>"
+                        <?= ($selected_region_id == $region['Region_Id']) ? 'selected' : '' ?>>
                         <?= htmlspecialchars($region['Region_name']) ?>
                     </option>
                 <?php endforeach; ?>
@@ -175,22 +206,33 @@ if ($province_id) {
                 <?php endforeach; ?>
             </select>
 
-            <input id="start-date" name="checkin_date" type="text" placeholder="วันที่เช็คอิน" readonly value="<?= htmlspecialchars($checkin_date) ?>" onclick="openCalendar()" />
-            <input id="end-date" name="checkout_date" type="text" placeholder="วันที่เช็คเอ้าท์" readonly value="<?= htmlspecialchars($checkout_date) ?>" onclick="openCalendar()" />
+            <!-- Input text field สำหรับแสดงวันที่ -->
+            <input id="start-date" type="text" placeholder="วันที่เช็คอิน" readonly value="<?= htmlspecialchars($checkin_date) ?>" onclick="openCalendar()" />
+            <input id="end-date" type="text" placeholder="วันที่เช็คเอ้าท์" readonly value="<?= htmlspecialchars($checkout_date) ?>" onclick="openCalendar()" />
 
             <div id="rooms-container">
-                <div class="room" data-room="1">
-                    <h4>ห้องที่ 1</h4>
+                <div class="room-input-group">
+                    <label for="num-rooms">จำนวนห้อง:</label>
+                    <input type="number" id="num-rooms" value="<?= htmlspecialchars($num_rooms) ?>" min="1" max="5" onchange="updateRoomsFromInput()">
+                </div>
+                <?php 
+                // Loop เพื่อสร้าง div ของแต่ละห้องตามจำนวน num_rooms
+                for ($r = 1; $r <= $num_rooms; $r++): 
+                    $current_adults = $adults_per_room_initial[$r-1] ?? 1;
+                    $current_children = $children_per_room_initial[$r-1] ?? 0;
+                ?>
+                <div class="room" data-room="<?= $r ?>">
+                    <h4>ห้องที่ <?= $r ?></h4>
                     <div class="guest-group">
                         <span>ผู้ใหญ่</span>
                         <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
-                        <span class="adult-count"><?= htmlspecialchars($adults_per_room[0] ?? 1) ?></span>
+                        <span class="adult-count"><?= htmlspecialchars($current_adults) ?></span>
                         <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
                     </div>
                     <div class="guest-group">
                         <span>เด็ก</span>
                         <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
-                        <span class="child-count"><?= htmlspecialchars($children_per_room[0] ?? 0) ?></span>
+                        <span class="child-count"><?= htmlspecialchars($current_children) ?></span>
                         <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
                     </div>
                     <div class="child-age-container" style="display:none; margin-top:8px;">
@@ -198,16 +240,19 @@ if ($province_id) {
                         <div class="child-age-list"></div>
                     </div>
                 </div>
-                <div class="room-input-group">
-                    <label for="num-rooms">จำนวนห้อง:</label>
-                    <input type="number" id="num-rooms" value="<?= htmlspecialchars($num_rooms) ?>" min="1" max="5" onchange="updateRoomsFromInput()">
-                </div>
+                <?php endfor; ?>
+                
                 <div class="guest-summary">
                     <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ <?= htmlspecialchars($total_adults) ?>, เด็ก <?= htmlspecialchars($total_children) ?> คน" />
                 </div>
             </div>
-            <input type="hidden" name="adults" id="adults-hidden-input" value="<?= htmlspecialchars(implode(',', $adults_per_room)) ?>">
-            <input type="hidden" name="children" id="children-hidden-input" value="<?= htmlspecialchars(implode(',', $children_per_room)) ?>">
+            <!-- Hidden inputs สำหรับส่งค่าไปยังตัวเอง (เพื่อใช้ในการค้นหา) -->
+            <input type="hidden" name="checkin_date" id="checkin_date_submit" value="<?= htmlspecialchars($checkin_date) ?>">
+            <input type="hidden" name="checkout_date" name="checkout_date_submit" id="checkout_date_submit" value="<?= htmlspecialchars($checkout_date) ?>">
+            <input type="hidden" name="total_adults" id="total_adults_submit" value="<?= htmlspecialchars($total_adults) ?>">
+            <input type="hidden" name="total_children" id="total_children_submit" value="<?= htmlspecialchars($total_children) ?>">
+            <input type="hidden" name="num_rooms" id="num_rooms_submit" value="<?= htmlspecialchars($num_rooms) ?>">
+
             <button type="submit" class="btn">ค้นหาห้องพัก</button>
         </form>
     </section>
@@ -242,9 +287,10 @@ if ($province_id) {
                             <input type="hidden" name="price" value="<?= $room['Price'] ?>">
                             <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
                             <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
-                            <input type="hidden" name="num_rooms" class="num-rooms-input" value="<?= htmlspecialchars($num_rooms) ?>">
-                            <input type="hidden" name="adults" class="adults-input" value="<?= htmlspecialchars(implode(',', $adults_per_room)) ?>">
-                            <input type="hidden" name="children" class="children-input" value="<?= htmlspecialchars(implode(',', $children_per_room)) ?>">
+                            <input type="hidden" name="num_rooms" value="<?= htmlspecialchars($num_rooms) ?>">
+                            <input type="hidden" name="total_adults" value="<?= htmlspecialchars($total_adults) ?>">
+                            <input type="hidden" name="total_children" value="<?= htmlspecialchars($total_children) ?>">
+                            <input type="hidden" name="province_id" value="<?= htmlspecialchars($province_id) ?>">
                             <button type="submit" class="btn-book">จอง</button>
                         </form>
                     </div>
@@ -270,6 +316,7 @@ if ($province_id) {
         </div>
     </div>
 
+    <!-- Modal สำหรับรายละเอียดห้องพัก -->
     <div class="modal-overlay" id="roomModal" style="display: none;">
         <div class="modal-container">
             <span class="modal-close-btn" onclick="closeModal()">&times;</span>
@@ -291,15 +338,15 @@ if ($province_id) {
                         <div class="booking-total" id="modal-total"></div>
                         <div class="booking-action">
                             <form action="payment.php" method="get" class="modal-booking-form">
-                          <form action="payment.php" method="get" class="booking-form-item">
-                            <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
-                            <input type="hidden" name="price" value="<?= $room['Price'] ?>">
-                            <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
-                            <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
-                            <input type="hidden" name="num_rooms" class="num-rooms-input" value="<?= htmlspecialchars($num_rooms) ?>">
-                            <input type="hidden" name="adults" class="adults-input" value="<?= htmlspecialchars(implode(',', $adults_per_room)) ?>">
-                            <input type="hidden" name="children" class="children-input" value="<?= htmlspecialchars(implode(',', $children_per_room)) ?>">
-                            <button type="submit" class="btn-book">จอง</button>
+                                <input type="hidden" name="room_id" id="modal-room-id" value="">
+                                <input type="hidden" name="price" id="modal-room-price" value="">
+                                <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
+                                <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
+                                <input type="hidden" name="num_rooms" value="<?= htmlspecialchars($num_rooms) ?>">
+                                <input type="hidden" name="total_adults" value="<?= htmlspecialchars($total_adults) ?>">
+                                <input type="hidden" name="total_children" value="<?= htmlspecialchars($total_children) ?>">
+                                <input type="hidden" name="province_id" value="<?= htmlspecialchars($province_id) ?>">
+                                <button type="submit" class="btn-book">จอง</button>
                             </form>
                         </div>
                     </div>
@@ -310,68 +357,79 @@ if ($province_id) {
 
     <script src="../JS/js/test.js"></script>
     <script src="../JS/js/modal_script.js"></script>
+       <script src="../JS/js/calendar.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // เรียก updateBranches() ครั้งแรกเมื่อ DOM โหลดเสร็จ เพื่อตั้งค่าเริ่มต้น
+            // หากต้องการให้ dropdown สาขาถูกกรองตามภูมิภาคที่ถูกเลือกไว้ก่อนหน้า (ถ้ามี)
+            updateBranches(); 
+
+            // เมื่อเลือกภูมิภาค
+            document.getElementById('region').addEventListener('change', function() {
+                updateBranches();
+            });
+
+            // เมื่อเลือกสาขา
+            document.getElementById('branch').addEventListener('change', function() {
+                const selectedProvinceId = this.value;
+                document.getElementById('province_id_submit').value = selectedProvinceId; // อัปเดต hidden input สำหรับ form ค้นหา
+            });
+
+            // ตรวจสอบว่ามี province_id ใน URL หรือไม่ เพื่อตั้งค่าเริ่มต้น
+            const urlParams = new URLSearchParams(window.location.search);
+            const initialProvinceId = urlParams.get('province_id');
+            if (initialProvinceId) {
+                const branchSelect = document.getElementById('branch');
+                branchSelect.value = initialProvinceId;
+                updateBranches(); // เรียกอีกครั้งเพื่อแสดงสาขาที่เลือก
+                document.getElementById('province_id_submit').value = initialProvinceId; // อัปเดต hidden input
+                
+                const selectedBranchOption = branchSelect.querySelector(`option[value="${initialProvinceId}"]`);
+                if (selectedBranchOption) {
+                    const regionId = selectedBranchOption.getAttribute('data-region-id');
+                    if (regionId) {
+                        document.getElementById('region').value = regionId;
+                    }
+                }
+            } else {
+                // ถ้าไม่มี province_id ใน URL ให้ตั้งค่า province_id_submit เป็นค่าว่างเริ่มต้น
+                document.getElementById('province_id_submit').value = '';
+            }
+
+            // เรียก updateGuestSummary() อีกครั้งเพื่อให้แน่ใจว่า hidden inputs ได้รับค่าที่ถูกต้องเมื่อ DOM โหลด
+            updateGuestSummary();
+        });
+
+
         function updateBranches() {
             const regionSelect = document.getElementById('region');
             const branchSelect = document.getElementById('branch');
             const selectedRegionId = regionSelect.value;
-            branchSelect.selectedIndex = 0;
+
             const branchOptions = branchSelect.getElementsByTagName('option');
+
             for (let i = 0; i < branchOptions.length; i++) {
                 const option = branchOptions[i];
                 const regionIdOfBranch = option.getAttribute('data-region-id');
-                if (regionIdOfBranch === selectedRegionId) {
+
+                if (option.value === "" || regionIdOfBranch === selectedRegionId) {
                     option.style.display = '';
                 } else {
                     option.style.display = 'none';
                 }
             }
-            if (branchOptions.length > 0) {
-                branchOptions[0].style.display = '';
+            
+            const currentSelectedBranch = branchSelect.value;
+            const currentSelectedBranchOption = branchSelect.querySelector(`option[value="${currentSelectedBranch}"][data-region-id="${selectedRegionId}"]`);
+            if (!currentSelectedBranchOption && currentSelectedBranch !== "") {
+                branchSelect.value = ""; 
+                document.getElementById('province_id_submit').value = ''; 
+            } else if (currentSelectedBranch === "") {
+                document.getElementById('province_id_submit').value = ''; 
+            } else {
+                document.getElementById('province_id_submit').value = currentSelectedBranch;
             }
         }
-        
-        // เพิ่ม JavaScript สำหรับอัปเดตค่า num_rooms ในฟอร์มจองทั้งหมด
-        document.addEventListener('DOMContentLoaded', () => {
-            const numRoomsInput = document.getElementById('num-rooms');
-            const bookingForms = document.querySelectorAll('.booking-form-item, .modal-booking-form');
-
-            numRoomsInput.addEventListener('change', (event) => {
-                const newNumRooms = event.target.value;
-                bookingForms.forEach(form => {
-                    const hiddenInput = form.querySelector('.num-rooms-input');
-                    if (hiddenInput) {
-                        hiddenInput.value = newNumRooms;
-                    }
-                });
-            });
-        });
-        /**
- * ฟังก์ชันอัปเดตข้อมูลสรุปรวมจำนวนผู้เข้าพักทั้งหมด
- */
-function updateGuestSummary() {
-  let totalAdults = 0;
-  let totalChildren = 0;
-
-  document.querySelectorAll('.room').forEach(room => {
-    totalAdults += parseInt(room.querySelector('.adult-count').textContent);
-    totalChildren += parseInt(room.querySelector('.child-count').textContent);
-  });
-
-  const summaryText = `ผู้ใหญ่ ${totalAdults}, เด็ก ${totalChildren} คน`;
-  const summaryInput = document.getElementById('guest-summary-input');
-  if (summaryInput) {
-    summaryInput.value = summaryText;
-  }
-
-  // ✅ เพิ่มตรงนี้: อัปเดต hidden input
-  document.querySelectorAll('.adults-input').forEach(input => {
-    input.value = totalAdults;
-  });
-  document.querySelectorAll('.children-input').forEach(input => {
-    input.value = totalChildren;
-  });
-}
     </script>
 </body>
 

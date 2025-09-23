@@ -46,8 +46,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <button type="submit">ยืนยัน</button>
     </form>
     <hr>
-    <a href="admin_login.php"><button type="button">เข้าสู่ระบบแอดมิน</button></a>
-    <a href="staff_login.php"><button type="button">เข้าสู่ระบบเจ้าหน้าที่</button></a>
+    <a href="#"><button type="button">เข้าสู่ระบบแอดมิน</button></a>
+    <a href="#"><button type="button">เข้าสู่ระบบเจ้าหน้าที่</button></a>
   </div>
 </body>
 </html>

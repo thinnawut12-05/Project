@@ -1,34 +1,28 @@
-// รอให้หน้าเว็บโหลดเสร็จก่อนเริ่มทำงาน
 document.addEventListener('DOMContentLoaded', () => {
-  // เริ่มต้นสร้างห้องตามค่าเริ่มต้นใน input หรือมีอยู่แล้ว
   updateRoomsFromInput(); 
   updateGuestSummary();
 
-  // ตรวจสอบและสร้าง selectors อายุเด็กสำหรับห้องที่มีอยู่
   document.querySelectorAll('.room').forEach(room => {
     const childCount = parseInt(room.querySelector('.child-count').textContent);
     if (childCount > 0) {
       generateChildAgeSelectors(room);
     }
   });
+  renderDaysOfWeek(); // เพิ่มตรงนี้
+  renderCalendar(); // เพิ่มตรงนี้
 });
 
-// นับจำนวนห้องเริ่มต้นจาก HTML ที่มีอยู่จริง (ควรจะมี 1 ห้องเริ่มต้น)
 let roomCount = document.querySelectorAll('.room').length;
 
-/**
- * (ใหม่) ฟังก์ชันสำหรับอัปเดตจำนวนห้องตามค่าในช่องกรอกตัวเลข
- */
 function updateRoomsFromInput() {
     const numRoomsInput = document.getElementById('num-rooms');
     let desiredRoomCount = parseInt(numRoomsInput.value);
 
-    // ตรวจสอบค่า min/max (ใน HTML ก็กำหนดไว้แล้ว แต่เช็คซ้ำเพื่อความปลอดภัย)
     if (isNaN(desiredRoomCount) || desiredRoomCount < 1) {
         desiredRoomCount = 1;
         numRoomsInput.value = 1;
     }
-    const maxRooms = parseInt(numRoomsInput.getAttribute('max')) || 5; // อ่านค่า max จาก attribute
+    const maxRooms = parseInt(numRoomsInput.getAttribute('max')) || 5;
     if (desiredRoomCount > maxRooms) {
         desiredRoomCount = maxRooms;
         numRoomsInput.value = maxRooms;
@@ -38,32 +32,22 @@ function updateRoomsFromInput() {
     const existingRooms = container.querySelectorAll('.room');
     const currentRoomCount = existingRooms.length;
 
-    // ถ้าจำนวนห้องที่ต้องการน้อยกว่าห้องที่มีอยู่ ให้ลบห้องส่วนเกิน
     if (desiredRoomCount < currentRoomCount) {
         for (let i = currentRoomCount - 1; i >= desiredRoomCount; i--) {
             existingRooms[i].remove();
         }
-    } 
-    // ถ้าจำนวนห้องที่ต้องการมากกว่าห้องที่มีอยู่ ให้เพิ่มห้องใหม่
-    else if (desiredRoomCount > currentRoomCount) {
+    } else if (desiredRoomCount > currentRoomCount) {
         for (let i = currentRoomCount; i < desiredRoomCount; i++) {
-            addRoomInternal(i + 1); // ส่งเลขห้องถัดไป
+            addRoomInternal(i + 1);
         }
     }
-    // อัปเดตตัวแปร global roomCount
     roomCount = desiredRoomCount; 
-    updateRoomNumbers(); // อัปเดตหมายเลขห้องให้ถูกต้อง
     updateGuestSummary();
 }
 
-
-/**
- * ฟังก์ชันเพิ่มห้องใหม่ (ถูกเรียกโดย updateRoomsFromInput เท่านั้น)
- * @param {number} newRoomNumber - หมายเลขห้องที่จะสร้าง
- */
 function addRoomInternal(newRoomNumber) {
   const container = document.getElementById('rooms-container');
-  const guestSummary = document.querySelector('.guest-summary'); // อ้างอิงส่วน guest-summary
+  const guestSummary = document.querySelector('.guest-summary');
 
   const newRoom = document.createElement('div');
   newRoom.classList.add('room');
@@ -72,7 +56,6 @@ function addRoomInternal(newRoomNumber) {
   newRoom.innerHTML = `
         <div class="room-header">
             <h4>ห้องที่ ${newRoomNumber}</h4>
-            <!-- ปุ่มลบจะถูกควบคุมด้วยจำนวนห้องใน input แทน -->
         </div>
         <div class="guest-group">
             <span>ผู้ใหญ่</span>
@@ -92,24 +75,9 @@ function addRoomInternal(newRoomNumber) {
         </div>
     `;
 
-  // แทรกห้องใหม่เข้าไปใน container (ก่อนส่วน guest-summary)
   container.insertBefore(newRoom, guestSummary);
 }
 
-
-/**
- * (ลบฟังก์ชัน addRoom เดิม)
- * (ลบฟังก์ชัน deleteRoom เดิม)
- * (ลบฟังก์ชัน updateRoomNumbers เดิม)
- *
- * เหตุผล: ฟังก์ชันเหล่านี้ถูกแทนที่ด้วย updateRoomsFromInput()
- * ซึ่งจัดการการสร้าง/ลบ/อัปเดตหมายเลขห้องทั้งหมดตามค่า input แล้ว
- */
-
-
-/**
- * ฟังก์ชันเปลี่ยนจำนวนผู้เข้าพัก (ผู้ใหญ่/เด็ก)
- */
 function changeGuest(button, type, delta) {
   const room = button.closest('.room');
   const countElement = room.querySelector(`.${type}-count`);
@@ -118,11 +86,11 @@ function changeGuest(button, type, delta) {
 
   if (type === 'adult') {
     if (newCount < 1) newCount = 1;
-    if (newCount > 2) newCount = 2; // จำกัดผู้ใหญ่ไม่เกิน 2 คนต่อห้อง
+    if (newCount > 2) newCount = 2;
   }
   if (type === 'child') {
     if (newCount < 0) newCount = 0;
-    if (newCount > 1) newCount = 1; // จำกัดเด็กไม่เกิน 1 คนต่อห้อง
+    if (newCount > 1) newCount = 1;
   }
 
   countElement.textContent = newCount;
@@ -134,10 +102,6 @@ function changeGuest(button, type, delta) {
   updateGuestSummary();
 }
 
-
-/**
- * ฟังก์ชันสร้าง Dropdown สำหรับเลือกอายุเด็ก
- */
 function generateChildAgeSelectors(room) {
   const childCount = parseInt(room.querySelector('.child-count').textContent);
   const childAgeContainer = room.querySelector('.child-age-container');
@@ -162,10 +126,6 @@ function generateChildAgeSelectors(room) {
   }
 }
 
-
-/**
- * ฟังก์ชันอัปเดตข้อมูลสรุปรวมจำนวนผู้เข้าพักทั้งหมด
- */
 function updateGuestSummary() {
   let totalAdults = 0;
   let totalChildren = 0;
@@ -180,169 +140,19 @@ function updateGuestSummary() {
   if (summaryInput) {
     summaryInput.value = summaryText;
   }
-}
-
-// โค้ดปฏิทิน (ไม่มีการเปลี่ยนแปลงในส่วนนี้)
-const monthNames = [
-  "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-  "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-];
-
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
-let isDragging = false;
-let selectedDates = [];
-
-// เก็บวันปัจจุบัน
-const today = new Date();
-today.setHours(0, 0, 0, 0); // ตั้งค่าเวลาเป็น 00:00:00 เพื่อเปรียบเทียบเฉพาะวันที่
-
-const calendarDaysEl = document.getElementById("calendar-days");
-const calendarDatesEl = document.getElementById("calendar-dates");
-const monthLabel = document.getElementById("month-label");
-
-function openCalendar() {
-  document.getElementById("calendarOverlay").style.display = "block";
-  document.getElementById("calendarPopup").style.display = "block";
-}
-
-function closeCalendar() {
-  document.getElementById("calendarOverlay").style.display = "none";
-  document.getElementById("calendarPopup").style.display = "none";
-}
-
-function toggleDate(el) {
-  if (!el.classList.contains("calendar-date")) return;
   
-  // *** เพิ่มการตรวจสอบวันที่ในอดีตที่นี่ ***
-  if (el.classList.contains("past-date")) {
-    return; // ถ้าเป็นวันที่ในอดีต จะไม่ทำอะไร
-  }
-
-  if (el.classList.contains("selected")) {
-    el.classList.remove("selected");
-    selectedDates = selectedDates.filter(d => d !== el);
-  } else {
-    el.classList.add("selected");
-    selectedDates.push(el);
-  }
+  // Update hidden inputs for adults and children
+  const adultsHiddenInput = document.getElementById('adults');
+  const childrenHiddenInput = document.getElementById('children');
+  if (adultsHiddenInput) adultsHiddenInput.value = totalAdults;
+  if (childrenHiddenInput) childrenHiddenInput.value = totalChildren;
 }
 
-function renderDaysOfWeek() {
-  const days = ["อา", "จ", "อ", "พ", "พฤ", "ศ", "ส"];
-  calendarDaysEl.innerHTML = "";
-  days.forEach(day => {
-    const el = document.createElement("div");
-    el.className = "calendar-day";
-    el.textContent = day;
-    calendarDaysEl.appendChild(el);
-  });
-}
 
-function renderCalendar() {
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+// ================== Calendar Management ==================
 
-  monthLabel.textContent = `${monthNames[currentMonth]} ${currentYear}`;
-  calendarDatesEl.innerHTML = "";
-  selectedDates = [];
 
-  for (let i = 0; i < firstDay; i++) {
-    const blank = document.createElement("div");
-    calendarDatesEl.appendChild(blank);
-  }
 
-  for (let i = 1; i <= daysInMonth; i++) {
-    const dateEl = document.createElement("div");
-    dateEl.className = "calendar-date";
-    dateEl.textContent = i;
-
-    // *** เพิ่มการตรวจสอบและคลาสสำหรับวันที่ในอดีต ***
-    const dateToCheck = new Date(currentYear, currentMonth, i);
-    dateToCheck.setHours(0, 0, 0, 0); // ตั้งค่าเวลาเป็น 00:00:00
-
-    if (dateToCheck < today) {
-      dateEl.classList.add("past-date"); // เพิ่มคลาส "past-date"
-    }
-
-    dateEl.addEventListener("mousedown", () => {
-      isDragging = true;
-      toggleDate(dateEl);
-    });
-
-    dateEl.addEventListener("mouseover", () => {
-      if (isDragging) toggleDate(dateEl);
-    });
-
-    dateEl.addEventListener("mouseup", () => isDragging = false);
-
-    calendarDatesEl.appendChild(dateEl);
-  }
-}
-
-function changeMonth(offset) {
-  // ไม่ให้ย้อนกลับไปเดือนในอดีต ถ้าเดือนปัจจุบันคือเดือนของวันนี้
-  const newMonth = currentMonth + offset;
-  const newDate = new Date(currentYear, newMonth, 1);
-
-  // ถ้าเดือนใหม่ย้อนไปก่อนเดือนปัจจุบัน และเป็นปีเดียวกัน
-  if (newDate < new Date(today.getFullYear(), today.getMonth(), 1)) {
-    return; // ไม่อนุญาตให้เปลี่ยน
-  }
-
-  currentMonth += offset;
-  if (currentMonth < 0) {
-    currentMonth = 11;
-    currentYear--;
-  } else if (currentMonth > 11) {
-    currentMonth = 0;
-    currentYear++;
-  }
-  renderCalendar();
-}
-
-function confirmDate() {
-  if (selectedDates.length === 0) {
-    alert("กรุณาเลือกวันก่อน");
-    return;
-  }
-  
-  // ตรวจสอบว่าวันที่เริ่มต้นไม่เป็นวันที่ในอดีต (ซ้ำซ้อนเพื่อความมั่นใจ)
-  const firstSelectedDateEl = selectedDates.sort((a,b) => +a.textContent - +b.textContent)[0];
-  const firstSelectedDay = parseInt(firstSelectedDateEl.textContent);
-  const checkInDate = new Date(currentYear, currentMonth, firstSelectedDay);
-  checkInDate.setHours(0,0,0,0);
-
-  if (checkInDate < today) {
-    alert("ไม่สามารถเลือกวันที่เช็คอินย้อนหลังได้ กรุณาเลือกวันที่ปัจจุบันหรืออนาคต");
-    selectedDates.forEach(el => el.classList.remove("selected")); // ลบการเลือกทั้งหมด
-    selectedDates = [];
-    return;
-  }
-
-  const days = selectedDates
-    .map(el => el.textContent.trim())
-    .sort((a, b) => +a - +b);
-
-  const start = days[0];
-  const end = days[days.length - 1];
-
-  // format เป็น YYYY-MM-DD
-  const startDateISO = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(start).padStart(2, "0")}`;
-  const endDateISO   = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(end).padStart(2, "0")}`;
-
-  // เก็บค่าแบบ ISO ไว้ใน input (ส่งไป PHP)
-  document.getElementById("start-date").value = startDateISO;
-  document.getElementById("end-date").value = endDateISO;
-
-  // ถ้าอยากโชว์เป็นภาษาไทยให้ user เห็น (ทำ span แยก)
-  document.getElementById("start-date-display").textContent =
-    `วันที่ ${start} ${monthNames[currentMonth]} ${currentYear}`;
-  document.getElementById("end-date-display").textContent =
-    `วันที่ ${end} ${monthNames[currentMonth]} ${currentYear}`;
-
-  closeCalendar();
-}
-renderDaysOfWeek();
-renderCalendar();
-
+// ลบฟังก์ชัน toggleDate() เดิมออก ไม่ได้ใช้แล้ว
+// renderDaysOfWeek(); // ย้ายไปใน DOMContentLoaded
+// renderCalendar();   // ย้ายไปใน DOMContentLoaded

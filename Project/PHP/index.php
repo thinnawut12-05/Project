@@ -17,7 +17,8 @@ $conn->set_charset("utf8");
 if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
-
+$checkin_date = $_GET['checkin_date'] ?? '';
+$checkout_date = $_GET['checkout_date'] ?? '';
 // --- Fetch Regions ---
 $sql_regions = "SELECT Region_Id, Region_name FROM region ORDER BY Region_Id ASC";
 $result_regions = $conn->query($sql_regions);
@@ -60,7 +61,7 @@ $conn->close();
 <body>
   <header>
     <section class="logo">
-       <a href="./nextpage.php"> <!-- เปลี่ยน index.php เป็นหน้าที่คุณต้องการ -->
+      <a href="./nextpage.php"> <!-- เปลี่ยน index.php เป็นหน้าที่คุณต้องการ -->
         <img src="../src/images/4.png" width="50" height="50" alt="Dom Inn Logo" />
       </a>
     </section>
@@ -105,7 +106,11 @@ $conn->close();
       <?php endforeach; ?>
     </select>
 
-    <input id="date-range" type="text" placeholder="วันที่เช็คอิน - วันที่เช็คเอ้าท์" readonly onclick="openCalendar()" />
+    <input id="start-date" name="checkin_date" type="text" placeholder="วันที่เช็คอิน" readonly value="<?= htmlspecialchars($checkin_date) ?>" onclick="openCalendar()" />
+    <input id="end-date" name="checkout_date" type="text" placeholder="วันที่เช็คเอ้าท์" readonly value="<?= htmlspecialchars($checkout_date) ?>" onclick="openCalendar()" />
+
+    <input type="hidden" id="start-date">
+    <input type="hidden" id="end-date">
 
     <div id="rooms-container">
       <!-- ช่องกรอกจำนวนห้องพัก -->
@@ -184,7 +189,7 @@ $conn->close();
     </div>
   </div>
 
-  <script src="../JS/js/test.js"></script>
+  <script src="../JS/js/calendar.js"></script>
 
   <!-- START: JAVASCRIPT for dynamic dropdown -->
   <script>

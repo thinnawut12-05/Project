@@ -1,8 +1,8 @@
 <?php
 // เชื่อมต่อฐานข้อมูล
 $servername = "localhost";
-$username = "root"; 
-$password = ""; 
+$username = "root";
+$password = "";
 $dbname = "hotel_db";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -17,11 +17,14 @@ $result = $conn->query($sql);
 
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <title>สาขาโรงแรม Dom inn</title>
+    <link rel="icon" type="image/png" href="../src/images/logo.png" />
     <link rel="stylesheet" href="../CSS/css/branch.css">
 </head>
+
 <body>
 
     <div class="header">
@@ -31,7 +34,7 @@ $result = $conn->query($sql);
     <div class="container">
         <?php
         if ($result->num_rows > 0) {
-            while($row = $result->fetch_assoc()) {
+            while ($row = $result->fetch_assoc()) {
                 $province = $row["Province_name"];
                 $address  = $row["Address"];
                 $phone    = $row["Phone"];
@@ -52,4 +55,5 @@ $result = $conn->query($sql);
     </div>
 
 </body>
+
 </html>
