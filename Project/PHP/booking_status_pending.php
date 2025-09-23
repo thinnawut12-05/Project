@@ -26,6 +26,7 @@ $stmt->close();
 <head>
   <meta charset="UTF-8">
   <title>สถานะการจอง - รอการตรวจสอบ</title>
+     <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap">
   <style>
     body {
