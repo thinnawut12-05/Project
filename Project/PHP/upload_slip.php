@@ -7,6 +7,7 @@ include 'db.php';
 <head>
   <meta charset="UTF-8">
   <title>ยืนยันการจอง</title>
+    <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
