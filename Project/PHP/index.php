@@ -1,24 +1,7 @@
-<?php
-// --- START: PHP code for database connection and fetching data ---
+<?php 
+session_start(); // เริ่ม session สำหรับเช็คสมาชิก
+include 'db.php'; // เชื่อมต่อฐานข้อมูล
 
-// Database connection details
-$servername = "localhost"; // หรือ IP ของเซิร์ฟเวอร์ฐานข้อมูล
-$username = "root";       // ชื่อผู้ใช้ฐานข้อมูล (ค่าเริ่มต้นคือ root)
-$password = "";           // รหัสผ่าน (ค่าเริ่มต้นมักจะว่าง)
-$dbname = "hotel_db";     // ชื่อฐานข้อมูล
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Set character set to utf8 to support Thai language
-$conn->set_charset("utf8");
-
-// Check connection
-if ($conn->connect_error) {
-  die("Connection failed: " . $conn->connect_error);
-}
-$checkin_date = $_GET['checkin_date'] ?? '';
-$checkout_date = $_GET['checkout_date'] ?? '';
 // --- Fetch Regions ---
 $sql_regions = "SELECT Region_Id, Region_name FROM region ORDER BY Region_Id ASC";
 $result_regions = $conn->query($sql_regions);
@@ -29,7 +12,7 @@ if ($result_regions->num_rows > 0) {
   }
 }
 
-// --- Fetch Provinces (Branches) ---
+// --- Fetch Provinces ---
 $sql_provinces = "SELECT Province_Id, Province_name, Region_Id FROM province ORDER BY Province_name ASC";
 $result_provinces = $conn->query($sql_provinces);
 $provinces = [];
@@ -39,14 +22,15 @@ if ($result_provinces->num_rows > 0) {
   }
 }
 
-// Close the database connection
-$conn->close();
+// ดึงวันที่จาก GET/POST
+$checkin_date = $_GET['checkin_date'] ?? '';
+$checkout_date = $_GET['checkout_date'] ?? '';
 
-// --- END: PHP code ---
+// ปิด connection
+$conn->close();
 ?>
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
   <meta charset="UTF-8" />
   <title>Dom Inn Hotel</title>
@@ -56,12 +40,13 @@ $conn->close();
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
     integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x5l5x"
     crossorigin="anonymous" />
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
-
 <body>
   <header>
     <section class="logo">
-      <a href="./nextpage.php"> <!-- เปลี่ยน index.php เป็นหน้าที่คุณต้องการ -->
+      <a href="./nextpage.php">
         <img src="../src/images/4.png" width="50" height="50" alt="Dom Inn Logo" />
       </a>
     </section>
@@ -79,28 +64,21 @@ $conn->close();
   </header>
 
   <section class="booking-form">
-    <!-- Dropdown ภูมิภาค -->
     <select id="region" onchange="updateBranches()">
       <option disabled selected value>เลือกภูมิภาค</option>
-      <?php
-      foreach ($regions as $region):
-      ?>
+      <?php foreach ($regions as $region): ?>
         <option value="<?= htmlspecialchars($region['Region_Id']) ?>">
           <?= htmlspecialchars($region['Region_name']) ?>
         </option>
       <?php endforeach; ?>
     </select>
 
-    <!-- Dropdown สาขา (จังหวัด) -->
     <select id="branch">
       <option disabled selected value>เลือกสาขา</option>
-      <?php
-      foreach ($provinces as $province):
-      ?>
-        <!-- เพิ่ม data-region-id เพื่อให้ Javascript รู้ว่าสาขานี้อยู่ภูมิภาคไหน -->
+      <?php foreach ($provinces as $province): ?>
         <option value="<?= htmlspecialchars($province['Province_Id']) ?>"
           data-region-id="<?= htmlspecialchars($province['Region_Id']) ?>"
-          style="display:none;"> <!-- ซ่อนไว้ก่อนเป็นค่าเริ่มต้น -->
+          style="display:none;">
           <?= htmlspecialchars($province['Province_name']) ?>
         </option>
       <?php endforeach; ?>
@@ -109,41 +87,30 @@ $conn->close();
     <input id="start-date" name="checkin_date" type="text" placeholder="วันที่เช็คอิน" readonly value="<?= htmlspecialchars($checkin_date) ?>" onclick="openCalendar()" />
     <input id="end-date" name="checkout_date" type="text" placeholder="วันที่เช็คเอ้าท์" readonly value="<?= htmlspecialchars($checkout_date) ?>" onclick="openCalendar()" />
 
-    <input type="hidden" id="start-date">
-    <input type="hidden" id="end-date">
-
     <div id="rooms-container">
-      <!-- ช่องกรอกจำนวนห้องพัก -->
       <div class="room-input-group">
         <label for="num-rooms">จำนวนห้อง:</label>
         <input type="number" id="num-rooms" value="1" min="1" max="5" onchange="updateRoomsFromInput()">
       </div>
-
-      <!-- ห้องแรก (จะถูกสร้างหรืออัปเดตด้วย JavaScript) -->
       <div class="room" data-room="1">
         <h4>ห้องที่ 1</h4>
-
         <div class="guest-group">
           <span>ผู้ใหญ่</span>
           <button type="button" onclick="changeGuest(this, 'adult', -1)">–</button>
           <span class="adult-count">1</span>
           <button type="button" onclick="changeGuest(this, 'adult', 1)">+</button>
         </div>
-
         <div class="guest-group">
           <span>เด็ก</span>
           <button type="button" onclick="changeGuest(this, 'child', -1)">–</button>
           <span class="child-count">0</span>
           <button type="button" onclick="changeGuest(this, 'child', 1)">+</button>
         </div>
-
-
         <div class="child-age-container" style="display:none; margin-top:8px;">
           <label>อายุของเด็กแต่ละคน (ปี):</label>
           <div class="child-age-list"></div>
         </div>
       </div>
-      <!-- ปุ่มเพิ่มห้องจะถูกลบออกไป และควบคุมด้วยช่องกรอกตัวเลขแทน -->
       <div class="guest-summary">
         <input id="guest-summary-input" type="text" readonly value="ผู้ใหญ่ 1, เด็ก 0 คน" />
       </div>
@@ -151,8 +118,6 @@ $conn->close();
 
     <button class="btn">จองเลย</button>
   </section>
-
-  <!-- ... ส่วนที่เหลือของ HTML ... -->
 
   <section class="room-gallery">
     <img src="../src/images/1.jpg" alt="Room 1" />
@@ -191,41 +156,56 @@ $conn->close();
 
   <script src="../JS/js/calendar.js"></script>
 
-  <!-- START: JAVASCRIPT for dynamic dropdown -->
   <script>
+    // Dynamic branch dropdown
     function updateBranches() {
       const regionSelect = document.getElementById('region');
       const branchSelect = document.getElementById('branch');
       const selectedRegionId = regionSelect.value;
 
-      // รีเซ็ต dropdown สาขาให้กลับไปที่ค่าเริ่มต้น "เลือกสาขา"
       branchSelect.selectedIndex = 0;
-
-      // ดึง option ทั้งหมดใน dropdown สาขา
       const branchOptions = branchSelect.getElementsByTagName('option');
 
-      // วนลูปเพื่อตรวจสอบทีละ option
       for (let i = 0; i < branchOptions.length; i++) {
         const option = branchOptions[i];
         const regionIdOfBranch = option.getAttribute('data-region-id');
-
-        // ถ้า option มี data-region-id ตรงกับภูมิภาคที่เลือก ให้แสดง option นั้น
-        if (regionIdOfBranch === selectedRegionId) {
-          option.style.display = '';
-        } else {
-          // ถ้าไม่ตรง ให้ซ่อนไว้
-          option.style.display = 'none';
-        }
+        option.style.display = (regionIdOfBranch === selectedRegionId) ? '' : 'none';
       }
 
-      // ทำให้ option แรก "เลือกสาขา" แสดงผลเสมอ
-      if (branchOptions.length > 0) {
-        branchOptions[0].style.display = '';
-      }
+      if (branchOptions.length > 0) branchOptions[0].style.display = '';
     }
+
+    // --- SweetAlert2: Booking alert ---
+    const isMember = <?php echo isset($_SESSION['member_id']) ? 'true' : 'false'; ?>;
+    const bookingButton = document.querySelector('.btn');
+
+    bookingButton.addEventListener('click', function(e) {
+      e.preventDefault();
+
+      if (!isMember) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ท่านยังไม่เป็นสมาชิก',
+          text: 'โปรดสมัครสมาชิกของโรงแรม Dom-Inn ก่อนทำการจอง',
+          showCancelButton: true,
+          confirmButtonText: 'สมัครสมาชิก',
+          cancelButtonText: 'ยกเลิก',
+          allowOutsideClick: false
+        }).then((result) => {
+          if (result.isConfirmed) {
+            window.location.href = './member.php';
+          }
+        });
+      } else {
+        Swal.fire({
+          icon: 'success',
+          title: 'จองสำเร็จ',
+          text: 'คุณสามารถทำการชำระเงินต่อได้',
+          timer: 2000,
+          showConfirmButton: false
+        });
+      }
+    });
   </script>
-  <!-- END: JAVASCRIPT for dynamic dropdown -->
-
 </body>
-
 </html>

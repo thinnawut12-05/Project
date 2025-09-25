@@ -36,18 +36,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         echo '<div class="error">กรุณาเลือกบทบาท</div>';
       }
     ?>
-    <form method="POST">
-      <label for="role">เลือกบทบาท:</label>
-      <select id="role" name="role" required>
-        <option value="">-- กรุณาเลือก --</option>
-        <option value="staff">เจ้าหน้าที่</option>
-        <option value="admin">แอดมิน</option>
-      </select>
-      <button type="submit">ยืนยัน</button>
-    </form>
     <hr>
-    <a href="#"><button type="button">เข้าสู่ระบบแอดมิน</button></a>
-    <a href="#"><button type="button">เข้าสู่ระบบเจ้าหน้าที่</button></a>
+    <a href="./admin_login.php"><button type="button">เข้าสู่ระบบแอดมิน</button></a>
+    <a href="./staff_login.php"><button type="button">เข้าสู่ระบบเจ้าหน้าที่</button></a>
+
   </div>
 </body>
 </html>
