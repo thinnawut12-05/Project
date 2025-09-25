@@ -1,26 +1,29 @@
 <?php
 session_start();
-include 'db.php'; // เชื่อมต่อฐานข้อมูล
+include 'db.php';
 
 $error = "";
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = $_POST["email"] ?? "";
-    $password = $_POST["password"] ?? "";
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = $_POST['email'] ?? '';
+    $password = $_POST['password'] ?? '';
 
-    // ดึงข้อมูลจาก DB
-    $stmt = $conn->prepare("SELECT Password FROM admin WHERE Email_Admin = ?");
-    $stmt->bind_param("s", $email);
+    $sql = "SELECT * FROM admin WHERE Email_Admin=? AND Password=?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ss", $email, $password);
     $stmt->execute();
-    $stmt->bind_result($hashed_password);
+    $result = $stmt->get_result();
 
-    if ($stmt->fetch() && password_verify($password, $hashed_password)) {
-        $_SESSION["admin_logged_in"] = true;
-        header("Location: admin_dashboard.php");
+    if ($result->num_rows === 1) {
+        $row = $result->fetch_assoc();
+        $_SESSION['admin_logged_in'] = true;
+        $_SESSION['admin_email'] = $row['Email_Admin'];
+        $_SESSION['admin_name'] = $row['First_name'] . " " . $row['Last_name'];
+        // Redirect ไปหน้า dashboard
+        header("Location: admin.php");
         exit();
     } else {
-        $error = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+        $error = "อีเมลหรือรหัสผ่านไม่ถูกต้อง!";
     }
-    $stmt->close();
 }
 ?>
 <!DOCTYPE html>
@@ -29,14 +32,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
     <meta charset="UTF-8">
     <title>เข้าสู่ระบบแอดมิน - Dom Inn Hotel</title>
+    <link rel="icon" type="image/png" href="../src/images/logo.png" />
     <style>
         body {
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background: linear-gradient(135deg, #74b9ff, #a29bfe);
             font-family: 'Segoe UI', sans-serif;
+            background: #f0f2f5;
         }
 
         .login-box {
@@ -60,13 +64,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         input {
             width: 100%;
-            padding: 12px 15px;/* ทำให้มีพื้นที่ด้านบน-ล่างพอดี */
+            padding: 12px 15px;
             margin: 10px 0;
             border: 1px solid #b2bec3;
             border-radius: 8px;
             font-size: 1rem;
-            line-height: normal;/* แก้ปัญหาข้อความลอย */
-            box-sizing: border-box;/* กันการเกินขอบ */
+            box-sizing: border-box;
         }
 
         input:focus {
@@ -83,7 +86,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             color: #fff;
             font-size: 1rem;
             cursor: pointer;
-            transition: 0.3s;
         }
 
         button:hover {

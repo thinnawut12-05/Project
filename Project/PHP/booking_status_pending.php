@@ -5,11 +5,14 @@ include 'db.php';
 // รับ email จาก session
 $email_member = $_SESSION['email'] ?? '';
 
-// ดึงข้อมูลการจองที่รอการตรวจสอบ (Booking_status_Id = 2)
-$sql = "SELECT Reservation_Id, Guest_name, Number_of_rooms, Booking_date, Check_out_date, Booking_status_Id 
-        FROM reservation 
-        WHERE Email_member = ? AND Booking_status_Id = 2
-        ORDER BY Booking_date DESC";
+// ดึงข้อมูลการจองทั้งหมดของลูกค้า + ชื่อสถานะ
+$sql = "SELECT r.Reservation_Id, r.Guest_name, r.Number_of_rooms, 
+               r.Booking_date, r.Check_out_date, r.Booking_status_Id,
+               b.Booking_status_name
+        FROM reservation r
+        LEFT JOIN booking_status b ON r.Booking_status_Id = b.Booking_status_Id
+        WHERE r.Email_member = ?
+        ORDER BY r.Booking_date DESC";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param('s', $email_member);
 $stmt->execute();
@@ -17,39 +20,41 @@ $result = $stmt->get_result();
 
 $bookings = [];
 while ($row = $result->fetch_assoc()) {
-    $bookings[] = $row;
+  $bookings[] = $row;
 }
 $stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
-  <title>สถานะการจอง - รอการตรวจสอบ</title>
-     <link rel="icon" type="image/png" href="../src/images/logo.png" />
+  <title>สถานะการจอง</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap">
   <style>
     body {
       font-family: 'Kanit', sans-serif;
-      background: linear-gradient(120deg,#a8edea,#fed6e3);
+      background: linear-gradient(120deg, #a8edea, #fed6e3);
       margin: 0;
       padding: 0;
     }
+
     .container {
-      max-width: 900px;
+      max-width: 950px;
       margin: 40px auto;
       background: #fff;
       border-radius: 15px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
       padding: 32px 20px;
     }
+
     h2 {
       text-align: center;
       color: #3b3b3b;
       margin-bottom: 30px;
       font-size: 2rem;
-      letter-spacing: 1px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -57,37 +62,65 @@ $stmt->close();
       background: #fafafa;
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
     }
-    th, td {
-      padding: 16px 10px;
+
+    th,
+    td {
+      padding: 14px 10px;
       text-align: center;
       font-size: 1rem;
     }
+
     th {
       background: #74b9ff;
       color: #fff;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      border-bottom: 2px solid #dfe6e9;
     }
-    tr:nth-child(even) { background: #f1f6fb; }
-    .status-pending {
-      color: #f39c12;
-      font-weight: 700;
-      background: #fff6e0;
-      padding: 6px 16px;
+
+    tr:nth-child(even) {
+      background: #f1f6fb;
+    }
+
+    .status {
+      padding: 6px 14px;
       border-radius: 20px;
+      font-weight: 700;
       display: inline-block;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
+    }
+
+    .s1 {
+      background: #fff6e0;
+      color: #f39c12;
       border: 1px solid #f7b731;
     }
+
+    .s2 {
+      background: #e8f5ff;
+      color: #0984e3;
+      border: 1px solid #74b9ff;
+    }
+
+    .s3 {
+      background: #eaffea;
+      color: #27ae60;
+      border: 1px solid #2ecc71;
+    }
+
+    .s4,
+    .s5 {
+      background: #ffeaea;
+      color: #e74c3c;
+      border: 1px solid #ff7675;
+    }
+
     .no-booking {
       text-align: center;
       padding: 32px 0;
       color: #888;
       font-size: 1.15rem;
     }
+
     .back-btn {
       display: inline-block;
       padding: 10px 24px;
@@ -96,17 +129,20 @@ $stmt->close();
       border-radius: 8px;
       text-decoration: none;
       font-weight: 600;
-      margin-top: 15px;
-      transition: background 0.3s;
+      transition: 0.3s;
     }
-    .back-btn:hover { background: #0652dd; }
+
+    .back-btn:hover {
+      background: #0652dd;
+    }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h2>รายการจองที่รอการตรวจสอบ</h2>
+    <h2>สถานะการจองของคุณ</h2>
     <?php if (count($bookings) === 0): ?>
-      <div class="no-booking">ไม่มีรายการจองที่รอการตรวจสอบในขณะนี้</div>
+      <div class="no-booking">ไม่มีรายการจอง</div>
     <?php else: ?>
       <table>
         <thead>
@@ -120,17 +156,19 @@ $stmt->close();
           </tr>
         </thead>
         <tbody>
-          <?php foreach($bookings as $b): ?>
-          <tr>
-            <td><?= htmlspecialchars($b['Reservation_Id']) ?></td>
-            <td><?= !empty($b['Guest_name']) ? htmlspecialchars($b['Guest_name']) : '<span style="color:#d63031;">ไม่พบชื่อ</span>' ?></td>
-            <td><?= htmlspecialchars($b['Number_of_rooms']) ?></td>
-            <td><?= htmlspecialchars($b['Booking_date']) ?></td>
-            <td><?= htmlspecialchars($b['Check_out_date']) ?></td>
-            <td>
-              <span class="status-pending">รอการตรวจสอบ</span>
-            </td>
-          </tr>
+          <?php foreach ($bookings as $b): ?>
+            <tr>
+              <td><?= htmlspecialchars($b['Reservation_Id']) ?></td>
+              <td><?= htmlspecialchars($b['Guest_name']) ?></td>
+              <td><?= htmlspecialchars($b['Number_of_rooms']) ?></td>
+              <td><?= htmlspecialchars($b['Booking_date']) ?></td>
+              <td><?= htmlspecialchars($b['Check_out_date']) ?></td>
+              <td>
+                <span class="status s<?= $b['Booking_status_Id'] ?>">
+                  <?= htmlspecialchars($b['Booking_status_name'] ?? 'ไม่ทราบ') ?>
+                </span>
+              </td>
+            </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
@@ -140,4 +178,5 @@ $stmt->close();
     </div>
   </div>
 </body>
+
 </html>
