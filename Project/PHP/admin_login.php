@@ -33,77 +33,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <title>เข้าสู่ระบบแอดมิน - Dom Inn Hotel</title>
     <link rel="icon" type="image/png" href="../src/images/logo.png" />
-    <style>
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            font-family: 'Segoe UI', sans-serif;
-            background: #f0f2f5;
-        }
-
-        .login-box {
-            background: #fff;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-            width: 350px;
-            text-align: center;
-        }
-
-        h2 {
-            margin-bottom: 20px;
-            color: #2d3436;
-        }
-
-        .error {
-            color: #e74c3c;
-            margin-bottom: 15px;
-        }
-
-        input {
-            width: 100%;
-            padding: 12px 15px;
-            margin: 10px 0;
-            border: 1px solid #b2bec3;
-            border-radius: 8px;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-
-        input:focus {
-            border-color: #0984e3;
-            outline: none;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            background: #0984e3;
-            color: #fff;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background: #74b9ff;
-        }
-
-        a {
-            display: block;
-            margin-top: 15px;
-            color: #636e72;
-            text-decoration: none;
-        }
-
-        a:hover {
-            color: #2d3436;
-        }
-    </style>
-</head>
+    <link rel="stylesheet" href="../CSS/css/admin.css"> 
 
 <body>
     <div class="login-box">
