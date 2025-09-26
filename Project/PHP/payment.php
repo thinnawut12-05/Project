@@ -1,19 +1,26 @@
 <?php 
 session_start();
-include 'db.php';
+include 'db.php'; // ตรวจสอบให้แน่ใจว่าเส้นทางนี้ถูกต้อง
+
+// ตรวจสอบว่าผู้ใช้ล็อกอินอยู่หรือไม่
+if (!isset($_SESSION['email'])) {
+    header('Location: login.php'); // เปลี่ยนเส้นทางไปหน้าล็อกอินหากยังไม่ได้ล็อกอิน
+    exit();
+}
 
 // รับ province_id จาก GET/POST
-$province_id = $_GET['province_id'] ?? $_POST['province_id'] ?? null;
+$province_id_from_param = $_GET['province_id'] ?? $_POST['province_id'] ?? null;
 
-// ถ้ามี province_id ให้ค้นชื่อจังหวัด/สาขา แล้วเซ็ตลง session
-if ($province_id) {
+// ถ้ามี province_id ที่ส่งมา และยังไม่ได้เก็บใน session หรือมีการเปลี่ยน province_id
+if ($province_id_from_param && (!isset($_SESSION['province_id']) || $_SESSION['province_id'] != $province_id_from_param)) {
     $sql = "SELECT Province_name FROM province WHERE Province_Id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('i', $province_id);
+    $stmt->bind_param('i', $province_id_from_param); // สมมติว่า Province_Id ในตาราง 'province' เป็น INT
     $stmt->execute();
     $stmt->bind_result($province_name);
     if ($stmt->fetch()) {
         $_SESSION['province_name'] = $province_name;
+        $_SESSION['province_id'] = $province_id_from_param; // เก็บ province_id ใน session
     }
     $stmt->close();
 }
@@ -23,16 +30,15 @@ $First_name = $_SESSION['First_name'] ?? '';
 $Last_name = $_SESSION['Last_name'] ?? '';
 $full_name = trim($First_name . ' ' . $Last_name);
 
-$room_id = $_GET['room_id'] ?? null;
-$price = floatval($_GET['price'] ?? 0);
-$num_rooms = intval($_GET['num_rooms'] ?? 1);
+$room_id = $_GET['room_id'] ?? ($_SESSION['room_id'] ?? null); // ใช้จาก GET ก่อน ถ้าไม่มีใช้จาก session
+$price = floatval($_GET['price'] ?? ($_SESSION['price'] ?? 0)); // ใช้จาก GET ก่อน ถ้าไม่มีใช้จาก session
+$num_rooms = intval($_GET['num_rooms'] ?? ($_SESSION['num_rooms'] ?? 1)); // ใช้จาก GET ก่อน ถ้าไม่มีใช้จาก session
 
-$checkin_date_str = $_GET['checkin_date'] ?? date("Y-m-d");
-$checkout_date_str = $_GET['checkout_date'] ?? date("Y-m-d", strtotime($checkin_date_str . " +1 day"));
+$checkin_date_str = $_GET['checkin_date'] ?? ($_SESSION['checkin_date'] ?? date("Y-m-d"));
+$checkout_date_str = $_GET['checkout_date'] ?? ($_SESSION['checkout_date'] ?? date("Y-m-d", strtotime($checkin_date_str . " +1 day")));
 
-// ✅ ใช้ค่าที่ส่งมาจริงจาก hotel_rooms.php
-$total_adults = intval($_GET['total_adults'] ?? 1);
-$total_children = intval($_GET['total_children'] ?? 0);
+$total_adults = intval($_GET['total_adults'] ?? ($_SESSION['total_adults'] ?? 1));
+$total_children = intval($_GET['total_children'] ?? ($_SESSION['total_children'] ?? 0));
 
 $num_nights = 1;
 try {
@@ -40,6 +46,7 @@ try {
         $checkin_date_obj = new DateTime($checkin_date_str);
         $checkout_date_obj = new DateTime($checkout_date_str);
         if ($checkout_date_obj <= $checkin_date_obj) {
+            // หากวันเช็คเอาท์ไม่ถูกต้อง ให้เพิ่ม 1 วัน
             $checkout_date_obj = clone $checkin_date_obj;
             $checkout_date_obj->modify('+1 day');
             $checkout_date_str = $checkout_date_obj->format('Y-m-d');
@@ -53,10 +60,17 @@ try {
 
 $total_price = ($price * $num_rooms) * $num_nights;
 
-$phone = "0967501732";
+$phone = "0967501732"; // หมายเลขโทรศัพท์สำหรับ PromptPay
 $qr_url = "https://promptpay.io/$phone/$total_price.png";
 
-// เก็บ session เพิ่ม province_name
+// === การจัดการ expire_time เพื่อไม่ให้รีเซ็ตเมื่อรีเฟรชหน้าจอ ===
+// ตั้งค่า expire_time ใน session หากยังไม่มี หรือหมดอายุไปแล้ว
+if (!isset($_SESSION['expire_time']) || $_SESSION['expire_time'] < time()) {
+    $_SESSION['expire_time'] = time() + (24 * 60 * 60); // หมดอายุ 24 ชั่วโมง
+}
+$expire_time = $_SESSION['expire_time']; // ใช้ค่าที่เก็บใน session
+
+// เก็บข้อมูลการจองทั้งหมดลงใน session เพื่อใช้ในหน้า save_booking_later.php
 $_SESSION['num_rooms'] = $num_rooms;
 $_SESSION['total_adults'] = $total_adults;
 $_SESSION['total_children'] = $total_children;
@@ -65,9 +79,8 @@ $_SESSION['checkout_date'] = $checkout_date_str;
 $_SESSION['room_id'] = $room_id;
 $_SESSION['total_price'] = $total_price;
 $_SESSION['num_nights'] = $num_nights;
+// province_id ถูกเซ็ตไปแล้วด้านบน
 
-$expire_time = time() + (24 * 60 * 60); // หมดอายุ 24 ชั่วโมง
-$_SESSION['expire_time'] = $expire_time;
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -171,6 +184,21 @@ $_SESSION['expire_time'] = $expire_time;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
+        .button-group {
+            display: flex;
+            justify-content: center; /* จัดให้อยู่ตรงกลาง */
+            gap: 20px; /* เพิ่มระยะห่างระหว่างปุ่ม */
+            margin-top: 20px;
+        }
+        .button-group button {
+            margin-top: 0; /* ล้าง margin-top เดิม */
+        }
+        .button-group .btn-pay-later {
+            background: #6c757d; /* สีเทาสำหรับปุ่มชำระเงินภายหลัง */
+        }
+        .button-group .btn-pay-later:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -192,7 +220,9 @@ $_SESSION['expire_time'] = $expire_time;
         <form action="upload_slip.php" method="post" enctype="multipart/form-data" class="form-group">
             <label for="slip_upload">อัพโหลดสลิปการชำระเงิน:</label>
             <input type="file" name="slip" id="slip_upload" accept="image/*" required>
-            <button type="submit">ยืนยันการชำระเงิน</button>        
+            <div class="button-group">
+                <button type="submit">ยืนยันการชำระเงิน</button>
+            </div>
         </form>
     </div>
     <script>
@@ -201,18 +231,33 @@ $_SESSION['expire_time'] = $expire_time;
         function updateTimer() {
             var now = new Date().getTime();
             var distance = expireTime - now;
+            
+            // ตรวจสอบว่า distance เป็นค่าบวกหรือไม่ (เวลาหมดอายุหรือยัง)
             if (distance <= 0) {
                 timerElement.innerHTML = "หมดเวลาชำระเงิน";
                 clearInterval(countdownInterval);
                 return;
             }
+
             var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+            // เพิ่มเลขศูนย์นำหน้าถ้าค่าน้อยกว่า 10
+            hours = String(hours).padStart(2, '0');
+            minutes = String(minutes).padStart(2, '0');
+            seconds = String(seconds).padStart(2, '0');
+
             timerElement.innerHTML = hours + " ชม. " + minutes + " นาที " + seconds + " วินาที ";
         }
         var countdownInterval = setInterval(updateTimer, 1000);
-        updateTimer();
+        updateTimer(); // เรียกใช้ครั้งแรกทันทีเมื่อโหลดหน้า
+
+        function confirmPayLater() {
+            if (confirm("คุณต้องการชำระเงินภายหลังหรือไม่? การจองจะถูกบันทึกและคุณสามารถชำระได้ในภายหลัง")) {
+                window.location.href = 'save_booking_later.php';
+            }
+        }
     </script>
 </body>
 </html>

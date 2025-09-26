@@ -172,7 +172,7 @@ if ($province_id) {
             <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
             <a href="./details.php">รายละเอียดต่างๆ</a>
             <a href="./booking_status_pending.php">การจองของฉัน</a>
-            <a href="./score.php">คะแนน</a>
+            <a href="./rate_booking.php">คะแนน</a>
         </nav>
         <?php if ($full_name && $full_name !== ' '): ?>
             <div class="user-display">
@@ -287,7 +287,7 @@ if ($province_id) {
                         </div>
                     </div>
                     <div class="booking-action">
-                        <form action="payment.php" method="get" class="booking-form-item">
+                        <form action="booking_confirmation.php" method="get" class="booking-form-item">
                             <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
                             <input type="hidden" name="price" value="<?= $room['Price'] ?>">
                             <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
@@ -342,7 +342,7 @@ if ($province_id) {
                         <hr>
                         <div class="booking-total" id="modal-total"></div>
                         <div class="booking-action">
-                            <form action="payment.php" method="get" class="booking-form-item">
+                            <form action="booking_confirmation.php" method="get" class="booking-form-item">
                                 <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
                                 <input type="hidden" name="price" value="<?= $room['Price'] ?>">
                                 <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
