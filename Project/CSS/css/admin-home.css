@@ -1,0 +1,202 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    background-color: #f4f7f6;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.header {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    padding: 20px 0;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 2.5em;
+}
+
+/* เพิ่มสไตล์สำหรับข้อความต้อนรับ */
+.welcome-message {
+    font-size: 1.2em;
+    margin-top: 10px;
+    color: #bdc3c7;
+}
+
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column; /* เปลี่ยนเป็น column เพื่อจัดเรียงเนื้อหาในแนวตั้ง */
+    align-items: center; /* จัดเนื้อหาในแนวนอนให้อยู่กึ่งกลาง */
+    padding: 20px;
+    /* max-width: 1200px; */ /* ลบหรือเพิ่มค่า max-width เพื่อขยายพื้นหลังสีขาว */
+    width: 90%; /* ให้ใช้ความกว้าง 90% ของ viewport เพื่อขยายพื้นที่สีขาว */
+    margin: 20px auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.admin-menu {
+    display: flex; /* ทำให้เป็น Flex container */
+    flex-direction: row; /* จัดเรียงรายการในแนวนอน */
+    flex-wrap: wrap; /* ให้รายการขึ้นบรรทัดใหม่ได้หากพื้นที่ไม่พอ */
+    justify-content: center; /* จัดรายการเมนูให้อยู่กึ่งกลางในแนวนอน */
+    gap: 20px; /* ระยะห่างระหว่างรายการเมนู */
+    padding: 20px 0; /* เพิ่ม padding ด้านบนและล่าง */
+    width: 100%; /* ให้ใช้ความกว้างเต็มของ Parent (.container) */
+    max-width: 900px; /* (ตัวเลือก) จำกัดความกว้างสูงสุดของบล็อกเมนู เพื่อไม่ให้กว้างเกินไป */
+}
+
+.menu-item {
+    display: flex;
+    flex-direction: row; /* เปลี่ยนเป็น row เพื่อให้ไอคอนกับข้อความอยู่บนบรรทัดเดียวกัน */
+    align-items: center; /* จัดแนวตั้งให้อยู่กึ่งกลาง */
+    justify-content: flex-start; /* จัดให้เริ่มต้นจากด้านซ้าย */
+    text-decoration: none;
+    color: #34495e;
+    background-color: #ecf0f1;
+    border: 1px solid #dde1e5;
+    border-radius: 8px;
+    padding: 15px 20px; /* ปรับ padding ให้เหมาะสมกับแนวราบ */
+    min-width: 220px; /* กำหนดความกว้างขั้นต่ำเพื่อรองรับไอคอนและข้อความ */
+    height: auto; /* ให้ความสูงปรับตามเนื้อหา */
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+    text-align: left; /* จัดข้อความให้อยู่ด้านซ้าย */
+    font-size: 1.1em;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.menu-item:hover {
+    background-color: #3498db;
+    color: #fff;
+    border-color: #2980b9;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+.menu-item .icon {
+    font-size: 2.2em; /* ปรับขนาดไอคอนให้เหมาะสม */
+    margin-right: 15px; /* เพิ่มระยะห่างด้านขวาของไอคอน */
+    margin-bottom: 0; /* ลบ margin-bottom เดิม */
+}
+
+.main-content {
+    flex: 1;
+    padding-left: 20px;
+}
+
+.main-content h2 {
+    color: #2c3e50;
+    margin-top: 0;
+    font-size: 2em;
+}
+
+/* สไตล์สำหรับ Summary Cards */
+.summary-cards {
+    display: flex;
+    flex-wrap: wrap; /* ให้การ์ดขึ้นบรรทัดใหม่ได้เมื่อพื้นที่ไม่พอ */
+    gap: 20px; /* ระยะห่างระหว่างการ์ด */
+    margin-top: 20px;
+}
+
+.card {
+    background-color: #fdfdfd;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    flex: 1 1 calc(33% - 20px); /* จัดให้มีการ์ด 3 ใบต่อแถว (หัก gap ออก) */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    min-width: 280px; /* กำหนดความกว้างขั้นต่ำ */
+    box-sizing: border-box;
+}
+
+.card h3 {
+    margin-top: 0;
+    color: #34495e;
+    font-size: 1.3em;
+}
+
+.card .highlight {
+    font-size: 2.2em;
+    font-weight: bold;
+    color: #2c3e50;
+    margin: 10px 0;
+    display: block;
+}
+
+.card small {
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+
+.footer {
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    text-align: center;
+    padding: 15px 0;
+    font-size: 0.9em;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .card {
+        flex: 1 1 calc(50% - 20px); /* 2 ใบต่อแถวสำหรับหน้าจอขนาดกลาง */
+    }
+    .admin-menu {
+        max-width: 700px; /* ปรับ max-width ของเมนูสำหรับจอขนาดกลาง */
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        padding: 10px;
+        margin: 10px auto;
+        width: 95%; /* เพิ่มความกว้างสำหรับมือถือ */
+    }
+
+    .admin-menu {
+        width: 100%;
+        border-bottom: 1px solid #eee; /* ยังคงมีเส้นคั่นด้านล่างสำหรับหน้าจอมือถือ */
+        padding-bottom: 20px;
+        margin-bottom: 20px;
+        flex-direction: column; /* เปลี่ยนเป็น column เพื่อให้แต่ละเมนูอยู่คนละบรรทัด */
+        justify-content: flex-start; /* จัดให้เริ่มต้นจากด้านซ้าย */
+        gap: 10px; /* ลดระยะห่างสำหรับหน้าจอขนาดเล็ก */
+        padding: 10px 0; /* ปรับ padding */
+        max-width: unset; /* ลบ max-width เพื่อให้ยืดเต็มความกว้าง */
+    }
+
+    .menu-item {
+        width: 100%; /* ให้เมนูเต็มความกว้างสำหรับมือถือ */
+        height: auto; /* ปรับความสูงอัตโนมัติ */
+        margin: 5px 0; /* ปรับ margin */
+        font-size: 1em; /* ตัวอักษรเล็กลง */
+        padding: 12px 15px; /* ปรับ padding */
+        justify-content: flex-start; /* จัดให้เริ่มต้นจากซ้าย */
+    }
+
+    .menu-item .icon {
+        font-size: 2em; /* ไอคอนเล็กลง */
+        margin-right: 10px; /* ระยะห่างไอคอน */
+        margin-bottom: 0;
+    }
+
+    .main-content {
+        padding-left: 0;
+    }
+
+    .card {
+        flex: 1 1 100%; /* 1 ใบต่อแถวสำหรับมือถือ */
+    }
+}

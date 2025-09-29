@@ -1,0 +1,307 @@
+/* officer_style.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --primary-color: #007bff; /* Blue */
+    --secondary-color: #6c757d; /* Gray */
+    --success-color: #28a745; /* Green */
+    --danger-color: #dc3545; /* Red */
+    --warning-color: #ffc107; /* Yellow */
+    --info-color: #17a2b8; /* Cyan */
+    --light-color: #f8f9fa; /* Light Gray */
+    --dark-color: #343a40; /* Dark Gray */
+    --bg-gradient-start: #e0f2f7; /* Light blueish */
+    --bg-gradient-end: #d1c4e9;   /* Light purplish */
+    --card-bg: #ffffff;
+    --border-color: #e9ecef;
+    --text-color: #343a40;
+    --header-bg: #0056b3; /* Darker blue for header */
+}
+
+body {
+    font-family: 'Kanit', sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--text-color);
+}
+
+.header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+.user-info {
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.user-info span {
+    margin-right: 15px;
+}
+
+.logout-btn {
+    background-color: var(--danger-color);
+    color: white;
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.logout-btn:hover {
+    background-color: #c82333;
+}
+
+.main-content {
+    display: flex;
+    flex: 1;
+    padding: 20px;
+    gap: 20px;
+}
+
+.sidebar {
+    width: 250px;
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar h3 {
+    color: var(--primary-color);
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar ul li {
+    margin-bottom: 10px;
+}
+
+.sidebar ul li a {
+    display: block;
+    padding: 12px 15px;
+    background-color: var(--light-color);
+    color: var(--text-color);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-weight: 500;
+}
+
+.sidebar ul li a:hover,
+.sidebar ul li a.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.content-area {
+    flex: 1;
+    background-color: var(--card-bg);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.content-area h2 {
+    color: var(--dark-color);
+    margin-top: 0;
+    margin-bottom: 25px;
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-group input[type="email"],
+.form-group input[type="password"],
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group input[type="number"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-family: 'Kanit', sans-serif;
+    font-size: 1rem;
+    box-sizing: border-box; /* สำคัญสำหรับการกำหนด width: 100% */
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+}
+
+.message {
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}
+
+/* Table styles */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 0.95rem;
+}
+
+.data-table th, .data-table td {
+    border: 1px solid var(--border-color);
+    padding: 12px;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    text-align: center;
+}
+
+.data-table tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.data-table tr:hover {
+    background-color: #e9f5ff;
+}
+
+.data-table td.center-text {
+    text-align: center;
+}
+
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    align-items: flex-end;
+}
+
+.search-form .form-group {
+    margin-bottom: 0;
+    flex: 1;
+}
+
+.search-form button {
+    flex-shrink: 0; /* ป้องกันปุ่มไม่ให้หด */
+}
+
+.action-buttons button {
+    margin-right: 5px;
+    padding: 6px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+.action-buttons .btn-checkin { background-color: var(--success-color); color: white; }
+.action-buttons .btn-checkin:hover { background-color: #218838; }
+.action-buttons .btn-checkout { background-color: var(--warning-color); color: var(--dark-color); }
+.action-buttons .btn-checkout:hover { background-color: #e0a800; }
+.action-buttons .btn-fine { background-color: var(--danger-color); color: white; }
+.action-buttons .btn-fine:hover { background-color: #bd2130; }
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px 20px;
+    }
+    .user-info {
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+    .user-info span {
+        margin-right: 10px;
+    }
+    .logout-btn {
+        margin-top: 10px;
+        padding: 6px 12px;
+        font-size: 0.9rem;
+    }
+    .main-content {
+        flex-direction: column;
+        padding: 15px;
+        gap: 15px;
+    }
+    .sidebar {
+        width: 100%;
+        padding: 15px;
+    }
+    .content-area {
+        padding: 20px;
+    }
+    .content-area h2 {
+        font-size: 1.7rem;
+    }
+    .search-form {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .search-form .form-group {
+        width: 100%;
+    }
+}

@@ -1,4 +1,4 @@
-<?php 
+<?php  
 session_start();
 include 'db.php';
 
@@ -7,9 +7,6 @@ if (!isset($_SESSION['email'])) {
 }
 
 $Email_member = $_SESSION['email'];
-$message = "";
-$password_value = "**********"; 
-$should_show_password = false; 
 
 // ✅ ดึงข้อมูลผู้ใช้ + เบอร์โทร + จำนวนห้องทั้งหมดที่เคยจอง
 $sql = "SELECT m.First_name, m.Last_name, m.Email_member, m.Phone_number,
@@ -33,31 +30,6 @@ if ($result->num_rows > 0) {
     die("ไม่พบข้อมูลผู้ใช้");
 }
 
-// ---------------- เปลี่ยนรหัสผ่าน ----------------
-if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST['new_password'])) {
-    $new_pass = $_POST['new_password'];
-
-    if (!preg_match('/^[0-9]+$/', $new_pass)) {
-        $message = "รหัสผ่านต้องเป็นตัวเลขเท่านั้น ❌";
-        $password_value = $new_pass; 
-    } else {
-        $hashed_pass = password_hash($new_pass, PASSWORD_DEFAULT);
-
-        $update = $conn->prepare("UPDATE member SET Password = ? WHERE Email_member = ?");
-        $update->bind_param("ss", $hashed_pass, $Email_member);
-
-        if ($update->execute()) {
-            $message = "เปลี่ยนรหัสผ่านเรียบร้อยแล้ว ✅";
-            $password_value = $new_pass;
-            $should_show_password = true;
-        } else {
-            $message = "เกิดข้อผิดพลาด: " . $conn->error;
-        }
-
-        $update->close();
-    }
-}
-
 $stmt->close();
 $conn->close();
 ?>
@@ -66,15 +38,10 @@ $conn->close();
 <head>
 <meta charset="UTF-8">
 <title>โปรไฟล์ของคุณ</title>
- <link rel="icon" type="image/png" href="../src/images/logo.png" />
+<link rel="icon" type="image/png" href="../src/images/logo.png" />
 <link rel="stylesheet" href="../CSS/css/profile.css">
 <style>
-input[type="password"], input[type="text"] {
-    width: 200px;
-}
-button {
-    margin-left: 5px;
-}
+/* ปุ่มและการจัดวางเพิ่มเติม */
 .navigation-links {
     margin-top: 20px;
     display: flex;
@@ -84,12 +51,13 @@ button {
 }
 .logout-link {
     display: inline-block;
-    padding: 8px 20px;
+    margin-top: 25px;
+    padding: 10px 20px;
     background-color: #dc3545;
-    color: white;
+    color: #ffffff;
     text-decoration: none;
     border-radius: 5px;
-    font-weight: bold;
+    transition: background-color 0.3s ease;
 }
 .logout-link:hover {
     background-color: #c82333;
@@ -105,25 +73,6 @@ button {
         <p><strong>Email:</strong> <?= htmlspecialchars($Email_member) ?></p>
         <p><strong>เบอร์โทรศัพท์:</strong> <?= htmlspecialchars($Phone_number) ?></p>
         <p><strong>จำนวนห้องที่จอง:</strong> <?= htmlspecialchars($Total_rooms) ?></p>
-
-        <form method="post">
-            <p><strong>รหัสผ่าน:</strong>
-                <input type="<?= $should_show_password ? 'text' : 'password' ?>" 
-                       id="passwordField" name="new_password"
-                       value="<?= htmlspecialchars($password_value) ?>" 
-                       pattern="[0-9]+" 
-                       title="กรุณากรอกตัวเลขเท่านั้น"
-                       oninput="this.value=this.value.replace(/[^0-9]/g,'')" required>
-                <button type="button" id="toggleBtn"><?= $should_show_password ? 'ซ่อน' : 'แสดง' ?></button>
-                <button type="submit">บันทึก</button>
-            </p>
-        </form>
-
-        <?php if($message): ?>
-            <p style="color: <?= strpos($message, '✅') !== false ? 'green' : 'red'; ?>;">
-                <?= $message ?>
-            </p>
-        <?php endif; ?>
     </div>
     
     <div class="navigation-links">
@@ -131,29 +80,5 @@ button {
         <a href="./index.php" class="logout-link">ออกจากระบบ</a>
     </div>
 </div>
-
-<script>
-const toggleBtn = document.getElementById('toggleBtn');
-const passwordField = document.getElementById('passwordField');
-
-toggleBtn.addEventListener('click', () => {
-    if (passwordField.type === "password") {
-        if (passwordField.value === "**********") {
-            passwordField.value = "";
-        }
-        passwordField.type = "text";
-        toggleBtn.textContent = "ซ่อน";
-    } else {
-        passwordField.type = "password";
-        toggleBtn.textContent = "แสดง";
-    }
-});
-
-passwordField.addEventListener('focus', () => {
-    if (passwordField.value === "**********") {
-        passwordField.value = "";
-    }
-});
-</script>
 </body>
 </html>
