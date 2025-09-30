@@ -39,7 +39,7 @@ $admin_name = "คุณ" . $admin_first_name . " " . $admin_last_name;
                 <div class="icon">📢</div>
                 <span>แจ้งเจ้าหน้าที่</span>
             </a>
-            <a href="add_staff.php" class="menu-item">
+            <a href="add_officer.php" class="menu-item">
                 <div class="icon">➕</div>
                 <span>เพิ่มเจ้าหน้าที่</span>
             </a>

@@ -1,4 +1,4 @@
-<?php  
+<?php   
 session_start();
 include 'db.php';
 
@@ -62,17 +62,27 @@ $conn->close();
 .logout-link:hover {
     background-color: #c82333;
 }
+/* เพิ่มสไตล์สำหรับ .label-fixed-width ใน <style> block หรือในไฟล์ CSS ของคุณ */
+.label-fixed-width {
+    color: #555;
+    width: 100px;
+    display: inline-block;
+}
 </style>
 </head>
 <body>
 <div class="profile-container">
     <h1>โปรไฟล์ของฉัน</h1>
     <div class="profile-info">
-        <p><strong>ชื่อจริง:</strong> <?= htmlspecialchars($First_name) ?></p>
-        <p><strong>นามสกุล:</strong> <?= htmlspecialchars($Last_name) ?></p>
-        <p><strong>Email:</strong> <?= htmlspecialchars($Email_member) ?></p>
-        <p><strong>เบอร์โทรศัพท์:</strong> <?= htmlspecialchars($Phone_number) ?></p>
-        <p><strong>จำนวนห้องที่จอง:</strong> <?= htmlspecialchars($Total_rooms) ?></p>
+        <p><strong class="label-fixed-width">ชื่อจริง:</strong> <?= htmlspecialchars($First_name) ?></p>
+        <p><strong class="label-fixed-width">นามสกุล:</strong> <?= htmlspecialchars($Last_name) ?></p>
+        <p><strong class="label-fixed-width">Email:</strong> <?= htmlspecialchars($Email_member) ?></p>
+        <!-- ส่วนที่แก้ไข: ลบคลาส label-fixed-width ออกจาก strong ของ เบอร์โทรศัพท์ และ จำนวนห้องที่จอง -->
+        <p>
+            <strong>เบอร์โทรศัพท์:</strong> <?= htmlspecialchars($Phone_number) ?>
+            &nbsp;&nbsp;&nbsp;&nbsp; <!-- ใช้ &nbsp; เพื่อเพิ่มระยะห่าง -->
+            <strong>จำนวนห้องที่จอง:</strong> <?= htmlspecialchars($Total_rooms) ?>
+        </p>
     </div>
     
     <div class="navigation-links">

@@ -15,7 +15,8 @@ if (isset($conn)) {
 
 // 1. ดึงค่าพารามิเตอร์ GET จาก hotel_rooms.php
 $room_id = $_GET['room_id'] ?? null;
-$price_per_room = floatval($_GET['price'] ?? 0); // ราคาต่อห้องต่อคืน
+// $room_type_id_passed_from_hotel_rooms = intval($_GET['room_type_id_passed'] ?? 0); // ถูกคอมเมนต์ออก
+$price_per_room_from_get = floatval($_GET['price'] ?? 0); // ราคาจาก GET (จะถูกแทนที่ด้วยราคาจาก DB หากพบข้อมูล)
 $checkin_date_str = $_GET['checkin_date'] ?? date("Y-m-d");
 $checkout_date_str = $_GET['checkout_date'] ?? date("Y-m-d", strtotime($checkin_date_str . " +1 day"));
 $num_rooms = intval($_GET['num_rooms'] ?? 1);
@@ -31,6 +32,9 @@ if (!$room_id || !$province_id) {
 
 // 2. ดึงรายละเอียดห้องพักจากฐานข้อมูล
 $room_info = [];
+// กำหนดค่าเริ่มต้นสำหรับราคาต่อห้อง เพื่อใช้ในกรณีที่ดึงข้อมูลห้องจาก DB ไม่สำเร็จ
+$price_per_room = $price_per_room_from_get; 
+
 if ($room_id && $conn) {
     $sql_room = "SELECT Room_Id, Price, Room_number, Room_type_Id, Number_of_people_staying
                   FROM room
@@ -41,7 +45,7 @@ if ($room_id && $conn) {
     $result_room = $stmt_room->get_result();
     if ($row = $result_room->fetch_assoc()) {
         $room_info = $row;
-        // กำหนดข้อมูลเพิ่มเติมสำหรับแสดงผลตาม Room_type_Id
+        // กำหนดข้อมูลเพิ่มเติมสำหรับแสดงผลตาม Room_type_Id ที่ได้จาก DB
         if ($room_info['Room_type_Id'] == 1) {
             $room_info['name'] = "ห้องมาตรฐาน เตียงใหญ่";
             $room_info['description'] = "ห้องพักมาตรฐานเตียงใหญ่ขนาด 17.28 ตร.ม. ไม่มีระเบียงที่สร้างเคียงรบกวนจากถนน ทุกห้องมีสิ่งอำนวยความสะดวกครบครัน อาทิ เตียงนอน, เครื่องปรับอากาศ, ทีวีแอลซีดี, ตู้เย็น, ห้องอาบน้ำพร้อมเครื่องทำน้ำอุ่น และอินเตอร์เน็ต Wi-Fi ทุกห้อง (ฟรี) เข้าพักสูงสุดได้ ผู้ใหญ่ 2 ท่าน, เด็ก 1 ท่าน(อายุต่ำกว่า 12 ปี)";
@@ -57,9 +61,12 @@ if ($room_id && $conn) {
             $room_info['bed_type'] = "2 เตียงเดี่ยว";
             $room_info['images'] = ["../src/images/2.jpg", "../src/images/6.avif"];
         }
+        // ใช้ราคาที่ดึงจากฐานข้อมูลเป็นหลัก
+        $price_per_room = floatval($room_info['Price']);
     }
     $stmt_room->close();
 }
+
 
 // 3. ดึงชื่อจังหวัด/สาขาจากฐานข้อมูล
 $province_name = '';
@@ -74,41 +81,25 @@ if ($province_id && $conn) {
     $stmt_province->close();
 }
 
-// Initialize guest counts for each room, similar to hotel_rooms.php
-$adults_per_room_initial = [];
-$children_per_room_initial = [];
-
-if ($num_rooms > 0) {
-    // Distribute total adults/children across rooms (simple distribution)
-    $adults_per_room_initial[0] = $total_adults;
-    $children_per_room_initial[0] = $total_children;
-    for ($i = 1; $i < $num_rooms; $i++) {
-        $adults_per_room_initial[$i] = 1; // Default 1 adult for additional rooms
-        $children_per_room_initial[$i] = 0; // Default 0 children for additional rooms
-    }
-} else { // Default if num_rooms is 0 or invalid
-    $num_rooms = 1;
-    $adults_per_room_initial[0] = 1;
-    $children_per_room_initial[0] = 0;
-}
-
-// num_nights and total_price will be calculated by JS on DOMContentLoaded and on updates
-$num_nights = 1; // Initial value for PHP display
-$total_price = ($price_per_room * $num_rooms) * $num_nights; // Initial value for PHP display
+// Calculate num_nights and total_price
+$num_nights = 1; // Initial value
 try {
     if (!empty($checkin_date_str) && !empty($checkout_date_str)) {
         $checkin_date_obj = new DateTime($checkin_date_str);
         $checkout_date_obj = new DateTime($checkout_date_str);
         if ($checkout_date_obj <= $checkin_date_obj) {
+            // Ensure checkout is at least 1 day after checkin if dates are invalid
             $checkout_date_obj = clone $checkin_date_obj;
             $checkout_date_obj->modify('+1 day');
-            $checkin_date_str = $checkin_date_obj->format('Y-m-d'); // Make sure checkin/out are valid before passing to JS
+            // Update the string representations as well
+            $checkin_date_str = $checkin_date_obj->format('Y-m-d');
             $checkout_date_str = $checkout_date_obj->format('Y-m-d');
         }
         $interval = $checkin_date_obj->diff($checkout_date_obj);
         $num_nights = max(1, (int)$interval->days);
     }
 } catch (Exception $e) {
+    // Fallback if date parsing fails
     $num_nights = 1;
 }
 $total_price = ($price_per_room * $num_rooms) * $num_nights;
@@ -167,21 +158,12 @@ $total_price = ($price_per_room * $num_rooms) * $num_nights;
     </header>
 
     <main class="confirmation-container">
-        <h1>ยืนยันรายละเอียดการจอง</h1>
+        <h1>ยืนยันการจองของคุณ:<?= htmlspecialchars($full_name) ?></h1>
 
-        <div class="booking-summary">
-            <div class="room-details-card">
-                <h2><?= htmlspecialchars($room_info['name'] ?? 'ไม่พบข้อมูลห้องพัก') ?></h2>
-                <?php if (isset($room_info['images'][0])): ?>
-                    <img src="<?= htmlspecialchars($room_info['images'][0]) ?>" alt="<?= htmlspecialchars($room_info['name']) ?>">
-                <?php endif; ?>
-                <p>ประเภท: <?= nl2br(htmlspecialchars($room_info['description'] ?? '')) ?></p>
-                <p>จำนวนผู้เข้าพักสูงสุด: <?= htmlspecialchars($room_info['capacity_display'] ?? '') ?></p>
-                <p>ประเภทเตียง: <?= htmlspecialchars($room_info['bed_type'] ?? '') ?></p>
-                <p>ราคาต่อคืน: ฿ <?= number_format($price_per_room, 2) ?></p>
-            </div>
+        <div class="booking-summary" style="display: flex; justify-content: center;">
+            <!-- เดิมทีเป็น div class="room-details-card" ถูกลบออกไปแล้ว -->
 
-            <div class="booking-overview">
+            <div class="booking-overview" style="width: 100%; max-width: 500px;"> <!-- ปรับ width เพื่อให้เนื้อหาอยู่ตรงกลาง -->
                 <h3>ข้อมูลการจองของคุณ</h3>
                 <p>สาขา: <b><?= htmlspecialchars($province_name) ?></b></p>
 
@@ -238,6 +220,7 @@ $total_price = ($price_per_room * $num_rooms) * $num_nights;
             <form id="confirmBookingForm" action="payment.php" method="get">
                 <!-- Hidden inputs สำหรับส่งข้อมูลทั้งหมดไปยังหน้า payment.php -->
                 <input type="hidden" name="room_id" id="form-room-id" value="<?= htmlspecialchars($room_id) ?>">
+                <input type="hidden" name="room_type_id" id="form-room-type-id" value="<?= htmlspecialchars($room_info['Room_type_Id'] ?? '') ?>">
                 <input type="hidden" name="price" id="form-price-per-room" value="<?= htmlspecialchars($price_per_room) ?>">
                 <input type="hidden" name="checkin_date" id="form-checkin-date" value="<?= htmlspecialchars($checkin_date_str) ?>">
                 <input type="hidden" name="checkout_date" id="form-checkout-date" value="<?= htmlspecialchars($checkout_date_str) ?>">
@@ -250,7 +233,7 @@ $total_price = ($price_per_room * $num_rooms) * $num_nights;
         </div>
     </main>
 
-    <!-- Modal สำหรับปฏิทิน -->
+    <!-- Modal สำหรับปฏิทิน (DO NOT MODIFY) -->
 
     <script src="../JS/js/test.js"></script>
     <script src="../JS/js/booking_confirmation.js"></script>

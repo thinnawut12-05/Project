@@ -48,11 +48,8 @@ $total_adults = isset($_GET['total_adults']) ? intval($_GET['total_adults']) : 1
 $total_children = isset($_GET['total_children']) ? intval($_GET['total_children']) : 0;
 
 // กำหนดค่าเริ่มต้นสำหรับแต่ละห้องในฟอร์มของ hotel_rooms.php
-// สมมติว่าห้องแรกมีผู้ใหญ่ = total_adults และเด็ก = total_children
-// หรือคุณอาจปรับ logic ตรงนี้ได้หากต้องการกระจายผู้เข้าพักไปแต่ละห้อง
 $adults_per_room_initial = [$total_adults];
 $children_per_room_initial = [$total_children];
-// หาก num_rooms มากกว่า 1 และคุณต้องการให้ห้องที่ 2 เป็นต้นไปมีผู้เข้าพักเริ่มต้นที่ 1 ผู้ใหญ่ 0 เด็ก
 for ($i = 1; $i < $num_rooms; $i++) {
     $adults_per_room_initial[] = 1;
     $children_per_room_initial[] = 0;
@@ -97,6 +94,7 @@ if ($province_id) {
 <!DOCTYPE html>
 <html lang="th">
 <style>
+    /* CSS Styles (DO NOT MODIFY) */
     .btn-book {
         display: inline-block;
         padding: 8px 16px;
@@ -114,22 +112,18 @@ if ($province_id) {
         background-color: #d94a1f;
     }
 
-    /* เพิ่มสไตล์สำหรับวันที่ที่ถูกเลือกในปฏิทิน */
     .calendar-date.selected {
         background-color: #f05a28;
-        /* สีส้ม */
         color: white;
     }
 
     .calendar-date.past-date {
         color: #cccccc;
-        /* สีเทาอ่อนสำหรับวันที่ในอดีต */
         cursor: not-allowed;
     }
 
     .calendar-date.blank {
         visibility: hidden;
-        /* ซ่อนวันที่ว่าง */
     }
 </style>
 
@@ -221,7 +215,6 @@ if ($province_id) {
                     <input type="number" id="num-rooms" value="<?= htmlspecialchars($num_rooms) ?>" min="1" max="5" onchange="updateRoomsFromInput()">
                 </div>
                 <?php
-                // Loop เพื่อสร้าง div ของแต่ละห้องตามจำนวน num_rooms
                 for ($r = 1; $r <= $num_rooms; $r++):
                     $current_adults = $adults_per_room_initial[$r - 1] ?? 1;
                     $current_children = $children_per_room_initial[$r - 1] ?? 0;
@@ -289,6 +282,7 @@ if ($province_id) {
                     <div class="booking-action">
                         <form action="booking_confirmation.php" method="get" class="booking-form-item">
                             <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
+                            <input type="hidden" name="room_type_id_passed" value="<?= $room['Room_type_Id'] ?>"> <!-- จุดสำหรับวินิจฉัย -->
                             <input type="hidden" name="price" value="<?= $room['Price'] ?>">
                             <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
                             <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
@@ -344,6 +338,7 @@ if ($province_id) {
                         <div class="booking-action">
                             <form action="booking_confirmation.php" method="get" class="booking-form-item">
                                 <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
+                                <input type="hidden" name="room_type_id_passed" value="<?= $room['Room_type_Id'] ?>"> <!-- จุดสำหรับวินิจฉัย -->
                                 <input type="hidden" name="price" value="<?= $room['Price'] ?>">
                                 <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
                                 <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
@@ -364,30 +359,23 @@ if ($province_id) {
     <script src="../JS/js/modal_script.js"></script>
     <script src="../JS/js/calendar.js"></script>
     <script>
+        // JavaScript (DO NOT MODIFY)
         document.addEventListener('DOMContentLoaded', function() {
-            // เรียก updateBranches() ครั้งแรกเมื่อ DOM โหลดเสร็จ เพื่อตั้งค่าเริ่มต้น
-            // หากต้องการให้ dropdown สาขาถูกกรองตามภูมิภาคที่ถูกเลือกไว้ก่อนหน้า (ถ้ามี)
             updateBranches();
-
-            // เมื่อเลือกภูมิภาค
             document.getElementById('region').addEventListener('change', function() {
                 updateBranches();
             });
-
-            // เมื่อเลือกสาขา
             document.getElementById('branch').addEventListener('change', function() {
                 const selectedProvinceId = this.value;
-                document.getElementById('province_id_submit').value = selectedProvinceId; // อัปเดต hidden input สำหรับ form ค้นหา
+                document.getElementById('province_id_submit').value = selectedProvinceId;
             });
-
-            // ตรวจสอบว่ามี province_id ใน URL หรือไม่ เพื่อตั้งค่าเริ่มต้น
             const urlParams = new URLSearchParams(window.location.search);
             const initialProvinceId = urlParams.get('province_id');
             if (initialProvinceId) {
                 const branchSelect = document.getElementById('branch');
                 branchSelect.value = initialProvinceId;
-                updateBranches(); // เรียกอีกครั้งเพื่อแสดงสาขาที่เลือก
-                document.getElementById('province_id_submit').value = initialProvinceId; // อัปเดต hidden input
+                updateBranches();
+                document.getElementById('province_id_submit').value = initialProvinceId;
 
                 const selectedBranchOption = branchSelect.querySelector(`option[value="${initialProvinceId}"]`);
                 if (selectedBranchOption) {
@@ -397,11 +385,8 @@ if ($province_id) {
                     }
                 }
             } else {
-                // ถ้าไม่มี province_id ใน URL ให้ตั้งค่า province_id_submit เป็นค่าว่างเริ่มต้น
                 document.getElementById('province_id_submit').value = '';
             }
-
-            // เรียก updateGuestSummary() อีกครั้งเพื่อให้แน่ใจว่า hidden inputs ได้รับค่าที่ถูกต้องเมื่อ DOM โหลด
             updateGuestSummary();
         });
 
@@ -434,12 +419,10 @@ if ($province_id) {
                 document.getElementById('province_id_submit').value = currentSelectedBranch;
             }
         }
-        //อัพเทดจำนวนคนเข้าพัก
-        //ฟังก์ชันนี้จะอัปเดต hidden input ในฟอร์มจองทุกอันตามค่าที่เลือก
+
         function updateGuestSummary() {
             let totalAdults = 0;
             let totalChildren = 0;
-            // ดึงจำนวนห้องปัจจุบันจาก input field ที่ผู้ใช้เลือก
             const currentNumRooms = parseInt(document.getElementById('num-rooms').value);
 
             document.querySelectorAll('.room').forEach(room => {
@@ -453,7 +436,6 @@ if ($province_id) {
                 summaryInput.value = summaryText;
             }
 
-            // Update hidden inputs สำหรับฟอร์มค้นหาด้านบน (ที่จะรีโหลดหน้า hotel_rooms.php)
             const totalAdultsSubmitInput = document.getElementById('total_adults_submit');
             const totalChildrenSubmitInput = document.getElementById('total_children_submit');
             const numRoomsSubmitInput = document.getElementById('num_rooms_submit');
@@ -462,18 +444,14 @@ if ($province_id) {
             if (totalChildrenSubmitInput) totalChildrenSubmitInput.value = totalChildren;
             if (numRoomsSubmitInput) numRoomsSubmitInput.value = currentNumRooms;
 
-            // ดึงค่าวันที่เช็คอิน/เช็คเอาท์ปัจจุบันจาก input fields
             const checkinDateVal = document.getElementById('start-date').value;
             const checkoutDateVal = document.getElementById('end-date').value;
 
-            // อัปเดต hidden inputs สำหรับฟอร์ม "จอง" ของแต่ละห้อง (ทั้งใน room-card และใน modal)
             document.querySelectorAll('form.booking-form-item').forEach(form => {
-                // อัปเดตจำนวนห้อง, ผู้ใหญ่, เด็ก
                 if (form.querySelector('input[name="num_rooms"]')) form.querySelector('input[name="num_rooms"]').value = currentNumRooms;
                 if (form.querySelector('input[name="total_adults"]')) form.querySelector('input[name="total_adults"]').value = totalAdults;
                 if (form.querySelector('input[name="total_children"]')) form.querySelector('input[name="total_children"]').value = totalChildren;
 
-                // อัปเดตวันที่เช็คอิน/เช็คเอาท์
                 if (form.querySelector('input[name="checkin_date"]')) form.querySelector('input[name="checkin_date"]').value = checkinDateVal;
                 if (form.querySelector('input[name="checkout_date"]')) form.querySelector('input[name="checkout_date"]').value = checkoutDateVal;
             });
