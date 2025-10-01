@@ -261,17 +261,28 @@ $result = $conn->query($sql_select);
         .logout-link:hover {
             background-color: #fdd;
         }
+           .btn-back {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+           .btn-back:hover {
+            background-color: #5a6268;
+        }
     </style>
 </head>
 
 <body>
     <div class="admin-navbar">
         <div class="welcome-text">ยินดีต้อนรับ, <?= htmlspecialchars($_SESSION['admin_name'] ?? 'Admin') ?></div>
-        <ul>
-            <li><a href="#">แจ้งเจ้าหน้าที่</a></li>
-            <li><a href="#">จัดการเจ้าหน้าที่</a></li>
-        </ul>
-        <a href="index.php" class="logout-link">ออกจากระบบ</a>
+         <a href="index.php" class="logout-link">ออกจากระบบ</a>
+        <a href="admin-home.php" class="btn-back">กลับหน้าผู้ดูแลระบบ</a>
     </div>
 
     <h2>ตรวจสอบหลักฐานการโอนเงิน</h2>

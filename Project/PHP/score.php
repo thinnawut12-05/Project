@@ -46,7 +46,7 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
   <style>
     body {
       font-family: 'Kanit', sans-serif;
-      background: linear-gradient(120deg, #a8edea, #fed6e3);
+      /* background: linear-gradient(120deg, #a8edea, #fed6e3); */
       margin: 0;
       padding: 0;
       min-height: 100vh;
