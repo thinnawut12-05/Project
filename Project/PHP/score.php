@@ -4,14 +4,15 @@ include 'db.php'; // ตรวจสอบให้แน่ใจว่าไ�
 
 // ตรวจสอบว่ามี session email_member หรือไม่ หากไม่มี ให้ redirect ไปหน้า login
 if (!isset($_SESSION['email'])) {
-    header('Location: login.php'); // เปลี่ยนเป็นหน้า login ของคุณ
-    exit();
+  header('Location: login.php'); // เปลี่ยนเป็นหน้า login ของคุณ
+  exit();
 }
 
 $email_member = $_SESSION['email'];
 
 // ดึงข้อมูลการจองทั้งหมดของลูกค้า พร้อมข้อมูลสถานะ, จังหวัด, ดาว และคอมเมนต์
-$sql = "SELECT r.Reservation_Id, r.Guest_name, r.Number_of_rooms,
+// *** แก้ไข: เพิ่ม r.Booking_time เข้ามาใน SELECT statement ***
+$sql = "SELECT r.Reservation_Id, r.Guest_name, r.Booking_time, r.Number_of_rooms,
                r.Number_of_adults, r.Number_of_children,
                r.Booking_date, r.Check_out_date, r.Booking_status_Id,
                b.Booking_status_name,
@@ -38,10 +39,11 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
 ?>
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
   <meta charset="UTF-8">
   <title>ให้คะแนนการจอง</title>
-    <link rel="icon" type="image/png" href="../src/images/logo.png" />
+  <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap">
   <style>
     body {
@@ -57,13 +59,16 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
     }
 
     .container {
-      max-width: 1000px; /* เพิ่มความกว้างเพื่อให้มีพื้นที่มากขึ้น */
+      max-width: 1000px;
+      /* เพิ่มความกว้างเพื่อให้มีพื้นที่มากขึ้น */
       margin: 40px auto;
       background: #fff;
       border-radius: 15px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-      padding: 32px 25px; /* ปรับ padding */
-      width: 95%; /* เพิ่มความยืดหยุ่น */
+      padding: 32px 25px;
+      /* ปรับ padding */
+      width: 95%;
+      /* เพิ่มความยืดหยุ่น */
       box-sizing: border-box;
     }
 
@@ -82,15 +87,20 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
       margin-bottom: 20px;
       padding: 20px;
       display: flex;
-      flex-wrap: wrap; /* ให้เนื้อหา card ขึ้นบรรทัดใหม่ได้ */
-      gap: 15px; /* ระยะห่างระหว่างข้อมูล */
-      align-items: flex-start; /* จัดให้อยู่ด้านบน */
+      flex-wrap: wrap;
+      /* ให้เนื้อหา card ขึ้นบรรทัดใหม่ได้ */
+      gap: 15px;
+      /* ระยะห่างระหว่างข้อมูล */
+      align-items: flex-start;
+      /* จัดให้อยู่ด้านบน */
       border: 1px solid #e0e0e0;
     }
 
     .booking-info {
-      flex: 1; /* ให้ส่วนข้อมูลขยายได้ */
-      min-width: 200px; /* อย่างน้อย 200px ก่อนจะหด */
+      flex: 1;
+      /* ให้ส่วนข้อมูลขยายได้ */
+      min-width: 200px;
+      /* อย่างน้อย 200px ก่อนจะหด */
       font-size: 0.95rem;
       color: #555;
     }
@@ -104,8 +114,10 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
     }
 
     .rating-section {
-      flex: 2; /* ให้ส่วน rating ขยายมากกว่า */
-      min-width: 300px; /* อย่างน้อย 300px */
+      flex: 2;
+      /* ให้ส่วน rating ขยายมากกว่า */
+      min-width: 300px;
+      /* อย่างน้อย 300px */
       background: #fdfdfd;
       padding: 15px;
       border-radius: 8px;
@@ -126,28 +138,37 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
       flex-direction: row-reverse;
       justify-content: center;
       margin-bottom: 15px;
-      user-select: none; /* ป้องกันการเลือกข้อความดาว */
+      user-select: none;
+      /* ป้องกันการเลือกข้อความดาว */
     }
+
     .star-rating input[type="radio"] {
       display: none;
     }
+
     .star-rating label {
-      font-size: 2.2em; /* ขนาดดาว */
+      font-size: 2.2em;
+      /* ขนาดดาว */
       color: #bbb;
       cursor: pointer;
       padding: 0 3px;
       transition: color 0.2s ease-in-out;
     }
+
     .star-rating label:hover,
-    .star-rating label:hover ~ label {
-      color: #ffcc00; /* สีเมื่อ hover */
+    .star-rating label:hover~label {
+      color: #ffcc00;
+      /* สีเมื่อ hover */
     }
-    .star-rating input[type="radio"]:checked ~ label {
-      color: #ffcc00; /* สีเมื่อเลือก */
+
+    .star-rating input[type="radio"]:checked~label {
+      color: #ffcc00;
+      /* สีเมื่อเลือก */
     }
 
     .rating-comment textarea {
-      width: calc(100% - 22px); /* ลบ padding */
+      width: calc(100% - 22px);
+      /* ลบ padding */
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 5px;
@@ -171,6 +192,7 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
       font-size: 1rem;
       transition: background 0.3s ease;
     }
+
     .submit-btn:hover {
       background: #218838;
     }
@@ -183,18 +205,21 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
     }
 
     .rated-stars {
-        color: #ffcc00;
-        font-size: 1.8em;
-        line-height: 1; /* จัดให้อยู่ในบรรทัดเดียว */
-        margin-bottom: 5px;
+      color: #ffcc00;
+      font-size: 1.8em;
+      line-height: 1;
+      /* จัดให้อยู่ในบรรทัดเดียว */
+      margin-bottom: 5px;
     }
+
     .rated-comment {
-        font-size: 0.95rem;
-        color: #666;
-        background: #f0f8ff; /* สีพื้นหลังอ่อนๆ สำหรับคอมเมนต์ */
-        padding: 8px;
-        border-radius: 5px;
-        margin-top: 10px;
+      font-size: 0.95rem;
+      color: #666;
+      background: #f0f8ff;
+      /* สีพื้นหลังอ่อนๆ สำหรับคอมเมนต์ */
+      padding: 8px;
+      border-radius: 5px;
+      margin-top: 10px;
     }
 
     .status-badge {
@@ -207,10 +232,11 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
     }
 
     .future-booking-status {
-        background: #e8f5ff;
-        color: #0984e3;
-        border: 1px solid #74b9ff;
+      background: #e8f5ff;
+      color: #0984e3;
+      border: 1px solid #74b9ff;
     }
+
     .no-booking {
       text-align: center;
       padding: 32px 0;
@@ -229,35 +255,39 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
       transition: 0.3s;
       margin-top: 20px;
     }
+
     .back-btn:hover {
       background: #0652dd;
     }
 
     /* Responsive adjustments */
     @media (max-width: 768px) {
-        .booking-card {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        .booking-info, .rating-section {
-            min-width: unset;
-            width: 100%;
-        }
+      .booking-card {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .booking-info,
+      .rating-section {
+        min-width: unset;
+        width: 100%;
+      }
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h2>ให้คะแนนการจองของคุณ</h2>
 
     <?php if (isset($_SESSION['message'])): ?>
-        <div style="background-color: <?= $_SESSION['message_type'] == 'success' ? '#d4edda' : '#f8d7da' ?>; color: <?= $_SESSION['message_type'] == 'success' ? '#155724' : '#721c24' ?>; border: 1px solid <?= $_SESSION['message_type'] == 'success' ? '#c3e6cb' : '#f5c6cb' ?>; padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center;">
-            <?= $_SESSION['message'] ?>
-        </div>
-        <?php
-        unset($_SESSION['message']);
-        unset($_SESSION['message_type']);
-        ?>
+      <div style="background-color: <?= $_SESSION['message_type'] == 'success' ? '#d4edda' : '#f8d7da' ?>; color: <?= $_SESSION['message_type'] == 'success' ? '#155724' : '#721c24' ?>; border: 1px solid <?= $_SESSION['message_type'] == 'success' ? '#c3e6cb' : '#f5c6cb' ?>; padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center;">
+        <?= $_SESSION['message'] ?>
+      </div>
+      <?php
+      unset($_SESSION['message']);
+      unset($_SESSION['message_type']);
+      ?>
     <?php endif; ?>
 
     <?php if (count($bookings) === 0): ?>
@@ -268,6 +298,8 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
           <div class="booking-info">
             <p><strong>รหัสการจอง:</strong> <?= htmlspecialchars($b['Reservation_Id']) ?></p>
             <p><strong>ชื่อผู้จอง:</strong> <?= htmlspecialchars($b['Guest_name']) ?></p>
+            <!-- *** เพิ่มส่วนแสดงวันที่และเวลาจองตรงนี้ *** -->
+            <p><strong>วันที่/เวลาจอง:</strong> <?= htmlspecialchars(date('d/m/Y H:i:s', strtotime($b['Booking_time']))) ?></p>
             <p><strong>ชื่อสาขา:</strong> <?= htmlspecialchars($b['Province_name'] ?? 'ไม่ระบุ') ?></p>
             <p><strong>จำนวนห้อง:</strong> <?= htmlspecialchars($b['Number_of_rooms']) ?></p>
             <p><strong>ผู้ใหญ่:</strong> <?= htmlspecialchars($b['Number_of_adults']) ?></p>
@@ -303,13 +335,13 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
               <h4>คุณให้คะแนนแล้ว</h4>
               <div class="rated-display">
                 <div class="rated-stars">
-                    <?php for ($i = 0; $i < $b['stars']; $i++) echo '★'; ?>
-                    <?php for ($i = 0; $i < (5 - $b['stars']); $i++) echo '☆'; ?>
+                  <?php for ($i = 0; $i < $b['stars']; $i++) echo '★'; ?>
+                  <?php for ($i = 0; $i < (5 - $b['stars']); $i++) echo '☆'; ?>
                 </div>
                 <?php if ($b['comment']): ?>
-                    <p class="rated-comment"><?= htmlspecialchars($b['comment']) ?></p>
+                  <p class="rated-comment"><?= htmlspecialchars($b['comment']) ?></p>
                 <?php else: ?>
-                    <p class="rated-comment">ไม่มีคอมเมนต์</p>
+                  <p class="rated-comment">ไม่มีคอมเมนต์</p>
                 <?php endif; ?>
               </div>
             <?php
@@ -333,4 +365,5 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
     </div>
   </div>
 </body>
+
 </html>

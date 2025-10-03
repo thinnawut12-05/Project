@@ -13,10 +13,10 @@
 
         <?php
         // ตั้งค่าการเชื่อมต่อฐานข้อมูล
-        $servername = "localhost"; // หรือ IP ของ MySQL Server ของคุณ
-        $username = "root"; // ชื่อผู้ใช้ MySQL ของคุณ
-        $password = ""; // รหัสผ่าน MySQL ของคุณ (อาจจะว่างเปล่าสำหรับ localhost)
-        $dbname = "hotel_db"; // ชื่อฐานข้อมูลของคุณ
+        $servername = "localhost";
+        $username = "root";
+        $password = "";
+        $dbname = "hotel_db";
 
         // สร้างการเชื่อมต่อ
         $conn = new mysqli($servername, $username, $password, $dbname);
@@ -29,37 +29,44 @@
         // กำหนด charset เป็น utf8 เพื่อรองรับภาษาไทย
         $conn->set_charset("utf8");
 
-        // สร้าง Query สำหรับดึงข้อมูลจากตาราง reservation
-        // ดึงข้อมูล guest_name, stars, และ comment
-        $sql = "SELECT guest_name, stars, comment FROM reservation WHERE stars IS NOT NULL OR comment IS NOT NULL ORDER BY booking_date DESC";
+        // ดึงข้อมูล booking_date, stars, comment
+        $sql = "SELECT booking_date, stars, comment 
+                FROM reservation 
+                WHERE stars IS NOT NULL OR comment IS NOT NULL 
+                ORDER BY booking_date DESC";
         $result = $conn->query($sql);
 
         if ($result->num_rows > 0) {
             echo "<table class='summary-table'>";
             echo "<thead>";
             echo "<tr>";
-            echo "<th>ชื่อผู้เข้าพัก</th>";
+            echo "<th>วันที่คอมเมนต์</th>";
             echo "<th>คะแนน (ดาว)</th>";
             echo "<th>คอมเมนต์</th>";
             echo "</tr>";
             echo "</thead>";
             echo "<tbody>";
-            // วนลูปแสดงผลข้อมูลแต่ละแถว
+
             while($row = $result->fetch_assoc()) {
+                // แปลงวันที่เป็นรูปแบบไทย (วัน/เดือน/พ.ศ.)
+                $date = date_create($row["booking_date"]);
+                $thaiDate = date_format($date, 'd/m/') . (date_format($date, 'Y') + 543);
+
                 echo "<tr>";
-                echo "<td>" . htmlspecialchars($row["guest_name"]) . "</td>";
+                echo "<td>" . htmlspecialchars($thaiDate) . "</td>";
                 echo "<td>";
                 if ($row["stars"] !== NULL) {
                     for ($i = 0; $i < $row["stars"]; $i++) {
-                        echo "<span class='star'>&#9733;</span>"; // รหัส HTML ของดาว
+                        echo "<span class='star'>&#9733;</span>";
                     }
                 } else {
                     echo "-";
                 }
                 echo "</td>";
-                echo "<td>" . htmlspecialchars($row["comment"] ?? "-") . "</td>"; // ใช้ ?? เพื่อจัดการค่า NULL
+                echo "<td>" . htmlspecialchars($row["comment"] ?? "-") . "</td>";
                 echo "</tr>";
             }
+
             echo "</tbody>";
             echo "</table>";
         } else {

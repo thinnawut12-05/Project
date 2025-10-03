@@ -186,11 +186,16 @@ $officer_name = $_SESSION['First_name'] ?? "เจ้าหน้าที่";
             <div class="icon">💸</div> <!-- ไอคอนเงิน/ปรับ -->
             <span>แจ้งปรับ</span>
         </a>
+         </a>
+           <a href="occupancy_stats.php" class="card">
+            <div class="icon">📈</div> <!-- ไอคอนโรงแรม/รับลูกค้า -->
+            <span>สรปุรายงานแต่ละเดือน</span>
+        </a>
         <a href="receive_customer.php" class="card">
             <div class="icon">🏨</div> <!-- ไอคอนโรงแรม/รับลูกค้า -->
             <span>รับลูกค้า</span>
         </a>
-           <a href="officer_notify.php" class="card">
+           <a href="staff_dashboard.php" class="card">
             <div class="icon">🛎️</div> <!-- ไอคอนโรงแรม/รับลูกค้า -->
             <span>เข้าพักออนไลน์</span>
         </a>

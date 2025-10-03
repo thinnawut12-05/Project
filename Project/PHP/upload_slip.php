@@ -2,139 +2,296 @@
 session_start();
 include 'db.php'; // ตรวจสอบว่าไฟล์ db.php เชื่อมต่อฐานข้อมูลด้วย $conn ได้ถูกต้อง
 
+// เปิดการแสดงข้อผิดพลาดทั้งหมดสำหรับการดีบัก
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// --- 1. ตั้งค่า Timezone ที่ส่วนหัวของสคริปต์ PHP ---
+// สำคัญ: คุณควรตั้งค่า Timezone ให้ถูกต้องตามภูมิภาคของคุณ
+// สำหรับประเทศไทยคือ 'Asia/Bangkok'
+date_default_timezone_set('Asia/Bangkok');
+error_log("DEBUG: upload_slip.php - PHP Default Timezone: " . date_default_timezone_get());
+
 // ตรวจสอบว่า $conn ถูกสร้างขึ้นและเป็น object ของ mysqli
 if (!isset($conn) || $conn->connect_error) {
-  echo "<p class='error'>❌ ข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล: " . ($conn->connect_error ?? 'ไม่สามารถเชื่อมต่อได้') . "</p>";
+  error_log("Database connection failed in upload_slip.php: " . ($conn->connect_error ?? 'Connection object not initialized.'));
+  die("<p class='error'>❌ ข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล: " . ($conn->connect_error ?? 'ไม่สามารถเชื่อมต่อได้') . "</p>");
+}
+$conn->set_charset("utf8");
+
+// ตรวจสอบว่าผู้ใช้ล็อกอินอยู่หรือไม่ (ผ่านอีเมลใน session)
+if (!isset($_SESSION['email'])) {
+  error_log("ERROR: upload_slip.php - User not logged in, redirecting to login.php");
+  header('Location: login.php');
+  exit();
+}
+$email_member = $_SESSION['email']; // อีเมลของผู้ใช้งานปัจจุบัน
+
+// *** สำคัญ: ดึง Reservation_Id จาก POST ที่ส่งมาจาก payment.php ***
+$reservation_id = $_POST['reservation_id'] ?? ($_SESSION['current_reservation_id'] ?? null);
+
+if (!$reservation_id) {
+  error_log("ERROR: upload_slip.php - reservation_id is missing in POST data for user " . $email_member);
+  $_SESSION['error'] = "ไม่พบรหัสการจอง กรุณาลองใหม่อีกครั้ง";
+  header("Location: payment.php?error=no_reservation_id_for_slip");
   exit();
 }
 
-// ดึงข้อมูลจาก Session
-$First_name   = $_SESSION['First_name'] ?? '';
-$Last_name    = $_SESSION['Last_name'] ?? '';
-$full_name    = trim($First_name . ' ' . $Last_name);
+// --- 2. ดึงข้อมูลการจองและข้อมูลสมาชิก (เบอร์โทร) เพื่อนำไปใช้บันทึกในตาราง receipt ---
+$guest_name = "";
+$phone_number = "";
+$num_rooms = 0;
+$adults = 0;
+$children = 0;
+$checkin_date = "";
+$checkout_date = "";
+$total_price = 0;
+$province_id_from_db = null;
+$province_name_to_display = "ไม่ระบุ";
 
-$num_rooms    = $_SESSION['num_rooms'] ?? 1;
-$adults       = $_SESSION['total_adults'] ?? 1;
-$children     = $_SESSION['total_children'] ?? 0;
-$checkin_date = $_SESSION['checkin_date'] ?? date("Y-m-d");
-$checkout_date = $_SESSION['checkout_date'] ?? date("Y-m-d");
-$total_price  = $_SESSION['total_price'] ?? 0;
-$room_id      = $_SESSION['room_id'] ?? null;
-$email_member = $_SESSION['email'] ?? 'guest@example.com';
+// เพิ่มการ JOIN ตาราง member เพื่อดึงเบอร์โทรศัพท์
+$sql_fetch_details = "SELECT r.Guest_name, r.Number_of_rooms, r.Number_of_adults, r.Number_of_children,
+                      r.Booking_date, r.Check_out_date, r.Total_price, r.Province_Id,
+                      m.Phone_number
+                      FROM reservation r
+                      JOIN member m ON r.Email_member = m.Email_member 
+                      WHERE r.Reservation_Id = ?";
+$stmt_details = $conn->prepare($sql_fetch_details);
 
-// ใช้ Booking_status_Id = 2 (ชำระเงินสำเร็จรอตรวจสอบ)
-$status_id = 2;
-$receipt_image_filename = NULL;
+if ($stmt_details === false) {
+  error_log("Failed to prepare statement for fetching guest details in upload_slip.php: " . $conn->error);
+  die("<p class='error'>❌ เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL สำหรับดึงข้อมูลการจอง: " . $conn->error . "</p>");
+}
 
-// ตรวจสอบการอัปโหลดไฟล์สลิป
-if (isset($_FILES['slip']) && $_FILES['slip']['error'] == 0) {
-  $targetDir = "uploads/receipts/";
-  if (!is_dir($targetDir)) {
-    mkdir($targetDir, 0777, true);
+// ใช้ 's' สำหรับ Reservation_Id เพราะเราสร้างมันเป็น string (หรือ BIGINT ใน DB)
+$stmt_details->bind_param("s", $reservation_id);
+$stmt_details->execute();
+$result_details = $stmt_details->get_result();
+
+if ($row_details = $result_details->fetch_assoc()) {
+  $guest_name = $row_details['Guest_name'];
+  $num_rooms = $row_details['Number_of_rooms'];
+  $adults = $row_details['Number_of_adults'];
+  $children = $row_details['Number_of_children'];
+  $checkin_date = $row_details['Booking_date'];
+  $checkout_date = $row_details['Check_out_date'];
+  $total_price = $row_details['Total_price'] ?? 0;
+  $province_id_from_db = $row_details['Province_Id'];
+  $phone_number = $row_details['Phone_number']; // ดึงเบอร์โทรศัพท์
+
+  // ดึงชื่อจังหวัดจาก DB
+  $sql_province_name = "SELECT Province_name FROM province WHERE Province_Id = ?";
+  $stmt_province_name = $conn->prepare($sql_province_name);
+  if ($stmt_province_name) {
+    $stmt_province_name->bind_param("i", $province_id_from_db);
+    $stmt_province_name->execute();
+    $stmt_province_name->bind_result($province_name_db);
+    $stmt_province_name->fetch();
+    $province_name_to_display = $province_name_db;
+    $stmt_province_name->close();
   }
+} else {
+  error_log("No booking or member details found for reservation_id: " . $reservation_id . " for user " . $email_member);
+  die("<p class='error'>❌ ไม่พบข้อมูลการจองสำหรับรหัส: " . htmlspecialchars($reservation_id) . "</p>");
+}
+$stmt_details->close();
 
+
+// --- 3. จัดการการอัปโหลดไฟล์สลิป ---
+$receipt_image_filename = NULL;
+$targetDir = "uploads/receipts/"; // โฟลเดอร์สำหรับเก็บสลิป (อยู่ในโฟลเดอร์ PHP/)
+
+// ตรวจสอบและสร้างโฟลเดอร์ถ้ายังไม่มี
+if (!is_dir($targetDir)) {
+  if (!mkdir($targetDir, 0777, true)) { // 0777 เพื่อให้มีสิทธิ์เขียน (ควรปรับให้ปลอดภัยขึ้นใน production)
+    error_log("ERROR: upload_slip.php - Failed to create directory: " . $targetDir);
+    die("<p class='error'>❌ ไม่สามารถสร้างโฟลเดอร์สำหรับอัปโหลดสลิปได้</p>");
+  } else {
+    error_log("DEBUG: upload_slip.php - Directory created successfully: " . $targetDir);
+  }
+}
+
+if (isset($_FILES['slip']) && $_FILES['slip']['error'] == 0) {
   $fileExtension = pathinfo($_FILES["slip"]["name"], PATHINFO_EXTENSION);
+  // สร้างชื่อไฟล์ที่ไม่ซ้ำกัน
   $fileName = uniqid('receipt_', true) . '.' . $fileExtension;
   $targetFilePath = $targetDir . $fileName;
 
   if (move_uploaded_file($_FILES["slip"]["tmp_name"], $targetFilePath)) {
     $receipt_image_filename = $fileName;
+    error_log("DEBUG: upload_slip.php - File uploaded successfully: " . $targetFilePath);
   } else {
-    echo "<p class='error'>❌ อัพโหลดไฟล์ไม่สำเร็จ</p>";
-    exit();
+    error_log("ERROR: upload_slip.php - Failed to upload file. Error code: " . $_FILES["slip"]["error"] . " Target: " . $targetFilePath);
+    die("<p class='error'>❌ อัปโหลดไฟล์สลิปไม่สำเร็จ กรุณาลองใหม่</p>");
   }
 } else {
-  echo "<p class='error'>❌ กรุณาเลือกไฟล์สลิป</p>";
-  exit();
+  error_log("ERROR: upload_slip.php - No slip file uploaded or upload error: " . ($_FILES['slip']['error'] ?? 'No file selected.'));
+  die("<p class='error'>❌ กรุณาเลือกไฟล์สลิปเพื่อยืนยันการชำระเงิน</p>");
 }
 
-// สร้าง Reservation ID
-$reservation_id = time() . rand(100, 999);
-$_SESSION['reservation_id'] = $reservation_id;
+// --- 4. บันทึกข้อมูลลงในตาราง `receipt` ---
 
-// *** เพิ่มโค้ดเพื่อดึง Province_Id จากตาราง room โดยใช้ room_id ***
-$province_id_to_save = null;
-$province_name_to_display = "ไม่ระบุ"; // กำหนดค่าเริ่มต้น
-if ($room_id !== null) {
-  // ใช้ prepared statement เพื่อป้องกัน SQL Injection
-  $sql_get_province_id = "SELECT Province_Id FROM room WHERE Room_Id = ?";
-  $stmt_get_province_id = $conn->prepare($sql_get_province_id);
+// *** ฟังก์ชันสำหรับสร้าง ID ที่ไม่ซ้ำกันและอยู่ในช่วง INT ***
+function generateUniqueIntId($conn, $table, $idColumn)
+{
+  $isUnique = false;
+  $newId = 0;
+  $maxAttempts = 100; // จำกัดจำนวนครั้งที่ลองเพื่อป้องกันลูปไม่รู้จบ
 
-  if ($stmt_get_province_id === false) {
-    echo "<p class='error'>❌ ข้อผิดพลาดในการเตรียมคำสั่ง SQL สำหรับดึง Province_Id: " . $conn->error . "</p>";
-    exit();
-  }
+  for ($i = 0; $i < $maxAttempts && !$isUnique; $i++) {
+    // สร้างตัวเลขสุ่มที่อยู่ในช่วงของ signed INT (max 2147483647)
+    // เริ่มจาก 100,000,000 (9 หลัก) เพื่อให้มีค่าที่แตกต่างกันพอสมควร
+    $newId = mt_rand(100000000, 2147483647);
+    error_log("DEBUG: generateUniqueIntId: Attempt $i - Generated ID: $newId"); // Debug log
 
-  $stmt_get_province_id->bind_param("i", $room_id); // 'i' คือ integer สำหรับ Room_Id
-  $stmt_get_province_id->execute();
-  $stmt_get_province_id->bind_result($province_id_to_save); // ผูกผลลัพธ์เข้ากับตัวแปร
-  $stmt_get_province_id->fetch(); // ดึงข้อมูล
-  $stmt_get_province_id->close();
-
-  if ($province_id_to_save !== null) {
-    // *** เพิ่มโค้ดเพื่อดึง Province_Name จากตาราง province โดยใช้ Province_Id ***
-    $sql_get_province_name = "SELECT Province_Name FROM province WHERE Province_Id = ?";
-    $stmt_get_province_name = $conn->prepare($sql_get_province_name);
-
-    if ($stmt_get_province_name === false) {
-      echo "<p class='error'>❌ ข้อผิดพลาดในการเตรียมคำสั่ง SQL สำหรับดึง Province_Name: " . $conn->error . "</p>";
-      exit();
+    $check_sql = "SELECT 1 FROM $table WHERE $idColumn = ?";
+    $check_stmt = $conn->prepare($check_sql);
+    if ($check_stmt) {
+      $check_stmt->bind_param("i", $newId); // 'i' เพราะ Receipt_Id เป็น INT
+      $check_stmt->execute();
+      $check_stmt->store_result();
+      if ($check_stmt->num_rows == 0) {
+        $isUnique = true; // พบ ID ที่ไม่ซ้ำกัน
+        error_log("DEBUG: generateUniqueIntId: Found unique ID: $newId"); // Debug log
+      } else {
+        error_log("DEBUG: generateUniqueIntId: ID $newId is NOT unique, trying again."); // Debug log
+      }
+      $check_stmt->close();
+    } else {
+      // จัดการข้อผิดพลาดหาก prepare statement ล้มเหลว
+      error_log("ERROR: generateUniqueIntId - Failed to prepare unique ID check statement for $table.$idColumn: " . $conn->error);
+      die("Error checking for unique ID.");
     }
-
-    $stmt_get_province_name->bind_param("i", $province_id_to_save);
-    $stmt_get_province_name->execute();
-    $stmt_get_province_name->bind_result($province_name_to_display);
-    $stmt_get_province_name->fetch();
-    $stmt_get_province_name->close();
-    // *** สิ้นสุดการเพิ่มโค้ดดึง Province_Name ***
-  } else {
-    echo "<p class='error'>❌ ไม่พบข้อมูล Province_Id สำหรับ Room_Id: $room_id</p>";
-    exit();
   }
-} else {
-  echo "<p class='error'>❌ ไม่พบ Room_Id ใน Session ไม่สามารถระบุ Province ได้</p>";
-  exit();
-}
-// *** สิ้นสุดการเพิ่มโค้ดดึง Province_Id ***
 
-// บันทึกลงฐานข้อมูล (เพิ่ม Province_Id)
-$sql = "INSERT INTO reservation
-        (Reservation_Id, Guest_name, Number_of_rooms, Booking_time,
-         Number_of_adults, Number_of_children, Booking_date,
-         Check_out_date, Email_member, receipt_image, Booking_status_Id, Province_Id)
-        VALUES (?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?, ?)"; // เพิ่ม ?, สำหรับ Province_Id
+  if (!$isUnique) {
+    // หากไม่สามารถสร้าง ID ที่ไม่ซ้ำกันได้หลังจากพยายามหลายครั้ง
+    error_log("CRITICAL ERROR: generateUniqueIntId - Failed to generate a unique ID for $table.$idColumn after $maxAttempts attempts. Last ID tried: $newId");
+    die("Error: Could not generate a unique receipt ID.");
+  }
 
-$stmt = $conn->prepare($sql);
-
-if ($stmt === false) {
-  echo "<p class='error'>❌ ข้อผิดพลาดในการเตรียมคำสั่ง SQL สำหรับการจอง: " . $conn->error . "</p>";
-  exit();
+  return $newId;
 }
 
-// 'ssiiissssi' สำหรับ 10 ตัวแปรเดิม, เพิ่ม 'i' สำหรับ Province_Id (รวมเป็น 11 ตัวแปร)
-$stmt->bind_param(
-  "ssiiissssii", // อัปเดต type string
-  $reservation_id,          // s
-  $full_name,               // s
-  $num_rooms,               // i
-  $adults,                  // i
-  $children,                // i
-  $checkin_date,            // s
-  $checkout_date,           // s
-  $email_member,            // s
-  $receipt_image_filename,  // s
-  $status_id,               // i
-  $province_id_to_save      // i (เพิ่มเข้ามาสำหรับ Province_Id)
+// *** ใช้ฟังก์ชันเพื่อสร้าง Receipt_Id ***
+$receipt_id = generateUniqueIntId($conn, 'receipt', 'Receipt_Id');
+
+// เพิ่ม debug log เพื่อยืนยันค่า Receipt_Id ก่อน INSERT
+error_log("DEBUG: upload_slip.php - About to insert into receipt: Receipt_Id = " . $receipt_id . " (Type: " . gettype($receipt_id) . ")");
+
+
+$receipt_date = date('Y-m-d'); // วันที่ปัจจุบัน (จะใช้ Timezone ที่ตั้งไว้ด้านบน)
+$receipt_time = date('H:i:s'); // เวลาปัจจุบัน (จะใช้ Timezone ที่ตั้งไว้ด้านบน)
+
+// เพิ่ม debug log สำหรับเวลาที่กำลังจะถูกบันทึก
+error_log("DEBUG: upload_slip.php - Date to be saved: " . $receipt_date);
+error_log("DEBUG: upload_slip.php - Time to be saved: " . $receipt_time);
+
+
+$email_admin = NULL; // ค่าเริ่มต้นเป็น NULL เพราะยังไม่มีแอดมินอนุมัติ
+$status_receipt = 'No'; // ค่าเริ่มต้นเป็น 'No' ตามที่กำหนด
+
+// *** แก้ไข: ใช้ Payment_image_file ใน INSERT statement (กลับมาใช้ตามที่คุณแจ้ง) ***
+$sql_insert_receipt = "INSERT INTO receipt (Receipt_Id, Guest_name, Receipt_date, Receipt_time,
+                                            Phone_number, Payment_image_file, Email_Admin, Status)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+$stmt_insert_receipt = $conn->prepare($sql_insert_receipt);
+
+if ($stmt_insert_receipt === false) {
+  error_log("ERROR: upload_slip.php - Failed to prepare receipt insert statement: " . $conn->error);
+  // ตรวจสอบว่า $targetFilePath ถูกกำหนดค่าแล้วก่อน unlink
+  if (isset($targetFilePath) && file_exists($targetFilePath)) {
+    unlink($targetFilePath); // ลบไฟล์ที่อัปโหลดไปแล้วออกหากเกิดข้อผิดพลาดตรงนี้
+    error_log("DEBUG: upload_slip.php - Deleted uploaded file due to SQL prepare error: " . $targetFilePath);
+  }
+  die("<p class='error'>❌ เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL สำหรับบันทึกสลิป: " . $conn->error . "</p>");
+}
+
+// ผูกพารามิเตอร์สำหรับตาราง receipt
+// i (สำหรับ Receipt_Id ที่เป็น INT), แล้วตามด้วย sssssss
+$stmt_insert_receipt->bind_param(
+  "isssssss",
+  $receipt_id,    // ต้องเป็น 'i'
+  $guest_name,
+  $receipt_date,
+  $receipt_time,
+  $phone_number,
+  $receipt_image_filename, // ตัวแปรยังคงชื่อเดิมคือ $receipt_image_filename
+  $email_admin, // ส่ง NULL เป็นสตริง
+  $status_receipt
 );
+
+if (!$stmt_insert_receipt->execute()) {
+  error_log("ERROR: upload_slip.php - Error inserting into receipt table: " . $stmt_insert_receipt->error);
+  // ตรวจสอบว่า $targetFilePath ถูกกำหนดค่าแล้วก่อน unlink
+  if (isset($targetFilePath) && file_exists($targetFilePath)) {
+    unlink($targetFilePath); // ลบไฟล์ที่อัปโหลดไปแล้วออกหากบันทึกข้อมูลใน DB ไม่สำเร็จ
+    error_log("DEBUG: upload_slip.php - Deleted uploaded file due to SQL execution error: " . $targetFilePath);
+  }
+  die("<p class='error'>❌ เกิดข้อผิดพลาดในการบันทึกข้อมูลสลิป: " . $stmt_insert_receipt->error . "</p>");
+}
+$stmt_insert_receipt->close();
+
+
+// --- 5. อัปเดตตาราง `reservation` เพื่อเปลี่ยนสถานะ และบันทึก Receipt_Id ---
+$booking_status_id_paid_pending = 2; // สถานะ "ชำระเงินสำเร็จรอตรวจสอบ"
+
+$sql_update_reservation = "UPDATE reservation
+                           SET Booking_status_Id = ?, Receipt_Id = ? 
+                           WHERE Reservation_Id = ?";
+$stmt_update_reservation = $conn->prepare($sql_update_reservation);
+
+if ($stmt_update_reservation === false) {
+  error_log("ERROR: upload_slip.php - Failed to prepare reservation update statement: " . $conn->error);
+  die("<p class='error'>❌ เกิดข้อผิดพลาดในการเตรียมคำสั่ง SQL สำหรับอัปเดตสถานะการจอง: " . $conn->error . "</p>");
+}
+
+// ผูกพารามิเตอร์: 'i' สำหรับ Booking_status_Id (int), 'i' สำหรับ Receipt_Id (int), 's' สำหรับ Reservation_Id (string)
+$stmt_update_reservation->bind_param(
+  "iis", // 'i' สำหรับ Booking_status_Id, 'i' สำหรับ Receipt_Id (เป็น int), 's' สำหรับ Reservation_Id
+  $booking_status_id_paid_pending,
+  $receipt_id,       // ส่งค่า Receipt_Id (ที่เป็น int) ไปบันทึกในตาราง reservation
+  $reservation_id
+);
+
+if (!$stmt_update_reservation->execute()) {
+  error_log("ERROR: upload_slip.php - Error updating reservation status: " . $stmt_update_reservation->error);
+  die("<p class='error'>❌ เกิดข้อผิดพลาดในการอัปเดตสถานะการจอง: " . $stmt_update_reservation->error . "</p>");
+}
+$stmt_update_reservation->close();
+
+// --- 6. ล้าง session ที่เกี่ยวข้องกับการจองทั้งหมดหลังจากที่ทำรายการสำเร็จแล้ว ---
+unset($_SESSION['current_reservation_id']);
+unset($_SESSION['total_price']);
+unset($_SESSION['expire_time']);
+unset($_SESSION['province_id']);
+unset($_SESSION['province_name']);
+error_log("DEBUG: upload_slip.php - All relevant session variables unset.");
+
+$conn->close(); // ปิดการเชื่อมต่อฐานข้อมูล
+
+// --- 7. แสดงผลลัพธ์หรือเปลี่ยนเส้นทางไปยังหน้าแสดงผลสำเร็จ ---
+// *** สร้าง URL สำหรับรูปภาพโดยตรง *** (จะใช้ใน receipt_details.php)
+// สมมติว่าไฟล์ upload_slip.php อยู่ที่ C:\xampp\htdocs\dom-inn\Project\PHP\
+// และโฟลเดอร์ uploads/receipts/ อยู่ที่ C:\xampp\htdocs\dom-inn\Project\PHP\uploads\receipts\
+// Base URL สำหรับ Project (ตัวอย่าง: http://localhost/dom-inn/Project/)
+$base_project_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
+$base_project_url .= "/dom-inn/Project/"; // ปรับตาม path จริงของ Project ใน htdocs
+
+// URL สำหรับโฟลเดอร์รูปภาพ (สัมพัทธ์กับ root ของ Project)
+$image_folder_web_path = "PHP/" . $targetDir; // targetDir = "uploads/receipts/"
+
 ?>
 <!DOCTYPE html>
 <html lang="th">
 
 <head>
   <meta charset="UTF-8">
-  <title>ยืนยันการจอง</title>
+  <title>บันทึกการชำระเงินสำเร็จ</title>
   <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <style>
+    /* Styles as provided previously */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #74b9ff, #a29bfe);
@@ -214,26 +371,18 @@ $stmt->bind_param(
 
 <body>
   <div class="container">
-    <?php
-    if ($stmt->execute()) {
-      echo "<h2>✅ บันทึกการจองสำเร็จ</h2>";
-      echo "<p>รหัสการจอง: <span class='highlight'>$reservation_id</span></p>";
-      echo "<p>คุณ <span class='highlight'>$full_name</span> ได้จองห้องจำนวน <span class='highlight'>$num_rooms</span> ห้อง</p>";
-      echo "<p>ยอดเงินที่ต้องชำระ: <span class='highlight'>฿ " . number_format($total_price, 2) . "</span></p>";
-      echo "<p>วันเข้าพัก: <span class='highlight'>$checkin_date</span> ถึง <span class='highlight'>$checkout_date</span></p>";
-      echo "<p>จำนวนผู้เข้าพัก: <span class='highlight'>$adults</span> ผู้ใหญ่, <span class='highlight'>$children</span> เด็ก</p>";
-      echo "<p>สาขาที่จอง: <span class='highlight'>$province_name_to_display</span></p>"; // เปลี่ยนเป็นแสดง Province_Name
-      echo "<p>สถานะการจอง: <span class='highlight'>ชำระเงินสำเร็จรอตรวจสอบ</span></p>";
+    <h2>✅ บันทึกการชำระเงินสำเร็จ</h2>
+    <p>รหัสการจอง: <span class='highlight'>#<?= htmlspecialchars($reservation_id) ?></span></p>
+    <p>รหัสใบเสร็จ: <span class='highlight'>#<?= htmlspecialchars($receipt_id) ?></span></p>
+    <p>คุณ <span class='highlight'><?= htmlspecialchars($guest_name) ?></span> ได้จองห้องจำนวน <span class='highlight'><?= htmlspecialchars($num_rooms) ?></span> ห้อง</p>
+    <p>ยอดเงินที่ต้องชำระ: <span class='highlight'>฿ <?= number_format($total_price, 2) ?></span></p>
+    <p>วันเข้าพัก: <span class='highlight'><?= htmlspecialchars($checkin_date) ?></span> ถึง <span class='highlight'><?= htmlspecialchars($checkout_date) ?></span></p>
+    <p>จำนวนผู้เข้าพัก: <span class='highlight'><?= htmlspecialchars($adults) ?></span> ผู้ใหญ่, <span class='highlight'><?= htmlspecialchars($children) ?></span> เด็ก</p>
+    <p>สาขาที่จอง: <span class='highlight'><?= htmlspecialchars($province_name_to_display) ?></span></p>
+    <p>สถานะการจอง: <span class='highlight'>ชำระเงินสำเร็จรอตรวจสอบ</span></p>
 
-      echo "<a href='home.php'>กลับไปหน้าหลัก</a>";
-      echo "<a href='receipt.php?booking_id=$reservation_id' class='btn-green'>ดูใบเสร็จ</a>";
-    } else {
-      echo "<p class='error'>❌ เกิดข้อผิดพลาดในการบันทึกข้อมูล: " . $stmt->error . "</p>";
-    }
-
-    $stmt->close();
-    $conn->close();
-    ?>
+    <a href='home.php'>กลับไปหน้าหลัก</a>
+    <!-- <a href='receipt_details.php?receipt_id=<?= htmlspecialchars($receipt_id) ?>' target="_blank" class='btn-green'>ดูรายละเอียดสลิป</a> -->
   </div>
 </body>
 
