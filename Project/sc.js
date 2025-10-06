@@ -284,3 +284,8 @@
 
 // renderDaysOfWeek();
 // renderCalendar();
+
+  <a href="officerindex.php" class="card"> 
+            <div class="icon">🏨</div> 
+            <span>รับลูกค้า</span>
+        </a>

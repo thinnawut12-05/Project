@@ -373,7 +373,7 @@ $image_folder_web_path = "PHP/" . $targetDir; // targetDir = "uploads/receipts/"
   <div class="container">
     <h2>✅ บันทึกการชำระเงินสำเร็จ</h2>
     <p>รหัสการจอง: <span class='highlight'>#<?= htmlspecialchars($reservation_id) ?></span></p>
-    <p>รหัสใบเสร็จ: <span class='highlight'>#<?= htmlspecialchars($receipt_id) ?></span></p>
+    <!-- <p>รหัสใบเสร็จ: <span class='highlight'>#<?= htmlspecialchars($receipt_id) ?></span></p> -->
     <p>คุณ <span class='highlight'><?= htmlspecialchars($guest_name) ?></span> ได้จองห้องจำนวน <span class='highlight'><?= htmlspecialchars($num_rooms) ?></span> ห้อง</p>
     <p>ยอดเงินที่ต้องชำระ: <span class='highlight'>฿ <?= number_format($total_price, 2) ?></span></p>
     <p>วันเข้าพัก: <span class='highlight'><?= htmlspecialchars($checkin_date) ?></span> ถึง <span class='highlight'><?= htmlspecialchars($checkout_date) ?></span></p>

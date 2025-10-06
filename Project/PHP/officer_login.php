@@ -8,10 +8,20 @@ include 'db.php'; // ตรวจสอบให้แน่ใจว่าไ�
 
 $error = '';
 // เคลียร์ค่า session ที่เกี่ยวข้องกับการล็อกอินก่อนพยายามตั้งค่าใหม่
+// การ unset ค่าเหล่านี้ ณ จุดเริ่มต้นของ login.php เหมาะสมถ้าคุณต้องการให้หน้า login เป็นจุดเริ่มต้นใหม่เสมอ
 unset($_SESSION['Email_Officer']);
 unset($_SESSION['First_name']);
 unset($_SESSION['Last_name']);
-unset($_SESSION['Province_id']); // เคลียร์ Province_id ด้วย
+unset($_SESSION['Province_id']);
+// เคลียร์ session ที่ occupancy_stats.php ใช้ด้วย เพื่อความแน่ใจ
+unset($_SESSION['officer_logged_in']);
+unset($_SESSION['officer_name']);
+unset($_SESSION['officer_province_id']);
+// ถ้าคุณมี Admin session ก็ควร clear ตรงนี้ด้วยถ้า login.php จัดการทั้งสองบทบาท
+unset($_SESSION['admin_logged_in']);
+unset($_SESSION['admin_name']);
+unset($_SESSION['admin_email']);
+
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $email = trim($_POST['Email_Officer'] ?? ''); // ชื่อ field จาก HTML form
@@ -32,17 +42,25 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $stmt->fetch();
 
             if (password_verify($password, $hashedPassword)) {
+                // ตั้งค่า Session สำหรับ officer.php
                 $_SESSION['Email_Officer'] = $emailDB;
                 $_SESSION['First_name'] = $first;
                 $_SESSION['Last_name'] = $last;
-                $_SESSION['Province_id'] = $provinceIdDB; // เก็บ Province_id ใน session
+                $_SESSION['Province_id'] = $provinceIdDB;
 
-                header("Location: officer.php"); // ไปยังหน้าแจ้งห้องไม่พร้อมใช้งาน
+                // *** เพิ่มโค้ด 3 บรรทัดนี้เพื่อตั้งค่า Session ที่ occupancy_stats.php ต้องการ ***
+                $_SESSION['officer_logged_in'] = true;
+                $_SESSION['officer_name'] = $first; // ใช้ First_name เป็นชื่อเจ้าหน้าที่
+                $_SESSION['officer_province_id'] = $provinceIdDB; // ใช้ Province_id ที่ดึงมา
+
+                header("Location: officer.php"); // ไปยังหน้า Dashboard เจ้าหน้าที่ (officer.php)
                 exit;
             } else {
                 $error = "รหัสผ่านไม่ถูกต้อง";
             }
         } else {
+            // หากไม่พบอีเมลในตาราง officer, คุณอาจต้องการตรวจสอบในตาราง admin ที่นี่
+            // สำหรับตอนนี้ เราจะถือว่าไม่พบผู้ใช้งาน
             $error = "ไม่พบอีเมลในระบบ";
         }
 
@@ -51,9 +69,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 }
 
 // ตรวจสอบและปิดการเชื่อมต่อฐานข้อมูล หาก db.php ไม่ได้จัดการเอง
-// if (isset($conn)) {
-//     $conn->close();
-// }
+if (isset($conn) && $conn->ping()) { // เพิ่มการตรวจสอบว่า $conn ยัง active อยู่หรือไม่ก่อนปิด
+    $conn->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -72,7 +90,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <div class="error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
         <form method="POST">
-            <!-- แก้ไข type ของ input ให้เป็น email และ password -->
             <input type="email" name="Email_Officer" placeholder="อีเมล" required value="<?= htmlspecialchars($email ?? '') ?>">
             <input type="password" name="Password" placeholder="รหัสผ่าน" required>
             <button type="submit">เข้าสู่ระบบ</button>

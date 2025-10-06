@@ -1,4 +1,4 @@
-<?php 
+<?php
 session_start();
 include 'db.php'; // ตรวจสอบว่า db.php เชื่อมต่อฐานข้อมูลเรียบร้อย
 
@@ -150,10 +150,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reservation_id'], $_P
     $status = $_POST['status'];
     $admin_email = $_SESSION['admin_email'] ?? NULL; // ดึงอีเมลแอดมินจาก session
 
-    // *** เพิ่ม Debug Log เพื่อตรวจสอบค่า $admin_email ***
-    error_log("DEBUG: admin-dashboard.php - Admin Email from session: " . ($admin_email ?? 'NULL'));
-
-
     if ($status == 3) { // อนุมัติ: สถานะ 3 คือ "ยืนยันการจองและชำระเงินแล้ว"
 
         // --- 1. ดึง Receipt_Id จากตาราง reservation ---
@@ -168,32 +164,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reservation_id'], $_P
                 $receipt_id_for_update = $row_receipt_id['Receipt_Id'];
             }
             $stmt_get_receipt_id->close();
-        } else {
-            error_log("ERROR: admin-dashboard.php - Failed to prepare get_receipt_id statement: " . $conn->error);
         }
 
-        // --- 2. อัปเดตสถานะในตาราง reservation ---
+        // --- 2. อัปเดตสถานะในตาราง reservation และ Email_Admin ---
         $sql_update_reservation = "UPDATE reservation SET Booking_status_Id = ?, Email_Admin = ? WHERE Reservation_Id = ?";
         $stmt_update_reservation = $conn->prepare($sql_update_reservation);
         if ($stmt_update_reservation) {
-            // *** bind_param: 's' สำหรับ Booking_status_Id (varchar), 's' สำหรับ Email_Admin (varchar), 's' สำหรับ Reservation_Id (varchar) ***
             $stmt_update_reservation->bind_param("sss", $status, $admin_email, $reservation_id);
             $stmt_update_reservation->execute();
             $stmt_update_reservation->close();
-        } else {
-            error_log("ERROR: admin-dashboard.php - Failed to prepare update_reservation statement: " . $conn->error);
         }
 
-        // --- 3. อัปเดต Status ในตาราง receipt ถ้ามี Receipt_Id ---
-        if ($receipt_id_for_update !== null) {
-            $sql_update_receipt = "UPDATE receipt SET Status = 'Yes' WHERE Receipt_Id = ?";
+        // --- 3. อัปเดต Status และ Email_Admin ในตาราง receipt ถ้ามี Receipt_Id ---
+        if ($receipt_id_for_update !== null && $receipt_id_for_update !== "") {
+            // อัปเดต Status = 'Yes' และ Email_Admin
+            $sql_update_receipt = "UPDATE receipt SET Status = 'Yes', Email_Admin = ? WHERE Receipt_Id = ?";
             $stmt_update_receipt = $conn->prepare($sql_update_receipt);
             if ($stmt_update_receipt) {
-                $stmt_update_receipt->bind_param("i", $receipt_id_for_update); // Receipt_Id เป็น int(10)
+                $stmt_update_receipt->bind_param("si", $admin_email, $receipt_id_for_update); // s=Email_Admin, i=Receipt_Id
                 $stmt_update_receipt->execute();
+                // DEBUG
+                // error_log("Update error: ".$stmt_update_receipt->error);
+                // error_log("Affected rows: ".$stmt_update_receipt->affected_rows);
                 $stmt_update_receipt->close();
-            } else {
-                error_log("ERROR: admin-dashboard.php - Failed to prepare update_receipt_status statement: " . $conn->error);
             }
         }
     } else { // ปฏิเสธ (สถานะ 5)
@@ -201,12 +194,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reservation_id'], $_P
         $sql_update = "UPDATE reservation SET Booking_status_Id = ? WHERE Reservation_Id = ?";
         $stmt_update = $conn->prepare($sql_update);
         if ($stmt_update) {
-            // *** bind_param: 's' สำหรับ Booking_status_Id (varchar), 's' สำหรับ Reservation_Id (varchar) ***
             $stmt_update->bind_param("ss", $status, $reservation_id);
             $stmt_update->execute();
             $stmt_update->close();
-        } else {
-            error_log("ERROR: admin-dashboard.php - Failed to prepare reject_reservation statement: " . $conn->error);
         }
     }
     header("Location: " . $_SERVER['PHP_SELF']); // รีเฟรชหน้า
@@ -469,7 +459,7 @@ $result = $conn->query($sql_select);
                 <th>เด็ก</th>
                 <th>อีเมลลูกค้า</th>
                 <th>สาขา</th>
-                <th>ราคารวม</th> <!-- เพิ่มคอลัมน์ราคารวม -->
+                <th>ราคารวม</th>
                 <th>หลักฐานการโอน</th>
                 <th>สถานะ</th>
                 <th>การกระทำ</th>
@@ -488,13 +478,10 @@ $result = $conn->query($sql_select);
                         <td><?= htmlspecialchars($row['Number_of_children']) ?></td>
                         <td><?= htmlspecialchars($row['Email_member']) ?></td>
                         <td><?= htmlspecialchars($row['Province_name'] ?? 'ไม่ระบุ') ?></td>
-                        <td><?= number_format($row['Total_price'] ?? 0, 2) ?></td> <!-- แสดงราคารวม -->
+                        <td><?= number_format($row['Total_price'] ?? 0, 2) ?></td>
                         <td>
                             <?php if (!empty($row['Payment_image_file'])): ?>
-                                <!-- สร้าง URL สำหรับรูปภาพโดยตรง -->
                                 <?php
-                                // สมมติว่า admin-dashboard.php อยู่ที่ C:\xampp\htdocs\dom-inn\Project\PHP\
-                                // และโฟลเดอร์ uploads/receipts/ อยู่ที่ C:\xampp\htdocs\dom-inn\Project\PHP\uploads\receipts\
                                 $base_url = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http") . "://$_SERVER[HTTP_HOST]";
                                 $image_web_path = $base_url . "/dom-inn/Project/PHP/uploads/receipts/" . htmlspecialchars($row['Payment_image_file']);
                                 ?>
@@ -526,14 +513,14 @@ $result = $conn->query($sql_select);
                                     <button type="submit" class="btn btn-reject">ปฏิเสธ</button>
                                 </form>
                             <?php else: ?>
-                                <span class="no-file-text">ดำเนินการแล้ว</span> <!-- แสดงข้อความเมื่อดำเนินการแล้ว -->
+                                <span class="no-file-text">ดำเนินการแล้ว</span>
                             <?php endif; ?>
                         </td>
                     </tr>
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="13">ไม่พบข้อมูลการจองที่รอการตรวจสอบ</td> <!-- ปรับ colspan -->
+                    <td colspan="13">ไม่พบข้อมูลการจองที่รอการตรวจสอบ</td>
                 </tr>
             <?php endif; ?>
         </tbody>

@@ -30,10 +30,10 @@
         $conn->set_charset("utf8");
 
         // ดึงข้อมูล booking_date, stars, comment
-        $sql = "SELECT booking_date, stars, comment 
+        $sql = "SELECT Check_out_date, stars, comment 
                 FROM reservation 
                 WHERE stars IS NOT NULL OR comment IS NOT NULL 
-                ORDER BY booking_date DESC";
+                ORDER BY Check_out_date DESC";
         $result = $conn->query($sql);
 
         if ($result->num_rows > 0) {
@@ -49,7 +49,7 @@
 
             while($row = $result->fetch_assoc()) {
                 // แปลงวันที่เป็นรูปแบบไทย (วัน/เดือน/พ.ศ.)
-                $date = date_create($row["booking_date"]);
+                $date = date_create($row["Check_out_date"]);
                 $thaiDate = date_format($date, 'd/m/') . (date_format($date, 'Y') + 543);
 
                 echo "<tr>";

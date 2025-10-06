@@ -55,12 +55,13 @@ for ($i = 1; $i < $num_rooms; $i++) {
     $children_per_room_initial[] = 0;
 }
 
-
+// ดึงเฉพาะห้องที่ Status = 'AVL' เท่านั้น
 $rooms = [];
 if ($province_id) {
     $sql_rooms = "SELECT Room_Id, Price, Room_number, Room_type_Id, Number_of_people_staying
                   FROM room
                   WHERE Province_Id = ?
+                  AND Status = 'AVL'
                   AND (Room_type_Id = 1 OR Room_type_Id = 2)
                   ORDER BY Room_type_Id ASC";
     $stmt = $conn->prepare($sql_rooms);
@@ -166,7 +167,7 @@ if ($province_id) {
             <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
             <a href="./details.php">รายละเอียดต่างๆ</a>
             <a href="./booking_status_pending.php">การจองของฉัน</a>
-            <a href="./rate_booking.php">คะแนน</a>
+            <a href="./success_booking.php">คะแนน</a>
         </nav>
         <?php if ($full_name && $full_name !== ' '): ?>
             <div class="user-display">
@@ -282,7 +283,7 @@ if ($province_id) {
                     <div class="booking-action">
                         <form action="booking_confirmation.php" method="get" class="booking-form-item">
                             <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
-                            <input type="hidden" name="room_type_id_passed" value="<?= $room['Room_type_Id'] ?>"> <!-- จุดสำหรับวินิจฉัย -->
+                            <input type="hidden" name="room_type_id_passed" value="<?= $room['Room_type_Id'] ?>">
                             <input type="hidden" name="price" value="<?= $room['Price'] ?>">
                             <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
                             <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">
@@ -338,7 +339,7 @@ if ($province_id) {
                         <div class="booking-action">
                             <form action="booking_confirmation.php" method="get" class="booking-form-item">
                                 <input type="hidden" name="room_id" value="<?= $room['Room_Id'] ?>">
-                                <input type="hidden" name="room_type_id_passed" value="<?= $room['Room_type_Id'] ?>"> <!-- จุดสำหรับวินิจฉัย -->
+                                <input type="hidden" name="room_type_id_passed" value="<?= $room['Room_type_Id'] ?>">
                                 <input type="hidden" name="price" value="<?= $room['Price'] ?>">
                                 <input type="hidden" name="checkin_date" value="<?= htmlspecialchars($checkin_date) ?>">
                                 <input type="hidden" name="checkout_date" value="<?= htmlspecialchars($checkout_date) ?>">

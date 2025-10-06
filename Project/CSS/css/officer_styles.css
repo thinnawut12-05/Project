@@ -1,0 +1,111 @@
+body {
+    font-family: 'Prompt', 'Segoe UI', sans-serif;
+    background: linear-gradient(120deg, #e9f0fc 0%, #f7fafd 100%);
+    margin: 0;
+}
+
+.container {
+    background: #fff;
+    max-width: 1050px;
+    margin: 40px auto 0 auto;
+    padding: 38px 42px 28px 42px;
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.09);
+}
+
+h2 {
+    color: #184177;
+    text-align: center;
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+}
+
+.info-bar {
+    margin-bottom: 20px;
+    padding: 12px 18px;
+    background: #eaf4fe;
+    color: #184177;
+    border-radius: 7px;
+    font-size: 1.15rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.badge {
+    background: #1f70c1;
+    color: #fff;
+    padding: 3px 13px;
+    border-radius: 15px;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 16px;
+    background: #f9fbff;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+th, td {
+    border: 1px solid #d8e4f3;
+    padding: 13px 10px;
+    text-align: center;
+    font-size: 1.02rem;
+}
+
+th {
+    background: #1f70c1;
+    color: #fff;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+tr:nth-child(even) {
+    background-color: #f4f8fc;
+}
+
+.btn {
+    padding: 7px 18px;
+    border: none;
+    border-radius: 7px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.btn-checkin {
+    background: linear-gradient(90deg, #39b385 50%, #56c5e9 100%);
+    color: #fff;
+    box-shadow: 0 1px 4px rgba(57,179,133,0.07);
+}
+
+.btn-checkin:hover {
+    background: linear-gradient(90deg, #239972 50%, #449bbd 100%);
+}
+
+.btn-checkout {
+    background: linear-gradient(90deg, #ffb547 40%, #fa7b5f 100%);
+    color: #fff;
+    box-shadow: 0 1px 4px rgba(250,123,95,0.07);
+}
+
+.btn-checkout:hover {
+    background: linear-gradient(90deg, #e79730 40%, #e05f3f 100%);
+}
+
+.btn:disabled, .btn[disabled] {
+    background: #d5dde5 !important;
+    color: #9ca8b8;
+    cursor: not-allowed;
+}
+
+.success {
+    color: #16a34a;
+    font-weight: bold;
+    letter-spacing: 1px;
+}

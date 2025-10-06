@@ -54,7 +54,10 @@ $custom_year = $_GET['custom_year'] ?? '';
 $custom_month = $_GET['custom_month'] ?? '';
 $selected_province_id = $_GET['province_filter'] ?? ''; // สำหรับ Admin เท่านั้น
 
-$sql_conditions_array = ["r.Booking_status_Id = 3"]; // เฉพาะการจองที่ยืนยันและชำระเงินแล้ว
+// *** แก้ไขตรงนี้: รวม Booking_status_Id = 7 (เช็คเอาท์แล้ว) เข้าไปด้วย ***
+$sql_conditions_array = ["r.Booking_status_Id IN (3, 6, 7)"]; // 3: ชำระเงินสำเร็จ, 6: เช็คอินแล้ว, 7: เช็คเอาท์แล้ว
+// คุณอาจต้องการรวมสถานะอื่นๆ ที่ถือว่าเป็นการเข้าพักที่สมบูรณ์แล้ว เช่น เช็คอินแล้ว (Booking_status_Id = 6) ด้วย
+
 
 // ถ้าเป็น officer ให้กรองข้อมูลตามจังหวัดของตัวเอง
 if ($is_officer && $user_province_id_filter !== null) {
@@ -122,7 +125,7 @@ if ($filter_type == 'today') {
         $sql_group_by_date = "GROUP BY MONTH(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY MONTH(r.Booking_date) ASC, p.Province_name ASC";
     } elseif (!empty($custom_month)) {
-        $month_name_for_title = (new DateTime('2000-'.$custom_month.'-01'))->format('F');
+        $month_name_for_title = (new DateTime('2000-' . $custom_month . '-01'))->format('F');
         $chart_title .= " เดือน " . $month_name_for_title . " (ทุกปี)";
         $sql_conditions_array[] = "MONTH(r.Booking_date) = ?";
         $bind_types .= "i";
@@ -134,7 +137,8 @@ if ($filter_type == 'today') {
         // หากเลือก Custom แต่ไม่ได้ระบุอะไรเลย ให้กลับไปเริ่มต้นที่เดือนนี้
         $filter_type = 'this_month';
         $chart_title = "สรุปยอดเข้าพักและจำนวนห้องที่จอง เดือนนี้ (" . date('m/Y') . ")";
-        $sql_conditions_array = ["r.Booking_status_Id = 3", "MONTH(r.Booking_date) = MONTH(CURDATE())", "YEAR(r.Booking_date) = YEAR(CURDATE())"];
+        // *** แก้ไขตรงนี้: เงื่อนไขเริ่มต้นควรมี Booking_status_Id IN (3, 6, 7) ด้วย ***
+        $sql_conditions_array = ["r.Booking_status_Id IN (3, 6, 7)", "MONTH(r.Booking_date) = MONTH(CURDATE())", "YEAR(r.Booking_date) = YEAR(CURDATE())"];
         // ถ้าเป็น officer ให้กรองข้อมูลตามจังหวัดของตัวเอง
         if ($is_officer && $user_province_id_filter !== null) {
             $sql_conditions_array[] = "r.Province_Id = ?";
@@ -187,8 +191,18 @@ $chart_rooms_data = [];
 $processed_chart_labels = []; // เพื่อป้องกัน label ซ้ำในกราฟหากมีการ Group by Province ด้วย
 
 $month_names_for_chart = [
-    1 => "ม.ค.", 2 => "ก.พ.", 3 => "มี.ค.", 4 => "เม.ย.", 5 => "พ.ค.", 6 => "มิ.ย.",
-    7 => "ก.ค.", 8 => "ส.ค.", 9 => "ก.ย.", 10 => "ต.ค.", 11 => "พ.ย.", 12 => "ธ.ค."
+    1 => "ม.ค.",
+    2 => "ก.พ.",
+    3 => "มี.ค.",
+    4 => "เม.ย.",
+    5 => "พ.ค.",
+    6 => "มิ.ย.",
+    7 => "ก.ค.",
+    8 => "ส.ค.",
+    9 => "ก.ย.",
+    10 => "ต.ค.",
+    11 => "พ.ย.",
+    12 => "ธ.ค."
 ];
 
 while ($row = $result_summary->fetch_assoc()) {
@@ -233,8 +247,8 @@ $all_years = [];
 $all_months = [];
 $all_provinces = []; // สำหรับ Admin
 
-// ควรดึงปีและเดือนจากข้อมูลที่มี Booking_status_Id = 3 เท่านั้น
-$sql_years_months_provinces_base_conditions = "WHERE Booking_status_Id = 3";
+// ควรดึงปีและเดือนจากข้อมูลที่มี Booking_status_Id = 3, 6, 7 เท่านั้น
+$sql_years_months_provinces_base_conditions = "WHERE Booking_status_Id IN (3, 6, 7)";
 if ($is_officer && $user_province_id_filter !== null) {
     $sql_years_months_provinces_base_conditions .= " AND Province_Id = " . (int)$user_province_id_filter;
 } elseif ($is_admin && !empty($selected_province_id)) {
@@ -400,9 +414,11 @@ $chart_data = [
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+
         .filter-form input[type="radio"] {
             margin-right: 5px;
         }
+
         .filter-form button {
             padding: 10px 15px;
             background-color: #007bff;
@@ -412,14 +428,18 @@ $chart_data = [
             cursor: pointer;
             transition: background-color 0.3s;
         }
+
         .filter-form button:hover {
             background-color: #0056b3;
         }
+
         .filter-buttons {
             display: flex;
             gap: 10px;
-            margin-bottom: 10px; /* เพิ่มระยะห่างด้านล่าง */
+            margin-bottom: 10px;
+            /* เพิ่มระยะห่างด้านล่าง */
         }
+
         .filter-buttons label {
             display: flex;
             align-items: center;
@@ -430,19 +450,23 @@ $chart_data = [
             transition: background-color 0.2s;
             border: 1px solid #ddd;
         }
+
         .filter-buttons label:hover {
             background-color: #e0e0e0;
         }
-        .filter-buttons input[type="radio"]:checked + span {
+
+        .filter-buttons input[type="radio"]:checked+span {
             color: #007bff;
             font-weight: bold;
         }
 
         .chart-container {
             width: 100%;
-            height: 500px; /* กำหนดความสูงของกราฟ */
+            height: 500px;
+            /* กำหนดความสูงของกราฟ */
             margin-bottom: 30px;
         }
+
         .logout-link {
             text-decoration: none;
             color: #e74c3c;
@@ -464,25 +488,46 @@ $chart_data = [
             border-collapse: collapse;
             margin-top: 30px;
         }
-        .summary-table th, .summary-table td {
+
+        .summary-table th,
+        .summary-table td {
             border: 1px solid #eee;
             padding: 10px;
             text-align: center;
         }
+
         .summary-table thead th {
             background-color: #3498db;
             color: #fff;
         }
+
         .summary-table tbody tr:nth-child(even) {
             background-color: #f8f8f8;
+        }
+
+        .btn-back {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .btn-back:hover {
+            background-color: #5a6268;
         }
     </style>
 </head>
 
 <body>
     <div class="admin-navbar">
-       
+
         <a href="index.php" class="logout-link">ออกจากระบบ</a>
+        <a href="officer.php" class="btn-back">กลับเจ้าหน้าที่ดูแลระบบ</a>
     </div>
 
     <div class="container">
@@ -526,8 +571,18 @@ $chart_data = [
                     <option value="">เลือกเดือน</option>
                     <?php
                     $month_names_full = [
-                        1 => "มกราคม", 2 => "กุมภาพันธ์", 3 => "มีนาคม", 4 => "เมษายน", 5 => "พฤษภาคม", 6 => "มิถุนายน",
-                        7 => "กรกฎาคม", 8 => "สิงหาคม", 9 => "กันยายน", 10 => "ตุลาคม", 11 => "พฤศจิกายน", 12 => "ธันวาคม"
+                        1 => "มกราคม",
+                        2 => "กุมภาพันธ์",
+                        3 => "มีนาคม",
+                        4 => "เมษายน",
+                        5 => "พฤษภาคม",
+                        6 => "มิถุนายน",
+                        7 => "กรกฎาคม",
+                        8 => "สิงหาคม",
+                        9 => "กันยายน",
+                        10 => "ตุลาคม",
+                        11 => "พฤศจิกายน",
+                        12 => "ธันวาคม"
                     ];
                     foreach ($all_months as $month_num): ?>
                         <option value="<?= htmlspecialchars($month_num) ?>" <?= ($custom_month == $month_num ? 'selected' : '') ?>>
@@ -537,18 +592,19 @@ $chart_data = [
                 </select>
             </div>
 
-            <?php if ($is_admin): // Admin สามารถเลือกจังหวัดได้ ?>
-            <div class="filter-group">
-                <label for="province_filter">สาขา:</label>
-                <select name="province_filter" id="province_filter">
-                    <option value="">เลือกทุกสาขา</option>
-                    <?php foreach ($all_provinces as $province): ?>
-                        <option value="<?= htmlspecialchars($province['Province_Id']) ?>" <?= (isset($_GET['province_filter']) && $_GET['province_filter'] == $province['Province_Id'] ? 'selected' : '') ?>>
-                            <?= htmlspecialchars($province['Province_name']) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <?php if ($is_admin): // Admin สามารถเลือกจังหวัดได้ 
+            ?>
+                <div class="filter-group">
+                    <label for="province_filter">สาขา:</label>
+                    <select name="province_filter" id="province_filter">
+                        <option value="">เลือกทุกสาขา</option>
+                        <?php foreach ($all_provinces as $province): ?>
+                            <option value="<?= htmlspecialchars($province['Province_Id']) ?>" <?= (isset($_GET['province_filter']) && $_GET['province_filter'] == $province['Province_Id'] ? 'selected' : '') ?>>
+                                <?= htmlspecialchars($province['Province_name']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             <?php endif; ?>
 
             <button type="submit">แสดงสถิติ</button>
@@ -563,8 +619,9 @@ $chart_data = [
             <thead>
                 <tr>
                     <th>ช่วงเวลา</th>
-                    <?php if ($is_admin || ($is_officer && $user_province_name)): // แสดงคอลัมน์สาขา ถ้าเป็น Admin หรือ Officer ที่มีชื่อจังหวัด ?>
-                    <th>สาขา</th>
+                    <?php if ($is_admin || ($is_officer && $user_province_name)): // แสดงคอลัมน์สาขา ถ้าเป็น Admin หรือ Officer ที่มีชื่อจังหวัด 
+                    ?>
+                        <th>สาขา</th>
                     <?php endif; ?>
                     <th>จำนวนผู้เข้าพักทั้งหมด</th>
                     <th>จำนวนห้องที่จอง</th>
@@ -595,7 +652,7 @@ $chart_data = [
                                 ?>
                             </td>
                             <?php if ($is_admin || ($is_officer && $user_province_name)): ?>
-                            <td><?= htmlspecialchars($data_row['Province_name'] ?? 'ไม่ระบุ') ?></td>
+                                <td><?= htmlspecialchars($data_row['Province_name'] ?? 'ไม่ระบุ') ?></td>
                             <?php endif; ?>
                             <td><?= htmlspecialchars($data_row['total_occupancy']) ?> คน</td>
                             <td><?= htmlspecialchars($data_row['total_rooms']) ?> ห้อง</td>

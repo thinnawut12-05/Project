@@ -2,12 +2,10 @@
 session_start(); // เริ่มต้น session
 
 // ** 1. การตรวจสอบสิทธิ์ (Authentication Check) **
-// ตรวจสอบว่ามี session 'Email_Officer' และ 'Province_id' หรือไม่
 if (!isset($_SESSION['Email_Officer']) || !isset($_SESSION['Province_id'])) {
-    header("Location: officer_login.php"); // ถ้าไม่มี ให้ redirect ไปหน้า login
+    header("Location: officer_login.php");
     exit;
 }
-
 
 // 2. เชื่อมต่อฐานข้อมูล
 $servername = "localhost";
@@ -24,68 +22,66 @@ if ($conn->connect_error) {
 $loggedInOfficerEmail = $_SESSION['Email_Officer'];
 $officerProvinceId = $_SESSION['Province_id'];
 
-$message = ''; // สำหรับแสดงข้อความสำเร็จ
-$error = '';   // สำหรับแสดงข้อความผิดพลาด
+$message = '';
+$error = '';
 
-if ($officerProvinceId !== null) { // ตรวจสอบให้แน่ใจว่า Province_id ไม่เป็น null
-    // 4. แจ้งห้องไม่พร้อมใช้งาน (เมื่อมีการส่งฟอร์ม mark_unavailable)
+if ($officerProvinceId !== null) {
+    // 4. แจ้งห้องไม่พร้อมใช้งาน
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['mark_unavailable'])) {
         $roomId = $_POST['room_id'];
-        // รับเหตุผล ถ้าไม่มี ให้ใช้ 'ไม่มีเหตุผลระบุ'
         $reason = !empty($_POST['unavailable_reason']) ? $_POST['unavailable_reason'] : 'ไม่มีเหตุผลระบุ';
-        // สร้างรายละเอียดห้องใหม่ที่รวมสถานะ "ไม่พร้อมใช้งาน", เหตุผล, และอีเมลผู้แจ้ง
         $newRoomDetails = "ไม่พร้อมใช้งาน: " . htmlspecialchars($reason) . " (แจ้งโดย: " . htmlspecialchars($loggedInOfficerEmail) . ")";
+        $newStatus = "UNAVL";
 
-        // เตรียมและรันคำสั่ง UPDATE เพื่ออัปเดต room_details
-        $stmt = $conn->prepare("UPDATE room SET room_details = ? WHERE Room_id = ? AND Province_id = ?");
-        $stmt->bind_param("ssi", $newRoomDetails, $roomId, $officerProvinceId); // ผูกพารามิเตอร์
+        // UPDATE พร้อม Email_Officer ด้วย
+        $stmt = $conn->prepare("UPDATE room SET room_details = ?, Status = ?, Email_Officer = ? WHERE Room_id = ? AND Province_id = ?");
+        $stmt->bind_param("ssssi", $newRoomDetails, $newStatus, $loggedInOfficerEmail, $roomId, $officerProvinceId);
 
         if ($stmt->execute()) {
             $message = "ห้อง " . htmlspecialchars($roomId) . " ถูกแจ้งว่าไม่พร้อมใช้งานแล้ว.";
         } else {
             $error = "เกิดข้อผิดพลาด: " . $stmt->error;
         }
-        $stmt->close(); // ปิด statement
+        $stmt->close();
     }
 
-    // 5. แจ้งห้องพร้อมใช้งาน (เมื่อมีการส่งฟอร์ม mark_available)
+    // 5. แจ้งห้องพร้อมใช้งาน
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['mark_available'])) {
         $roomId = $_POST['room_id'];
-        // กำหนดรายละเอียดห้องเป็นค่าเริ่มต้น (พร้อมใช้งาน)
         $defaultRoomDetails = "ห้องพักปกติ (พร้อมใช้งาน)";
+        $defaultStatus = "AVL";
 
-        // เตรียมและรันคำสั่ง UPDATE เพื่ออัปเดต room_details
-        $stmt = $conn->prepare("UPDATE room SET room_details = ? WHERE Room_id = ? AND Province_id = ?");
-        $stmt->bind_param("ssi", $defaultRoomDetails, $roomId, $officerProvinceId); // ผูกพารามิเตอร์
+        // Email_Officer set เป็น NULL เมื่อกลับมาพร้อมใช้งาน
+        $stmt = $conn->prepare("UPDATE room SET room_details = ?, Status = ?, Email_Officer = NULL WHERE Room_id = ? AND Province_id = ?");
+        $stmt->bind_param("sssi", $defaultRoomDetails, $defaultStatus, $roomId, $officerProvinceId);
 
         if ($stmt->execute()) {
             $message = "ห้อง " . htmlspecialchars($roomId) . " ถูกแจ้งว่าพร้อมใช้งานแล้ว.";
         } else {
             $error = "เกิดข้อผิดพลาด: " . $stmt->error;
         }
-        $stmt->close(); // ปิด statement
+        $stmt->close();
     }
 }
 
-// 6. ดึงข้อมูลห้องพักทั้งหมดที่เกี่ยวข้องกับ Province_id ของเจ้าหน้าที่ที่เข้าสู่ระบบ
+// 6. ดึงข้อมูลห้องพักทั้งหมด
 $rooms = [];
 if ($officerProvinceId !== null) {
-    // เลือก Room_id, Room_number, และ room_details จากตาราง room
-    $sql = "SELECT Room_id, Room_number, room_details FROM room WHERE Province_id = ? ORDER BY Room_id ASC";
+    $sql = "SELECT Room_id, Room_number, room_details, Status, Email_Officer FROM room WHERE Province_id = ? ORDER BY Room_id ASC";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param("i", $officerProvinceId); // ผูก Province_id
+    $stmt->bind_param("i", $officerProvinceId);
     $stmt->execute();
     $result = $stmt->get_result();
 
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            $rooms[] = $row; // เก็บข้อมูลห้องพักในอาร์เรย์
+            $rooms[] = $row;
         }
     }
-    $stmt->close(); // ปิด statement
+    $stmt->close();
 }
 
-$conn->close(); // ปิดการเชื่อมต่อฐานข้อมูล
+$conn->close();
 ?>
 
 <!DOCTYPE html>
@@ -96,23 +92,94 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="../src/images/logo.png" />
     <title>ระบบแจ้งห้องไม่พร้อมใช้งานสำหรับเจ้าหน้าที่</title>
-    <link rel="stylesheet" href="../CSS/css/unavailable_rooms.css"> <!-- เชื่อมโยงไฟล์ CSS -->
+    <link rel="stylesheet" href="../CSS/css/unavailable_rooms.css">
+    <style>
+        .success-message {
+            color: green;
+            margin: 10px 0;
+        }
+
+        .error-message {
+            color: red;
+            margin: 10px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid #cccccc;
+            padding: 8px 10px;
+            text-align: center;
+        }
+
+        th {
+            background: #e6e6f3;
+        }
+
+        .status-available {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-unavailable {
+            color: red;
+            font-weight: bold;
+        }
+
+        .reason-input {
+            width: 120px;
+        }
+
+        .btn {
+            padding: 4px 12px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .btn-unavailable {
+            background: #d9534f;
+            color: #fff;
+        }
+
+        .btn-available {
+            background: #5cb85c;
+            color: #fff;
+        }
+              .btn-back {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 5px;
+            text-decoration: none;
+            text-align: center;
+            transition: background-color 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .btn-back:hover {
+            background-color: #5a6268;
+        }
+    </style>
 </head>
 
 <body>
     <div class="container">
         <h1>ระบบแจ้งห้องไม่พร้อมใช้งานสำหรับเจ้าหน้าที่</h1>
+         <a href="officer.php" class="btn-back">กลับเจ้าหน้าที่ดูแลระบบ</a>
         <?php if (!empty($loggedInOfficerEmail) && $officerProvinceId !== null): ?>
-            <!-- แสดงข้อมูลเจ้าหน้าที่ที่เข้าสู่ระบบ -->
             <p>เจ้าหน้าที่: <strong><?php echo htmlspecialchars($loggedInOfficerEmail); ?> (สาขา: <?php echo htmlspecialchars($officerProvinceId); ?>)</strong></p>
         <?php endif; ?>
 
         <?php if (!empty($message)): ?>
-            <!-- แสดงข้อความสำเร็จ -->
             <div class="success-message"><?php echo $message; ?></div>
         <?php endif; ?>
         <?php if (!empty($error)): ?>
-            <!-- แสดงข้อความผิดพลาด -->
             <div class="error-message"><?php echo $error; ?></div>
         <?php endif; ?>
 
@@ -124,6 +191,7 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
                     <th>หมายเลขห้อง</th>
                     <th>รายละเอียดห้องพัก</th>
                     <th>สถานะ</th>
+                    <th>อีเมลเจ้าหน้าที่</th>
                     <th>ดำเนินการ</th>
                 </tr>
             </thead>
@@ -136,24 +204,22 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
                             <td><?php echo htmlspecialchars($room['room_details']); ?></td>
                             <td>
                                 <?php
-                                // ตรวจสอบสถานะจาก room_details
-                                if (strpos($room['room_details'], 'ไม่พร้อมใช้งาน') !== false) {
-                                    echo '<span class="status-unavailable">ไม่พร้อมใช้งาน</span>';
-                                } else {
+                                if ($room['Status'] === 'AVL') {
                                     echo '<span class="status-available">พร้อมใช้งาน</span>';
+                                } else {
+                                    echo '<span class="status-unavailable">ไม่พร้อมใช้งาน</span>';
                                 }
                                 ?>
                             </td>
+                            <td><?php echo htmlspecialchars($room['Email_Officer']); ?></td>
                             <td>
-                                <?php if (strpos($room['room_details'], 'ไม่พร้อมใช้งาน') === false): ?>
-                                    <!-- ฟอร์มสำหรับแจ้งห้องไม่พร้อมใช้งาน -->
+                                <?php if ($room['Status'] === 'AVL'): ?>
                                     <form method="POST" action="" style="display:inline-block;">
                                         <input type="hidden" name="room_id" value="<?php echo htmlspecialchars($room['Room_id']); ?>">
                                         <input type="text" name="unavailable_reason" placeholder="ระบุเหตุผล (ถ้ามี)" class="reason-input">
                                         <button type="submit" name="mark_unavailable" class="btn btn-unavailable">แจ้งห้องไม่พร้อมใช้งาน</button>
                                     </form>
                                 <?php else: ?>
-                                    <!-- ฟอร์มสำหรับแจ้งห้องพร้อมใช้งาน -->
                                     <form method="POST" action="" style="display:inline-block;">
                                         <input type="hidden" name="room_id" value="<?php echo htmlspecialchars($room['Room_id']); ?>">
                                         <button type="submit" name="mark_available" class="btn btn-available">แจ้งห้องพร้อมใช้งาน</button>
@@ -164,7 +230,7 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
                     <?php endforeach; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="5">ไม่พบข้อมูลห้องพัก</td>
+                        <td colspan="6">ไม่พบข้อมูลห้องพัก</td>
                     </tr>
                 <?php endif; ?>
             </tbody>

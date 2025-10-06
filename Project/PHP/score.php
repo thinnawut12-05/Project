@@ -2,6 +2,9 @@
 session_start();
 include 'db.php'; // ตรวจสอบให้แน่ใจว่าไฟล์ db.php เชื่อมต่อฐานข้อมูลได้ถูกต้อง
 
+// ตั้งค่า default timezone สำหรับ PHP เพื่อให้แน่ใจว่าเวลาถูกต้อง
+date_default_timezone_set('Asia/Bangkok'); // กำหนด timezone เป็น Asia/Bangkok (สำคัญ!)
+
 // ตรวจสอบว่ามี session email_member หรือไม่ หากไม่มี ให้ redirect ไปหน้า login
 if (!isset($_SESSION['email'])) {
   header('Location: login.php'); // เปลี่ยนเป็นหน้า login ของคุณ
@@ -11,7 +14,7 @@ if (!isset($_SESSION['email'])) {
 $email_member = $_SESSION['email'];
 
 // ดึงข้อมูลการจองทั้งหมดของลูกค้า พร้อมข้อมูลสถานะ, จังหวัด, ดาว และคอมเมนต์
-// *** แก้ไข: เพิ่ม r.Booking_time เข้ามาใน SELECT statement ***
+// สำคัญ: ต้องดึง Booking_status_Id มาด้วย
 $sql = "SELECT r.Reservation_Id, r.Guest_name, r.Booking_time, r.Number_of_rooms,
                r.Number_of_adults, r.Number_of_children,
                r.Booking_date, r.Check_out_date, r.Booking_status_Id,
@@ -35,7 +38,9 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-$current_date = date('Y-m-d'); // วันที่ปัจจุบัน
+// กำหนด ID ของสถานะ "เช็คเอาท์แล้ว" (เสร็จสมบูรณ์) และ "เช็คอินแล้ว"
+$status_id_completed = 7; // ตรวจสอบว่า ID 7 ใน booking_status table คือ 'เช็คเอาท์แล้ว'
+$status_id_checked_in = 6; // ตรวจสอบว่า ID 6 ใน booking_status table คือ 'เช็คอินแล้ว'
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -48,7 +53,7 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
   <style>
     body {
       font-family: 'Kanit', sans-serif;
-      /* background: linear-gradient(120deg, #a8edea, #fed6e3); */
+      background: #f8f9fa;
       margin: 0;
       padding: 0;
       min-height: 100vh;
@@ -60,15 +65,12 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
 
     .container {
       max-width: 1000px;
-      /* เพิ่มความกว้างเพื่อให้มีพื้นที่มากขึ้น */
       margin: 40px auto;
       background: #fff;
       border-radius: 15px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
       padding: 32px 25px;
-      /* ปรับ padding */
       width: 95%;
-      /* เพิ่มความยืดหยุ่น */
       box-sizing: border-box;
     }
 
@@ -88,19 +90,14 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
       padding: 20px;
       display: flex;
       flex-wrap: wrap;
-      /* ให้เนื้อหา card ขึ้นบรรทัดใหม่ได้ */
       gap: 15px;
-      /* ระยะห่างระหว่างข้อมูล */
       align-items: flex-start;
-      /* จัดให้อยู่ด้านบน */
       border: 1px solid #e0e0e0;
     }
 
     .booking-info {
       flex: 1;
-      /* ให้ส่วนข้อมูลขยายได้ */
       min-width: 200px;
-      /* อย่างน้อย 200px ก่อนจะหด */
       font-size: 0.95rem;
       color: #555;
     }
@@ -115,9 +112,7 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
 
     .rating-section {
       flex: 2;
-      /* ให้ส่วน rating ขยายมากกว่า */
       min-width: 300px;
-      /* อย่างน้อย 300px */
       background: #fdfdfd;
       padding: 15px;
       border-radius: 8px;
@@ -139,7 +134,6 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
       justify-content: center;
       margin-bottom: 15px;
       user-select: none;
-      /* ป้องกันการเลือกข้อความดาว */
     }
 
     .star-rating input[type="radio"] {
@@ -148,7 +142,6 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
 
     .star-rating label {
       font-size: 2.2em;
-      /* ขนาดดาว */
       color: #bbb;
       cursor: pointer;
       padding: 0 3px;
@@ -158,17 +151,14 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
     .star-rating label:hover,
     .star-rating label:hover~label {
       color: #ffcc00;
-      /* สีเมื่อ hover */
     }
 
     .star-rating input[type="radio"]:checked~label {
       color: #ffcc00;
-      /* สีเมื่อเลือก */
     }
 
     .rating-comment textarea {
       width: calc(100% - 22px);
-      /* ลบ padding */
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 5px;
@@ -208,7 +198,6 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
       color: #ffcc00;
       font-size: 1.8em;
       line-height: 1;
-      /* จัดให้อยู่ในบรรทัดเดียว */
       margin-bottom: 5px;
     }
 
@@ -216,7 +205,6 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
       font-size: 0.95rem;
       color: #666;
       background: #f0f8ff;
-      /* สีพื้นหลังอ่อนๆ สำหรับคอมเมนต์ */
       padding: 8px;
       border-radius: 5px;
       margin-top: 10px;
@@ -232,9 +220,24 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
     }
 
     .future-booking-status {
+      /* สำหรับสถานะที่ยังไม่เสร็จสมบูรณ์/ยังไม่เช็คอิน */
       background: #e8f5ff;
       color: #0984e3;
       border: 1px solid #74b9ff;
+    }
+
+    .checked-in-status {
+      /* สำหรับสถานะเช็คอินแล้ว */
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .completed-status {
+      /* สำหรับสถานะเช็คเอาท์แล้ว */
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
     }
 
     .no-booking {
@@ -298,7 +301,6 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
           <div class="booking-info">
             <p><strong>รหัสการจอง:</strong> <?= htmlspecialchars($b['Reservation_Id']) ?></p>
             <p><strong>ชื่อผู้จอง:</strong> <?= htmlspecialchars($b['Guest_name']) ?></p>
-            <!-- *** เพิ่มส่วนแสดงวันที่และเวลาจองตรงนี้ *** -->
             <p><strong>วันที่/เวลาจอง:</strong> <?= htmlspecialchars(date('d/m/Y H:i:s', strtotime($b['Booking_time']))) ?></p>
             <p><strong>ชื่อสาขา:</strong> <?= htmlspecialchars($b['Province_name'] ?? 'ไม่ระบุ') ?></p>
             <p><strong>จำนวนห้อง:</strong> <?= htmlspecialchars($b['Number_of_rooms']) ?></p>
@@ -310,8 +312,8 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
 
           <div class="rating-section">
             <?php
-            // ตรวจสอบว่าถึงกำหนดเช็คเอาท์แล้ว และยังไม่มีการให้คะแนน
-            if ($b['Check_out_date'] < $current_date && $b['stars'] === NULL):
+            // --- เงื่อนไขการแสดงฟอร์มให้คะแนน: ตรวจสอบสถานะการจองเป็น 'เช็คเอาท์แล้ว' และยังไม่มีการให้คะแนน ---
+            if ($b['Booking_status_Id'] == $status_id_completed && $b['stars'] === NULL):
             ?>
               <h4>ให้คะแนนประสบการณ์ของคุณ</h4>
               <form action="process_rating.php" method="POST">
@@ -329,8 +331,8 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
                 <button type="submit" class="submit-btn">ส่งคะแนน</button>
               </form>
             <?php
-            // ตรวจสอบว่าถึงกำหนดเช็คเอาท์แล้ว และให้คะแนนแล้ว
-            elseif ($b['Check_out_date'] < $current_date && $b['stars'] !== NULL):
+            // --- เงื่อนไขสำหรับจองที่เช็คเอาท์แล้ว และมีการให้คะแนนแล้ว ---
+            elseif ($b['Booking_status_Id'] == $status_id_completed && $b['stars'] !== NULL):
             ?>
               <h4>คุณให้คะแนนแล้ว</h4>
               <div class="rated-display">
@@ -345,15 +347,23 @@ $current_date = date('Y-m-d'); // วันที่ปัจจุบัน
                 <?php endif; ?>
               </div>
             <?php
-            // การจองที่ยังไม่ถึงกำหนดเช็คเอาท์
+            // --- เงื่อนไขสำหรับจองที่ยังไม่เช็คเอาท์ (สถานะอื่นๆ) ---
             else:
+              $status_class = '';
+              if ($b['Booking_status_Id'] == $status_id_checked_in) { // เช็คอินแล้ว
+                $status_class = 'checked-in-status';
+              } elseif ($b['Booking_status_Id'] < $status_id_checked_in) { // สถานะก่อนเช็คอิน เช่น ยืนยันการจอง, ชำระเงินสำเร็จ
+                $status_class = 'future-booking-status';
+              } else { // สถานะอื่นๆ เช่น ยกเลิก
+                $status_class = 'future-booking-status';
+              }
             ?>
               <h4>สถานะปัจจุบัน</h4>
-              <p class="status-badge future-booking-status">
+              <p class="status-badge <?= $status_class ?>">
                 <?= htmlspecialchars($b['Booking_status_name'] ?? 'ไม่ทราบ') ?>
               </p>
               <p style="margin-top: 10px; font-size: 0.9em; color: #777;">
-                สามารถให้คะแนนได้หลังวันเช็คเอาท์
+                สามารถให้คะแนนได้เมื่อสถานะเป็น "เช็คเอาท์แล้ว"
               </p>
             <?php endif; ?>
           </div>

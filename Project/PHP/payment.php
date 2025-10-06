@@ -21,10 +21,11 @@ if (!$reservation_id) {
     header('Location: home.php?error=no_reservation_id_found'); // หรือหน้าแจ้งข้อผิดพลาดอื่นๆ
     exit();
 }
+
 // เก็บ reservation_id ใน session เพื่อให้ upload_slip.php ใช้
 $_SESSION['current_reservation_id'] = $reservation_id;
 
-// ดึงข้อมูลการจองที่เหลือจาก DB ด้วย reservation_id
+// --- ดึงข้อมูลการจองที่เหลือจาก DB ด้วย reservation_id ---
 $full_name = "";
 $num_rooms = 0;
 $total_adults = 0;
@@ -35,13 +36,13 @@ $province_id = null;
 $province_name = 'ไม่ได้ระบุ';
 $total_price = 0;
 $num_nights = 0;
+$booking_status_id_current = 0; // เพิ่มเพื่อเก็บสถานะปัจจุบัน
 
 $sql_fetch_booking = "SELECT Guest_name, Number_of_rooms, Number_of_adults, Number_of_children,
-                      Booking_date, Check_out_date, Province_Id, Total_price
+                      Booking_date, Check_out_date, Province_Id, Total_price, Booking_status_Id
                       FROM reservation WHERE Reservation_Id = ?";
 $stmt_fetch = $conn->prepare($sql_fetch_booking);
 if ($stmt_fetch) {
-    // *** แก้ไขตรงนี้: เปลี่ยน "i" เป็น "s" เพื่อ bind_param เป็น string ***
     $stmt_fetch->bind_param("s", $reservation_id);
     $stmt_fetch->execute();
     $result_fetch = $stmt_fetch->get_result();
@@ -54,6 +55,7 @@ if ($stmt_fetch) {
         $checkout_date_str = $row_fetch['Check_out_date'];
         $province_id = $row_fetch['Province_Id'];
         $total_price = $row_fetch['Total_price'];
+        $booking_status_id_current = $row_fetch['Booking_status_Id']; // เก็บสถานะปัจจุบัน
 
         // คำนวณจำนวนคืนจากวันที่ที่ดึงจาก DB
         try {
@@ -79,26 +81,61 @@ if ($stmt_fetch) {
     } else {
         // ไม่พบข้อมูลการจองใน DB
         error_log("No booking found for reservation_id: " . $reservation_id);
-        header('Location: home.php?error=booking_not_found'); // ถูกดีดกลับหน้าหลักด้วย error นี้
+        $_SESSION['error'] = 'ไม่พบข้อมูลการจองที่ต้องการชำระเงิน.';
+        header('Location: home.php');
         exit();
     }
     $stmt_fetch->close();
 } else {
     error_log("Failed to prepare statement for fetching booking: " . $conn->error);
-    header('Location: home.php?error=db_error_fetch');
+    $_SESSION['error'] = 'เกิดข้อผิดพลาดในการดึงข้อมูลการจองเพื่อชำระเงิน.';
+    header('Location: home.php');
     exit();
 }
-
 
 $phone = "0967501732"; // หมายเลขโทรศัพท์สำหรับ PromptPay
 $qr_url = "https://promptpay.io/$phone/$total_price.png";
 
 // === การจัดการ expire_time เพื่อไม่ให้รีเซ็ตเมื่อรีเฟรชหน้าจอ ===
 // ตั้งค่า expire_time ใน session หากยังไม่มี หรือหมดอายุไปแล้ว
-if (!isset($_SESSION['expire_time']) || $_SESSION['expire_time'] < time()) {
-    $_SESSION['expire_time'] = time() + (24 * 60 * 60); // หมดอายุ 24 ชั่วโมง
+// ในโค้ดเดิมของคุณตั้งไว้ 30 วินาทีเพื่อทดสอบ
+// ควรตั้งเป็น (24 * 60 * 60) สำหรับ 24 ชั่วโมงใน Production
+if (!isset($_SESSION['expire_time'])) {
+    $_SESSION['expire_time'] = time() + (24 * 60 * 60); // 24 ชั่วโมง
 }
-$expire_time = $_SESSION['expire_time']; // ใช้ค่าที่เก็บใน session
+$expire_time = $_SESSION['expire_time'];
+
+// ตรวจสอบสถานะการจอง หากไม่ใช่ 'รอการชำระเงิน' (สถานะ 1) หรือหมดเวลาแล้ว
+// ให้ redirect ออกไป
+if ($booking_status_id_current != 1) { // ตรวจสอบว่าสถานะยังเป็น 'รอการชำระเงิน'
+    // หากสถานะไม่ใช่ 1 แล้ว เช่น ถูกยกเลิกไปแล้ว, ชำระแล้ว
+    $_SESSION['error'] = 'การจองนี้ไม่สามารถชำระเงินได้แล้ว (สถานะการจองไม่อนุญาต).';
+    header('Location: booking_status_pending.php'); // Redirect ไปหน้าสถานะการจอง
+    exit();
+}
+
+// ตรวจสอบเวลาหมดอายุ ณ จุดที่โหลดหน้า
+if (time() > $expire_time) {
+    // ถ้าเวลาหมดอายุแล้ว
+    // อัปเดตสถานะการจองเป็น 4 (ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน 24 ชม.)
+    $status_id_cancelled_timeout = 4; // กำหนดสถานะ 4
+
+    $sql_update_status = "UPDATE reservation SET Booking_status_Id = ? WHERE Reservation_Id = ?";
+    $stmt_update_status = $conn->prepare($sql_update_status);
+    if ($stmt_update_status) {
+        $stmt_update_status->bind_param("is", $status_id_cancelled_timeout, $reservation_id);
+        $stmt_update_status->execute();
+        $stmt_update_status->close();
+    } else {
+        error_log("Failed to prepare update status after timeout: " . $conn->error);
+    }
+    $conn->close(); // ปิด connection ก่อน redirect
+
+    $_SESSION['error'] = 'การชำระเงินหมดเวลาแล้ว! การจองของคุณถูกยกเลิก.';
+    header('Location: booking_status_pending.php'); // Redirect ไปหน้าสถานะการจอง
+    exit();
+}
+
 
 // ให้แน่ใจว่า Province_Id และ Province_name ถูกเก็บใน Session สำหรับหน้าอื่นๆ ถ้าจำเป็น
 $_SESSION['province_id'] = $province_id;
@@ -325,6 +362,7 @@ $_SESSION['province_name'] = $province_name;
     <script>
         var expireTime = <?= $expire_time ?> * 1000;
         var timerElement = document.getElementById('timer');
+        var submitButton = document.querySelector('.button-group button[type="submit"]');
 
         function updateTimer() {
             var now = new Date().getTime();
@@ -333,6 +371,14 @@ $_SESSION['province_name'] = $province_name;
             if (distance <= 0) {
                 timerElement.innerHTML = "หมดเวลาชำระเงิน";
                 clearInterval(countdownInterval);
+                submitButton.disabled = true; // ปิดการใช้งานปุ่มยืนยัน
+                submitButton.textContent = 'หมดเวลา (ไม่สามารถชำระได้)';
+                submitButton.style.backgroundColor = '#cccccc';
+                submitButton.style.cursor = 'not-allowed';
+
+                // อัปเดตสถานะการจองผ่าน AJAX หรือ redirect เพื่อให้ PHP ทำการอัปเดตสถานะ
+                // วิธีง่ายสุดคือ redirect ให้ PHP ทำงาน
+                window.location.href = 'payment.php?reservation_id=<?= htmlspecialchars($reservation_id) ?>&timeout=true';
                 return;
             }
 
