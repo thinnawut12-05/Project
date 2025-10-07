@@ -15,7 +15,9 @@ date_default_timezone_set('Asia/Bangkok'); // กำหนด timezone เป็
 if ($conn) {
     // การตั้งค่านี้จะใช้ได้เฉพาะกับ session การเชื่อมต่อปัจจุบันเท่านั้น
     $conn->query("SET SESSION sql_mode = '';"); 
-    error_log("DEBUG: SQL_MODE set for session: " . $conn->query("SELECT @@session.sql_mode;")->fetch_row()[0]);
+    // เพิ่มการ Log เพื่อตรวจสอบว่า SQL_MODE ถูกตั้งค่าจริงหรือไม่
+    $current_sql_mode = $conn->query("SELECT @@session.sql_mode;")->fetch_row()[0];
+    error_log("DEBUG: SQL_MODE set for session: " . $current_sql_mode);
 }
 
 // ตรวจสอบการเข้าสู่ระบบของเจ้าหน้าที่
@@ -29,6 +31,10 @@ $officer_email = $_SESSION['Email_Officer'];
 $officer_fname = $_SESSION['First_name'];
 $officer_lname = $_SESSION['Last_name'];
 $current_province_id = $_SESSION['Province_id']; // ID สาขาของเจ้าหน้าที่
+
+// *** เพิ่มบรรทัดนี้เพื่อ Debug ค่า officer_email ที่ดึงมาจาก Session ***
+error_log("DEBUG: Officer Email loaded from session: " . ($officer_email ?? 'NULL or EMPTY'));
+// *******************************************************************
 
 // ดึงชื่อจังหวัด/สาขา
 $province_name = '';
@@ -227,9 +233,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $damage_item = trim($_POST['damage_item'] ?? 'ของเสียหายทั่วไป'); // เพิ่มฟิลด์รายการของที่เสียหาย
                 $adjustment_date = date('Y-m-d H:i:s'); // วันที่เวลาปัจจุบันที่บันทึกการปรับ
 
+                // เพิ่มการตรวจสอบค่าก่อนดำเนินการ
+                error_log("DEBUG: Processing damage adjustment for Room ID: " . $room_id_damage . ", Item: " . $damage_item . ", Value: " . $amount_damage . ", Date: " . $adjustment_date);
+                // *** เพิ่มบรรทัดนี้เพื่อ Debug ค่า officer_email ก่อนการบันทึก ***
+                error_log("DEBUG: Officer Email value for damage adjustment: " . ($officer_email ?? 'NULL or EMPTY'));
+                // *******************************************************************
+
+
                 if (empty($room_id_damage) || $amount_damage <= 0 || empty($description_damage) || empty($damage_item)) {
                     throw new Exception("กรุณากรอกรหัสห้องพัก, รายการ, รายละเอียดความเสียหาย และมูลค่าให้ถูกต้อง.");
                 }
+
+                // *** เพิ่มการตรวจสอบว่า officer_email มีค่าหรือไม่ ***
+                if (empty($officer_email)) {
+                    throw new Exception("ไม่สามารถระบุอีเมลเจ้าหน้าที่ผู้ทำรายการได้. กรุณาลองเข้าสู่ระบบอีกครั้ง.");
+                }
+                // ***************************************************
 
                 $conn->begin_transaction();
 
@@ -252,27 +271,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt_check_room_and_get_stay_id->close();
 
                 if (empty($stay_id_for_damage)) {
+                    error_log("ERROR: No active stay found for room " . $room_id_damage . " in province " . $current_province_id);
                     throw new Exception("ไม่พบห้องพัก " . htmlspecialchars($room_id_damage) . " ที่กำลังเข้าพักในสาขาของคุณ (ต้องมี Stay ID เพื่อบันทึกความเสียหาย).");
                 }
+                error_log("DEBUG: Found Stay_Id for damage: " . $stay_id_for_damage);
+
 
                 // 2. บันทึกข้อมูลการปรับความเสียหายลงในตาราง room_damages
+                // เพิ่ม Damage_date เข้าไปในคำสั่ง INSERT
                 $stmt_insert_damage = $conn->prepare(
-                    "INSERT INTO room_damages (Stay_Id, Room_Id, Damage_item, Damage_description, Damage_value, Officer_Email)
-                    VALUES (?, ?, ?, ?, ?, ?)"
+                    "INSERT INTO room_damages (Stay_Id, Room_Id, Damage_item, Damage_description, Damage_value, Damage_date, Officer_Email)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)"
                 );
-                if ($stmt_insert_damage === false) { throw new Exception("Failed to prepare room damage insert statement: " . $conn->error); }
+                if ($stmt_insert_damage === false) { 
+                    error_log("ERROR: Failed to prepare room damage insert statement: " . $conn->error);
+                    throw new Exception("Failed to prepare room damage insert statement: " . $conn->error); 
+                }
                 
+                // เพิ่ม 's' สำหรับ Damage_date ($adjustment_date) ใน bind_param
                 $stmt_insert_damage->bind_param(
-                    "sssdss", // Stay_Id (s), Room_Id (s), Damage_item (s), Description (s), Value (d), Officer_Email (s)
+                    "sssdsss", // Stay_Id (s), Room_Id (s), Damage_item (s), Description (s), Value (d), Damage_date (s), Officer_Email (s)
                     $stay_id_for_damage, 
                     $room_id_damage, 
                     $damage_item,
                     $description_damage, 
-                    $amount_damage, 
+                    $amount_damage,
+                    $adjustment_date, // เพิ่มตัวแปรนี้เข้ามา
                     $officer_email
                 );
                 $stmt_insert_damage->execute();
-                if ($stmt_insert_damage->affected_rows === 0) { throw new Exception("ไม่สามารถบันทึกการปรับความเสียหายสำหรับห้อง " . htmlspecialchars($room_id_damage) . " ได้."); }
+                if ($stmt_insert_damage->affected_rows === 0) { 
+                    error_log("ERROR: Could not insert room damage for room " . $room_id_damage . ". MySQL Error: " . $stmt_insert_damage->error);
+                    throw new Exception("ไม่สามารถบันทึกการปรับความเสียหายสำหรับห้อง " . htmlspecialchars($room_id_damage) . " ได้. " . $stmt_insert_damage->error); 
+                }
                 $stmt_insert_damage->close();
 
                 $conn->commit();
@@ -621,8 +652,8 @@ $conn->close();
             color: #333;
         }
 
-        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม.,
-        .status-ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน-24-ชม. {
+        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม
+        .status-ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน-24-ชม{
             background-color: #dc3545;
             color: white;
         }

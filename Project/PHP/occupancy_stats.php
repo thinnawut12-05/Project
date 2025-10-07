@@ -155,7 +155,7 @@ $sql_conditions = implode(" AND ", $sql_conditions_array);
 
 
 // --- ดึงข้อมูลสำหรับกราฟและตารางสรุป ---
-$sql_summary = "SELECT 
+$sql_summary = "SELECT
                     " . $sql_select_date_part . ",
                     SUM(r.Number_of_adults + r.Number_of_children) AS total_occupancy,
                     SUM(r.Number_of_rooms) AS total_rooms
@@ -284,6 +284,43 @@ if ($is_admin) {
         }
     }
 }
+
+
+// --- ส่วนเพิ่มเติม: ดึงข้อมูลความเสียหายของห้องพัก (room_damages) ---
+$room_damages_data = [];
+$sql_room_damages = "SELECT Damage_Id, Stay_Id, Room_Id, Damage_item, Damage_description, Damage_value, Damage_date, Officer_Email FROM room_damages ORDER BY Damage_date DESC";
+$result_room_damages = $conn->query($sql_room_damages);
+
+if ($result_room_damages) {
+    while ($row_damage = $result_room_damages->fetch_assoc()) {
+        $room_damages_data[] = $row_damage;
+    }
+} else {
+    echo "Error fetching room damages: " . $conn->error;
+}
+
+// --- เตรียมข้อมูลสำหรับกราฟความเสียหาย ---
+$damage_chart_labels = [];
+$damage_chart_values = [];
+
+foreach ($room_damages_data as $damage_row) {
+    $damage_chart_labels[] = "ID: " . htmlspecialchars($damage_row['Damage_Id']) . " (ห้อง " . htmlspecialchars($damage_row['Room_Id']) . ")";
+    $damage_chart_values[] = (float)$damage_row['Damage_value'];
+}
+
+$damage_chart_data = [
+    'labels' => $damage_chart_labels,
+    'datasets' => [
+        [
+            'label' => 'มูลค่าความเสียหาย (บาท)',
+            'backgroundColor' => 'rgba(255, 159, 64, 0.6)', // สีส้ม
+            'borderColor' => 'rgba(255, 159, 64, 1)',
+            'borderWidth' => 1,
+            'data' => $damage_chart_values,
+        ]
+    ]
+];
+
 $conn->close();
 
 
@@ -378,7 +415,7 @@ $chart_data = [
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
-        h2 {
+        h2, h3 {
             text-align: center;
             color: #2c3e50;
             margin-bottom: 25px;
@@ -592,7 +629,7 @@ $chart_data = [
                 </select>
             </div>
 
-            <?php if ($is_admin): // Admin สามารถเลือกจังหวัดได้ 
+            <?php if ($is_admin): // Admin สามารถเลือกจังหวัดได้
             ?>
                 <div class="filter-group">
                     <label for="province_filter">สาขา:</label>
@@ -619,7 +656,7 @@ $chart_data = [
             <thead>
                 <tr>
                     <th>ช่วงเวลา</th>
-                    <?php if ($is_admin || ($is_officer && $user_province_name)): // แสดงคอลัมน์สาขา ถ้าเป็น Admin หรือ Officer ที่มีชื่อจังหวัด 
+                    <?php if ($is_admin || ($is_officer && $user_province_name)): // แสดงคอลัมน์สาขา ถ้าเป็น Admin หรือ Officer ที่มีชื่อจังหวัด
                     ?>
                         <th>สาขา</th>
                     <?php endif; ?>
@@ -662,9 +699,17 @@ $chart_data = [
             </tbody>
         </table>
 
+        <!-- เพิ่มส่วนนี้สำหรับแสดงกราฟมูลค่าความเสียหายของห้องพัก -->
+        <h3 style="margin-top: 50px;">กราฟแสดงมูลค่าความเสียหายของห้องพักแต่ละรายการ</h3>
+        <div class="chart-container">
+            <canvas id="damageValueChart"></canvas>
+        </div>
+        <!-- สิ้นสุดส่วนกราฟมูลค่าความเสียหาย -->
+
     </div>
 
     <script>
+        // กราฟสรุปยอดเข้าพักและจำนวนห้องที่จอง
         var ctx = document.getElementById('occupancyChart').getContext('2d');
         var chartData = <?= json_encode($chart_data); ?>;
         var chartTitle = "<?= htmlspecialchars($chart_title); ?>";
@@ -726,6 +771,72 @@ $chart_data = [
                             },
                             font: {
                                 family: 'Kanit' // ใช้ font Kanit
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // กราฟมูลค่าความเสียหายของห้องพัก
+        var ctxDamage = document.getElementById('damageValueChart').getContext('2d');
+        var damageChartData = <?= json_encode($damage_chart_data); ?>;
+
+        var damageValueChart = new Chart(ctxDamage, {
+            type: 'bar',
+            data: damageChartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'มูลค่าความเสียหายของห้องพักแต่ละรายการ',
+                        font: {
+                            size: 18,
+                            family: 'Kanit'
+                        }
+                    },
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'Kanit'
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'รายการความเสียหาย',
+                            font: {
+                                family: 'Kanit'
+                            }
+                        },
+                        ticks: {
+                            font: {
+                                family: 'Kanit'
+                            }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'มูลค่าความเสียหาย (บาท)',
+                            font: {
+                                family: 'Kanit'
+                            }
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString() + ' บาท'; // แสดงเป็นสกุลเงิน
+                            },
+                            font: {
+                                family: 'Kanit'
                             }
                         }
                     }
