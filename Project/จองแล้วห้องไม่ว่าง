@@ -2,6 +2,14 @@
 session_start();
 include 'db.php'; // ตรวจสอบให้แน่ใจว่า db.php อยู่ในตำแหน่งที่ถูกต้อง
 
+// *** ปรับปรุง: กำหนด Timezone ของ PHP ให้ชัดเจนที่สุดที่จุดเริ่มต้นของสคริปต์ ***
+date_default_timezone_set('Asia/Bangkok'); // หรือโซนเวลาที่เหมาะสมกับสาขาโรงแรมของคุณ
+
+// เปิดการแสดง error เพื่อช่วยในการ Debug (ควรปิดเมื่อใช้งานจริงบน Production)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 // ตรวจสอบการเข้าสู่ระบบของเจ้าหน้าที่
 if (!isset($_SESSION['Email_Officer'])) {
     header("Location: login.php"); // ส่งกลับไปหน้า login หากไม่ได้เข้าสู่ระบบ
@@ -17,14 +25,19 @@ $current_province_id = $_SESSION['Province_id']; // ID สาขาของเ�
 // ดึงชื่อจังหวัด/สาขา
 $province_name = '';
 $stmt_province = $conn->prepare("SELECT Province_name FROM province WHERE Province_ID = ?");
-$stmt_province->bind_param("i", $current_province_id);
-$stmt_province->execute();
-$result_province = $stmt_province->get_result();
-if ($result_province->num_rows > 0) {
-    $province_data = $result_province->fetch_assoc();
-    $province_name = $province_data['Province_name'];
+if ($stmt_province === false) {
+    error_log("ERROR: Failed to prepare province name statement: " . $conn->error);
+} else {
+    $stmt_province->bind_param("i", $current_province_id);
+    $stmt_province->execute();
+    $result_province = $stmt_province->get_result();
+    if ($result_province->num_rows > 0) {
+        $province_data = $result_province->fetch_assoc();
+        $province_name = $province_data['Province_name'];
+    }
+    $stmt_province->close();
 }
-$stmt_province->close();
+
 
 $message = ''; // สำหรับแสดงข้อความแจ้งเตือน
 if (isset($_SESSION['message'])) {
@@ -38,40 +51,38 @@ if (isset($_SESSION['error'])) {
 
 // ดึงรายการสถานะการจองทั้งหมดสำหรับ dropdown filter และ update
 $booking_statuses = [];
-$stmt_statuses = $conn->prepare("SELECT Booking_status_Id, Booking_status_name FROM booking_status ORDER BY Booking_status_name ASC");
+$stmt_statuses = $conn->prepare("SELECT Booking_status_Id, Booking_status_name FROM booking_status ORDER BY Booking_status_Id ASC");
 if ($stmt_statuses === false) {
     error_log("ERROR: Failed to prepare booking_status select statement: " . $conn->error);
-    $_SESSION['error'] = "เกิดข้อผิดพลาดในการดึงข้อมูลสถานะการจอง (กรุณาตรวจสอบชื่อคอลัมน์ Booking_status_name).";
-    header("Location: customer_reception.php"); // Redirect ไปยังหน้าที่ถูกต้อง
-    exit();
+} else {
+    $stmt_statuses->execute();
+    $result_statuses = $stmt_statuses->get_result();
+    while ($row = $result_statuses->fetch_assoc()) {
+        $booking_statuses[] = $row;
+    }
+    $stmt_statuses->close();
 }
-$stmt_statuses->execute();
-$result_statuses = $stmt_statuses->get_result();
-while ($row = $result_statuses->fetch_assoc()) {
-    $booking_statuses[] = $row;
-}
-$stmt_statuses->close();
 
-// กำหนด ID ของสถานะต่างๆ (อ้างอิงจากภาพและสถานะใหม่ที่เราแนะนำให้เพิ่ม)
-// คุณต้องตรวจสอบว่า ID เหล่านี้ตรงกับใน DB ของคุณหรือไม่!
+
+// กำหนด ID ของสถานะต่างๆ
 $status_id_pending_payment = 1; // ยืนยันการจองและรอชำระเงิน
 $status_id_payment_pending_review = 2; // ชำระเงินสำเร็จรอการตรวจสอบ
 $status_id_payment_confirmed = 3; // ชำระเงินสำเร็จ
 $status_id_cancelled_timeout = 4; // ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน 24 ชม.
 $status_id_cancelled_incomplete_payment = 5; // ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน 24 ชม.
-$status_id_checked_in = 6; // สถานะใหม่ที่ต้องเพิ่ม: เช็คอินแล้ว
-$status_id_completed = 7; // สถานะใหม่ที่ต้องเพิ่ม: เสร็จสมบูรณ์
+$status_id_checked_in = 6; // เช็คอินแล้ว
+$status_id_completed = 7; // เสร็จสมบูรณ์ (หรือ "เช็คเอาท์แล้ว" ตามที่คุณเปลี่ยนชื่อ)
 
 
 // --- ฟังก์ชันสำหรับสร้าง ID ที่ไม่ซ้ำกันและเป็นสตริงตัวเลข/ตัวอักษร (สำหรับ Stay_id) ---
-function generateUniqueStayId($conn, $table = 'stay', $idColumn = 'Stay_id') {
+function generateUniqueStayId($conn, $table = 'stay', $idColumn = 'Stay_id')
+{
     $isUnique = false;
     $newId = '';
     $maxAttempts = 100;
 
     for ($i = 0; $i < $maxAttempts && !$isUnique; $i++) {
-        // สร้างตัวเลขสุ่ม 10 หลัก (VARCHAR)
-        $newId = (string)mt_rand(1000000000, 9999999999); 
+        $newId = (string)mt_rand(1000000000, 9999999999);
 
         $check_sql = "SELECT 1 FROM $table WHERE $idColumn = ?";
         $check_stmt = $conn->prepare($check_sql);
@@ -85,7 +96,7 @@ function generateUniqueStayId($conn, $table = 'stay', $idColumn = 'Stay_id') {
             $check_stmt->close();
         } else {
             error_log("ERROR: generateUniqueStayId - Failed to prepare unique ID check statement for $table.$idColumn: " . $conn->error);
-            throw new Exception("Error checking for unique ID for Stay_id."); 
+            throw new Exception("Error checking for unique ID for Stay_id.");
         }
     }
     if (!$isUnique) {
@@ -99,351 +110,352 @@ function generateUniqueStayId($conn, $table = 'stay', $idColumn = 'Stay_id') {
 // --- ส่วนจัดการ POST Request สำหรับการดำเนินการ (Update Status, Check-in, Check-out, Cancel) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? null;
-    $reservation_id = $_POST['reservation_id'] ?? null; // ใช้ Reservation_Id (ตัวใหญ่)
+    $reservation_id = $_POST['reservation_id'] ?? null;
 
     if ($reservation_id) {
-        switch ($action) {
-            case 'update_status':
-                $new_status_id = $_POST['new_status_id'] ?? null;
-                if ($new_status_id) {
-                    $stmt = $conn->prepare("UPDATE reservation SET Booking_status_Id = ? WHERE Reservation_Id = ? AND Province_Id = ?"); // ใช้ Reservation_Id (ตัวใหญ่)
-                    if ($stmt === false) {
-                         throw new Exception("Failed to prepare update_status statement: " . $conn->error);
+        try {
+            switch ($action) {
+                case 'update_status':
+                    $new_status_id = $_POST['new_status_id'] ?? null;
+                    if ($new_status_id) {
+                        $stmt = $conn->prepare("UPDATE reservation SET Booking_status_Id = ? WHERE Reservation_Id = ? AND Province_Id = ?");
+                        if ($stmt === false) {
+                            throw new Exception("Failed to prepare update_status statement: " . $conn->error);
+                        }
+                        $stmt->bind_param("isi", $new_status_id, $reservation_id, $current_province_id);
+                        if ($stmt->execute()) {
+                            $_SESSION['message'] = "อัปเดตสถานะการจอง #" . htmlspecialchars($reservation_id) . " สำเร็จแล้ว.";
+                        } else {
+                            throw new Exception("เกิดข้อผิดพลาดในการอัปเดตสถานะ: " . $stmt->error);
+                        }
+                        $stmt->close();
                     }
-                    $stmt->bind_param("isi", $new_status_id, $reservation_id, $current_province_id);
+                    break;
+
+                case 'check_in_booking':
+                    $checkin_date = $_POST['checkin_date'] ?? date('Y-m-d'); // เก็บวันที่จากฟอร์ม, หากไม่มีใช้ค่าปัจจุบัน
+                    $checkin_time = date('H:i:s'); // บันทึกเวลาเช็คอินเป็นเวลาปัจจุบันของเซิร์ฟเวอร์พร้อมวินาทีเสมอ
+                    $num_rooms_booked = $_POST['num_rooms_booked'] ?? 1;
+                    $selected_room_ids = isset($_POST['selected_room_ids']) && is_array($_POST['selected_room_ids']) ? $_POST['selected_room_ids'] : [];
+
+                    if (count($selected_room_ids) != $num_rooms_booked) {
+                        $_SESSION['error'] = "กรุณาเลือกห้องพักให้ครบตามจำนวนที่จอง (" . $num_rooms_booked . " ห้อง).";
+                        break;
+                    }
+
+                    $conn->begin_transaction();
+                    try {
+                        $stmt_get_reservation_details = $conn->prepare("SELECT Email_member, Guest_name, Receipt_id FROM reservation WHERE Reservation_Id = ?");
+                        if ($stmt_get_reservation_details === false) {
+                            throw new Exception("Failed to prepare reservation details fetch statement: " . $conn->error);
+                        }
+                        $stmt_get_reservation_details->bind_param("s", $reservation_id);
+                        $stmt_get_reservation_details->execute();
+                        $result_reservation_details = $stmt_get_reservation_details->get_result();
+                        $member_email = null;
+                        $guest_name_from_reservation = null;
+                        $receipt_id_from_reservation = null;
+                        if ($row_reservation_details = $result_reservation_details->fetch_assoc()) {
+                            $member_email = $row_reservation_details['Email_member'];
+                            $guest_name_from_reservation = $row_reservation_details['Guest_name'];
+                            $receipt_id_from_reservation = $row_reservation_details['Receipt_id'];
+                        } else {
+                            throw new Exception("ไม่พบข้อมูลการจองสำหรับ Reservation ID: " . htmlspecialchars($reservation_id));
+                        }
+                        $stmt_get_reservation_details->close();
+
+                        $receipt_id_for_stay = (!empty($receipt_id_from_reservation) && is_numeric($receipt_id_from_reservation)) ? (int)$receipt_id_from_reservation : NULL;
+
+                        $valid_pre_checkin_status_ids = [$status_id_pending_payment, $status_id_payment_pending_review, $status_id_payment_confirmed];
+                        $valid_pre_checkin_placeholders = implode(',', array_fill(0, count($valid_pre_checkin_status_ids), '?'));
+                        $valid_pre_checkin_types = str_repeat('i', count($valid_pre_checkin_status_ids));
+
+                        $stmt_update_booking = $conn->prepare(
+                            "UPDATE reservation SET Booking_status_Id = ?
+                            WHERE Reservation_Id = ? AND Province_Id = ? AND Booking_status_Id IN ($valid_pre_checkin_placeholders)"
+                        );
+                        if ($stmt_update_booking === false) {
+                            throw new Exception("Failed to prepare booking status update statement: " . $conn->error);
+                        }
+
+                        $bind_params_booking_update = array_merge(
+                            [$status_id_checked_in, $reservation_id, $current_province_id],
+                            $valid_pre_checkin_status_ids
+                        );
+                        $bind_types_booking_update = 'isi' . $valid_pre_checkin_types;
+                        call_user_func_array([$stmt_update_booking, 'bind_param'], array_merge([$bind_types_booking_update], $bind_params_booking_update));
+                        $stmt_update_booking->execute();
+                        if ($stmt_update_booking->affected_rows === 0) {
+                            throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับเช็คอิน (ต้องเป็นสถานะ 'ยืนยันการจองและรอชำระเงิน', 'ชำระเงินสำเร็จรอการตรวจสอบ' หรือ 'ชำระเงินสำเร็จ').");
+                        }
+                        $stmt_update_booking->close();
+
+                        foreach ($selected_room_ids as $room_id) {
+                            $stmt_check_room = $conn->prepare("SELECT Status FROM room WHERE Room_ID = ? AND Province_id = ?");
+                            if ($stmt_check_room === false) {
+                                throw new Exception("Failed to prepare room status check statement: " . $conn->error);
+                            }
+                            $stmt_check_room->bind_param("si", $room_id, $current_province_id);
+                            $stmt_check_room->execute();
+                            $result_check_room = $stmt_check_room->get_result();
+                            $room_status_data = $result_check_room->fetch_assoc();
+                            $stmt_check_room->close();
+
+                            if (!$room_status_data || $room_status_data['Status'] !== 'AVL') {
+                                throw new Exception("ห้องพัก " . htmlspecialchars($room_id) . " ไม่ว่างหรือไม่ถูกต้อง (หรือไม่อยู่ในสาขา).");
+                            }
+
+                            $new_stay_id = generateUniqueStayId($conn);
+
+                            $stmt_insert_stay = $conn->prepare("INSERT INTO stay (Stay_id, Room_id, Guest_name, Check_in_date, Check_in_time, Check_out_date, Check_out_time, Reservation_Id, Email_member, Receipt_Id) VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)");
+                            if ($stmt_insert_stay === false) {
+                                error_log("Failed to prepare stay insert statement: " . $conn->error);
+                                throw new Exception("Failed to prepare stay insert statement: " . $conn->error);
+                            }
+                            $stmt_insert_stay->bind_param("sssssssi", $new_stay_id, $room_id, $guest_name_from_reservation, $checkin_date, $checkin_time, $reservation_id, $member_email, $receipt_id_for_stay);
+                            $stmt_insert_stay->execute();
+                            if ($stmt_insert_stay->affected_rows === 0) {
+                                throw new Exception("ไม่สามารถสร้างรายการเข้าพักสำหรับห้อง " . htmlspecialchars($room_id) . " ได้.");
+                            }
+                            $stmt_insert_stay->close();
+
+                            // อัปเดตสถานะห้องเป็น Occupied ('OCC')
+                            $stmt_update_room_status = $conn->prepare("UPDATE room SET Status = 'OCC' WHERE Room_ID = ? AND Province_id = ?");
+                            if ($stmt_update_room_status === false) {
+                                throw new Exception("Failed to prepare room status update (OCC) statement: " . $conn->error);
+                            }
+                            $stmt_update_room_status->bind_param("si", $room_id, $current_province_id);
+                            $stmt_update_room_status->execute();
+                            if ($stmt_update_room_status->affected_rows === 0) {
+                                throw new Exception("ไม่สามารถอัปเดตสถานะห้อง " . htmlspecialchars($room_id) . " เป็น 'OCC' ได้.");
+                            }
+                            $stmt_update_room_status->close();
+                        }
+
+                        $conn->commit();
+                        $_SESSION['message'] = "เช็คอินการจอง #" . htmlspecialchars($reservation_id) . " และห้องพักสำเร็จแล้ว.";
+                    } catch (Exception $e) {
+                        $conn->rollback();
+                        throw $e;
+                    }
+                    break;
+
+                case 'check_out_booking':
+                    $checkout_date = date('Y-m-d');
+                    $checkout_time = date('H:i:s'); // ค่าเวลาปัจจุบัน
+
+                    // อัปเดตสถานะการจองในตาราง 'reservation' เป็น 'เสร็จสมบูรณ์' (Booking_status_Id = 7)
+                    $stmt_update_reservation_status = $conn->prepare(
+                        "UPDATE reservation SET Booking_status_Id = ?
+                        WHERE Reservation_Id = ? AND Province_Id = ? AND Booking_status_Id = ?"
+                    );
+                    if ($stmt_update_reservation_status === false) {
+                        throw new Exception("Failed to prepare booking status update (Completed) statement: " . $conn->error);
+                    }
+                    $stmt_update_reservation_status->bind_param("isii", $status_id_completed, $reservation_id, $current_province_id, $status_id_checked_in);
+                    $stmt_update_reservation_status->execute();
+                    if ($stmt_update_reservation_status->affected_rows === 0) {
+                        throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับเช็คเอาท์ (ต้องเป็นสถานะ 'เช็คอินแล้ว').");
+                    }
+                    $stmt_update_reservation_status->close();
+
+                    $conn->begin_transaction();
+                    try {
+                        // อัปเดต Check_out_date และ Check_out_time ในตาราง 'stay'
+                        $stmt_update_stay = $conn->prepare(
+                            "UPDATE stay
+                            SET Check_out_date = ?, Check_out_time = ?
+                            WHERE Reservation_Id = ? AND Check_out_date IS NULL AND Check_in_date IS NOT NULL"
+                        );
+                        if ($stmt_update_stay === false) {
+                            throw new Exception("Failed to prepare stay update statement: " . $conn->error);
+                        }
+
+                        $stmt_update_stay->bind_param("sss", $checkout_date, $checkout_time, $reservation_id);
+                        $stmt_update_stay->execute();
+
+                        if ($stmt_update_stay->affected_rows === 0) {
+                            error_log("WARNING: No active stay records updated for Reservation_Id #" . htmlspecialchars($reservation_id) . ". This might be expected if all rooms were already checked out manually or if the conditions were not met.");
+                        } else {
+                            error_log("INFO: Successfully updated " . $stmt_update_stay->affected_rows . " stay records for Reservation_Id #" . htmlspecialchars($reservation_id) . ". Check_out_time should now be: " . $checkout_time);
+                        }
+                        $stmt_update_stay->close();
+
+                        // ดึง Room_id จาก stay ที่เพิ่ง Check-out เพื่อคืนสถานะห้อง
+                        $stmt_get_rooms_in_stay = $conn->prepare("SELECT Room_id FROM stay WHERE Reservation_Id = ? AND Check_out_date = ? AND Check_out_time = ?");
+                        if ($stmt_get_rooms_in_stay === false) {
+                            throw new Exception("Failed to prepare get rooms in stay statement: " . $conn->error);
+                        }
+                        $stmt_get_rooms_in_stay->bind_param("sss", $reservation_id, $checkout_date, $checkout_time);
+                        $stmt_get_rooms_in_stay->execute();
+                        $result_rooms_in_stay = $stmt_get_rooms_in_stay->get_result();
+                        $rooms_to_free = [];
+                        while ($row = $result_rooms_in_stay->fetch_assoc()) {
+                            $rooms_to_free[] = $row['Room_id'];
+                        }
+                        $stmt_get_rooms_in_stay->close();
+
+                        if (!empty($rooms_to_free)) {
+                            $placeholders = implode(',', array_fill(0, count($rooms_to_free), '?'));
+                            $types = str_repeat('s', count($rooms_to_free));
+
+                            $bind_values_for_room_status = array_merge($rooms_to_free, [$current_province_id]);
+                            $stmt_update_room_status = $conn->prepare("UPDATE room SET Status = 'AVL' WHERE Room_ID IN ($placeholders) AND Province_id = ?");
+                            if ($stmt_update_room_status === false) {
+                                throw new Exception("Failed to prepare room status update (AVL) statement: " . $conn->error);
+                            }
+                            $stmt_update_room_status->bind_param($types . 'i', ...$bind_values_for_room_status);
+
+                            $stmt_update_room_status->execute();
+                            if ($stmt_update_room_status->affected_rows === 0) {
+                                // อาจจะไม่มีห้องที่ต้องเปลี่ยนสถานะ หากมีการจัดการห้องไปแล้ว
+                            }
+                            $stmt_update_room_status->close();
+                        }
+
+                        $conn->commit();
+                        $_SESSION['message'] = "เช็คเอ้าท์การจอง #" . htmlspecialchars($reservation_id) . " และห้องพักสำเร็จแล้ว.";
+                    } catch (Exception $e) {
+                        $conn->rollback();
+                        throw $e; // ส่ง Exception ต่อไปให้ catch หลัก
+                    }
+                    break;
+
+                case 'cancel_booking':
+                    $valid_pre_cancel_status_ids = [
+                        $status_id_pending_payment,
+                        $status_id_payment_pending_review,
+                        $status_id_payment_confirmed,
+                        $status_id_checked_in
+                    ];
+                    $valid_pre_cancel_placeholders = implode(',', array_fill(0, count($valid_pre_cancel_status_ids), '?'));
+                    $valid_pre_cancel_types = str_repeat('i', count($valid_pre_cancel_status_ids));
+
+                    $cancel_target_status_id = $status_id_cancelled_timeout;
+
+                    $stmt = $conn->prepare(
+                        "UPDATE reservation SET Booking_status_Id = ?
+                        WHERE Reservation_Id = ? AND Province_Id = ? AND Booking_status_Id IN ($valid_pre_cancel_placeholders)"
+                    );
+                    if ($stmt === false) {
+                        throw new Exception("Failed to prepare booking status update (Cancelled) statement: " . $conn->error);
+                    }
+
+                    $bind_params_cancel_update = array_merge(
+                        [$cancel_target_status_id, $reservation_id, $current_province_id],
+                        $valid_pre_cancel_status_ids
+                    );
+                    $bind_types_cancel_update = 'isi' . $valid_pre_cancel_types;
+
+                    call_user_func_array([$stmt, 'bind_param'], array_merge([$bind_types_cancel_update], $bind_params_cancel_update));
+
                     if ($stmt->execute()) {
-                        $_SESSION['message'] = "อัปเดตสถานะการจอง #" . htmlspecialchars($reservation_id) . " สำเร็จแล้ว.";
+                        if ($stmt->affected_rows === 0) {
+                            throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับการยกเลิก.");
+                        }
+                        $_SESSION['message'] = "ยกเลิกการจอง #" . htmlspecialchars($reservation_id) . " สำเร็จแล้ว.";
+
+                        // ดึง Room_id จาก stay ที่ยังไม่ได้ Check-out เพื่อคืนสถานะห้อง (หากมี)
+                        $stmt_get_active_stays = $conn->prepare("SELECT Room_id FROM stay WHERE Reservation_Id = ? AND Check_out_date IS NULL");
+                        if ($stmt_get_active_stays === false) {
+                            throw new Exception("Failed to prepare get active stays statement: " . $conn->error);
+                        }
+                        $stmt_get_active_stays->bind_param("s", $reservation_id);
+                        $stmt_get_active_stays->execute();
+                        $result_active_stays = $stmt_get_active_stays->get_result();
+                        $rooms_to_free_on_cancel = [];
+                        while ($row = $result_active_stays->fetch_assoc()) {
+                            $rooms_to_free_on_cancel[] = $row['Room_id'];
+                        }
+                        $stmt_get_active_stays->close();
+
+                        if (!empty($rooms_to_free_on_cancel)) {
+                            $conn->begin_transaction();
+                            try {
+                                $current_date = date('Y-m-d');
+                                $current_time = date('H:i:s');
+                                // อัปเดต Check_out_date และ Check_out_time ใน stay สำหรับห้องที่ถูกยกเลิก (และยังไม่ได้เช็คเอาท์)
+                                $stmt_update_stay_cancel = $conn->prepare("UPDATE stay SET Check_out_date = ?, Check_out_time = ? WHERE Reservation_Id = ? AND Check_out_date IS NULL");
+                                if ($stmt_update_stay_cancel === false) {
+                                    throw new Exception("Failed to prepare stay update on cancel statement: " . $conn->error);
+                                }
+                                $stmt_update_stay_cancel->bind_param("sss", $current_date, $current_time, $reservation_id);
+                                $stmt_update_stay_cancel->execute();
+                                $stmt_update_stay_cancel->close();
+
+                                // คืนสถานะห้องเป็น 'AVL'
+                                $placeholders = implode(',', array_fill(0, count($rooms_to_free_on_cancel), '?'));
+                                $types = str_repeat('s', count($rooms_to_free_on_cancel));
+
+                                $bind_values_for_room_status_cancel = array_merge($rooms_to_free_on_cancel, [$current_province_id]);
+                                $stmt_update_room_status_cancel = $conn->prepare("UPDATE room SET Status = 'AVL' WHERE Room_ID IN ($placeholders) AND Province_id = ?");
+                                if ($stmt_update_room_status_cancel === false) {
+                                    throw new Exception("Failed to prepare room status update on cancel statement: " . $conn->error);
+                                }
+                                $stmt_update_room_status_cancel->bind_param($types . 'i', ...$bind_values_for_room_status_cancel);
+
+                                $stmt_update_room_status_cancel->execute();
+                                $stmt_update_room_status_cancel->close();
+                                $conn->commit();
+                            } catch (Exception $e) {
+                                $conn->rollback();
+                                $_SESSION['error'] .= " แต่เกิดข้อผิดพลาดในการคืนสถานะห้อง: " . $e->getMessage();
+                            }
+                        }
+
                     } else {
-                        $_SESSION['error'] = "เกิดข้อผิดพลาดในการอัปเดตสถานะ: " . $stmt->error;
+                        throw new Exception("เกิดข้อผิดพลาดในการยกเลิกการจอง: " . $stmt->error);
                     }
                     $stmt->close();
-                }
-                break;
-
-            case 'check_in_booking':
-                $checkin_date = $_POST['checkin_date'] ?? date('Y-m-d');
-                $checkin_time = $_POST['checkin_time'] ?? date('H:i:s');
-                $guest_name = $_POST['guest_name'] ?? 'ไม่ระบุ';
-                $num_rooms_booked = $_POST['num_rooms_booked'] ?? 1;
-
-                $selected_room_ids = isset($_POST['selected_room_ids']) && is_array($_POST['selected_room_ids']) ? $_POST['selected_room_ids'] : [];
-
-                if (count($selected_room_ids) != $num_rooms_booked) {
-                    $_SESSION['error'] = "กรุณาเลือกห้องพักให้ครบตามจำนวนที่จอง (" . $num_rooms_booked . " ห้อง).";
                     break;
-                }
-                
-                $conn->begin_transaction();
-                try {
-                    // ดึง Email_member และ Receipt_id จาก reservation table โดยตรง
-                    $stmt_get_reservation_details = $conn->prepare("SELECT Email_member, Receipt_id FROM reservation WHERE Reservation_Id = ?"); // ใช้ Reservation_Id (ตัวใหญ่)
-                    if ($stmt_get_reservation_details === false) {
-                        throw new Exception("Failed to prepare reservation details fetch statement: " . $conn->error);
-                    }
-                    $stmt_get_reservation_details->bind_param("s", $reservation_id);
-                    $stmt_get_reservation_details->execute();
-                    $result_reservation_details = $stmt_get_reservation_details->get_result();
-                    $member_email = null;
-                    $receipt_id_from_reservation = null; // ชื่อตัวแปรใหม่ให้ชัดเจน
-                    if ($row_reservation_details = $result_reservation_details->fetch_assoc()) {
-                        $member_email = $row_reservation_details['Email_member'];
-                        $receipt_id_from_reservation = $row_reservation_details['Receipt_id']; // ดึง Receipt_id จาก reservation
-                    }
-                    $stmt_get_reservation_details->close();
-
-                    // เตรียมค่า Receipt_Id สำหรับตาราง stay (ซึ่งเป็น INT)
-                    $receipt_id_for_stay = NULL; // ค่าเริ่มต้นเป็น NULL
-                    if (!empty($receipt_id_from_reservation) && is_numeric($receipt_id_from_reservation)) {
-                        $receipt_id_for_stay = (int)$receipt_id_from_reservation; // แปลงเป็น INT
-                    }
-
-
-                    // สถานะที่อนุญาตให้เช็คอินได้: ยืนยันการจองและรอชำระเงิน (1), ชำระเงินสำเร็จรอการตรวจสอบ (2), ชำระเงินสำเร็จ (3)
-                    $valid_pre_checkin_status_ids = [$status_id_pending_payment, $status_id_payment_pending_review, $status_id_payment_confirmed];
-                    $valid_pre_checkin_placeholders = implode(',', array_fill(0, count($valid_pre_checkin_status_ids), '?'));
-                    $valid_pre_checkin_types = str_repeat('i', count($valid_pre_checkin_status_ids));
-
-                    // อัปเดตสถานะการจองเป็น 'เช็คอินแล้ว' (Booking_status_Id = 6)
-                    $stmt_update_booking = $conn->prepare(
-                        "UPDATE reservation SET Booking_status_Id = ? 
-                         WHERE Reservation_Id = ? " . // ใช้ Reservation_Id (ตัวใหญ่)
-                         "AND Province_Id = ? 
-                         AND Booking_status_Id IN ($valid_pre_checkin_placeholders)"
-                    );
-                    if ($stmt_update_booking === false) {
-                        throw new Exception("Failed to prepare booking status update statement: " . $conn->error);
-                    }
-                    
-                    $bind_params_booking_update = array_merge(
-                        [$status_id_checked_in, $reservation_id, $current_province_id],
-                        $valid_pre_checkin_status_ids
-                    );
-                    $bind_types_booking_update = 'isi' . $valid_pre_checkin_types;
-                    
-                    call_user_func_array([$stmt_update_booking, 'bind_param'], array_merge([$bind_types_booking_update], $bind_params_booking_update));
-
-                    $stmt_update_booking->execute();
-                    if ($stmt_update_booking->affected_rows === 0) {
-                        throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับเช็คอิน (ต้องเป็นสถานะ 'ยืนยันการจองและรอชำระเงิน', 'ชำระเงินสำเร็จรอการตรวจสอบ' หรือ 'ชำระเงินสำเร็จ').");
-                    }
-                    $stmt_update_booking->close();
-
-                    foreach ($selected_room_ids as $room_id) {
-                        // ดึงข้อมูลห้องเพื่อตรวจสอบ Status และ Province_id
-                        // Room_ID ในตาราง room เป็น VARCHAR
-                        $stmt_check_room = $conn->prepare("SELECT Status FROM room WHERE Room_ID = ? AND Province_id = ?");
-                        if ($stmt_check_room === false) {
-                            throw new Exception("Failed to prepare room status check statement: " . $conn->error);
-                        }
-                        // Room_ID เป็น VARCHAR (s), Province_id เป็น INT (i)
-                        $stmt_check_room->bind_param("si", $room_id, $current_province_id);
-                        $stmt_check_room->execute();
-                        $result_check_room = $stmt_check_room->get_result();
-                        $room_status_data = $result_check_room->fetch_assoc();
-                        $stmt_check_room->close();
-
-                        if (!$room_status_data || $room_status_data['Status'] !== 'AVL') {
-                            throw new Exception("ห้องพัก " . htmlspecialchars($room_id) . " ไม่ว่างหรือไม่ถูกต้อง (หรือไม่อยู่ในสาขา).");
-                        }
-
-                        // สร้าง Stay_id แบบสุ่ม (VARCHAR)
-                        $new_stay_id = generateUniqueStayId($conn);
-
-                        // เพิ่มข้อมูลลงในตาราง stay
-                        // คอลัมน์ในตาราง stay: Stay_id, Room_id, Guest_name, Check_in_date, Check_in_time, Check_out_date, Check_out_time, Reservation_Id, Email_member, Receipt_Id
-                        // VALUES: Stay_id(s), Room_id(s), Guest_name(s), Check_in_date(s), Check_in_time(s), NULL (for Check_out_date), NULL (for Check_out_time), Reservation_Id(s), Email_member(s), Receipt_Id(i)
-                        $stmt_insert_stay = $conn->prepare("INSERT INTO stay (Stay_id, Room_id, Guest_name, Check_in_date, Check_in_time, Check_out_date, Check_out_time, Reservation_Id, Email_member, Receipt_Id) VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?)");
-                        if ($stmt_insert_stay === false) {
-                            error_log("Failed to prepare stay insert statement: " . $conn->error);
-                            throw new Exception("Failed to prepare stay insert statement: " . $conn->error);
-                        }
-                        // bind_param: s (Stay_id), s (Room_id), s (Guest_name), s (Check_in_date), s (Check_in_time), s (Reservation_Id), s (Email_member), i (Receipt_Id - เพราะ Receipt_Id ใน stay เป็น INT)
-                        // แก้ไข: Type Definition String จาก "ssssssssi" เป็น "sssssssi" (จาก 9 เป็น 8 ตัวอักษร)
-                        $stmt_insert_stay->bind_param("sssssssi", $new_stay_id, $room_id, $guest_name, $checkin_date, $checkin_time, $reservation_id, $member_email, $receipt_id_for_stay);
-                        $stmt_insert_stay->execute();
-                        if ($stmt_insert_stay->affected_rows === 0) {
-                            throw new Exception("ไม่สามารถสร้างรายการเข้าพักสำหรับห้อง " . htmlspecialchars($room_id) . " ได้.");
-                        }
-                        $stmt_insert_stay->close();
-
-                        // อัปเดตสถานะห้องเป็น Occupied ('OCC')
-                        // Room_ID ในตาราง room เป็น VARCHAR
-                        $stmt_update_room_status = $conn->prepare("UPDATE room SET Status = 'OCC' WHERE Room_ID = ? AND Province_id = ?");
-                        if ($stmt_update_room_status === false) {
-                            throw new Exception("Failed to prepare room status update (OCC) statement: " . $conn->error);
-                        }
-                        // Room_ID เป็น VARCHAR (s), Province_id เป็น INT (i)
-                        $stmt_update_room_status->bind_param("si", $room_id, $current_province_id);
-                        $stmt_update_room_status->execute();
-                        if ($stmt_update_room_status->affected_rows === 0) {
-                            throw new Exception("ไม่สามารถอัปเดตสถานะห้อง " . htmlspecialchars($room_id) . " เป็น 'OCC' ได้.");
-                        }
-                        $stmt_update_room_status->close();
-                    }
-
-                    $conn->commit();
-                    $_SESSION['message'] = "เช็คอินการจอง #" . htmlspecialchars($reservation_id) . " และห้องพักสำเร็จแล้ว.";
-
-                } catch (Exception $e) {
-                    $conn->rollback();
-                    $_SESSION['error'] = "เช็คอินไม่สำเร็จ: " . $e->getMessage();
-                }
-                break;
-
-            case 'check_out_booking':
-                $checkout_date = date('Y-m-d');
-                $checkout_time = date('H:i:s');
-                
-                // อัปเดตสถานะการจองเป็น 'เสร็จสมบูรณ์' (Booking_status_Id = 7)
-                $stmt_update_booking = $conn->prepare(
-                    "UPDATE reservation SET Booking_status_Id = ? 
-                     WHERE Reservation_Id = ? " . // ใช้ Reservation_Id (ตัวใหญ่)
-                     "AND Province_Id = ? 
-                     AND Booking_status_Id = ?" // ต้องเป็นสถานะ 'เช็คอินแล้ว' (6) ก่อน
-                );
-                if ($stmt_update_booking === false) {
-                    throw new Exception("Failed to prepare booking status update (Completed) statement: " . $conn->error);
-                }
-                $stmt_update_booking->bind_param("isii", $status_id_completed, $reservation_id, $current_province_id, $status_id_checked_in);
-                $stmt_update_booking->execute();
-                if ($stmt_update_booking->affected_rows === 0) {
-                    throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับเช็คเอาท์ (ต้องเป็นสถานะ 'เช็คอินแล้ว').");
-                }
-                $stmt_update_booking->close();
-
-                $conn->begin_transaction();
-                try {
-                    // อัปเดต stay_id ทั้งหมดที่เกี่ยวข้องกับ Reservation_Id นี้และยังไม่มี Check_out_date
-                    $stmt_update_stay = $conn->prepare("UPDATE stay SET Check_out_date = ?, Check_out_time = ? WHERE Reservation_Id = ? AND Check_out_date IS NULL"); // ใช้ Reservation_Id (ตัวใหญ่)
-                    if ($stmt_update_stay === false) {
-                        throw new Exception("Failed to prepare stay update statement: " . $conn->error);
-                    }
-                    $stmt_update_stay->bind_param("sss", $checkout_date, $checkout_time, $reservation_id);
-                    $stmt_update_stay->execute();
-                    if ($stmt_update_stay->affected_rows === 0) {
-                        throw new Exception("ไม่พบรายการเข้าพักที่กำลังใช้งานสำหรับการจอง #" . htmlspecialchars($reservation_id) . ".");
-                    }
-                    $stmt_update_stay->close();
-
-                    // ดึง Room_id จาก stay ที่เพิ่ง Check-out เพื่อคืนสถานะห้อง
-                    $stmt_get_rooms_in_stay = $conn->prepare("SELECT Room_id FROM stay WHERE Reservation_Id = ? AND Check_out_date = ? AND Check_out_time = ?"); // ใช้ Reservation_Id (ตัวใหญ่)
-                    if ($stmt_get_rooms_in_stay === false) {
-                        throw new Exception("Failed to prepare get rooms in stay statement: " . $conn->error);
-                    }
-                    $stmt_get_rooms_in_stay->bind_param("sss", $reservation_id, $checkout_date, $checkout_time);
-                    $stmt_get_rooms_in_stay->execute();
-                    $result_rooms_in_stay = $stmt_get_rooms_in_stay->get_result();
-                    $rooms_to_free = [];
-                    while($row = $result_rooms_in_stay->fetch_assoc()) {
-                        $rooms_to_free[] = $row['Room_id']; // Room_id ที่ได้มาเป็น VARCHAR
-                    }
-                    $stmt_get_rooms_in_stay->close();
-
-                    if (!empty($rooms_to_free)) {
-                        $placeholders = implode(',', array_fill(0, count($rooms_to_free), '?'));
-                        $types = str_repeat('s', count($rooms_to_free)); // Room_id เป็น VARCHAR จึงใช้ 's'
-                        
-                        $bind_values_for_room_status = array_merge($rooms_to_free, [$current_province_id]);
-                        $stmt_update_room_status = $conn->prepare("UPDATE room SET Status = 'AVL' WHERE Room_ID IN ($placeholders) AND Province_id = ?");
-                        if ($stmt_update_room_status === false) {
-                            throw new Exception("Failed to prepare room status update (AVL) statement: " . $conn->error);
-                        }
-                        $stmt_update_room_status->bind_param($types . 'i', ...$bind_values_for_room_status);
-                        
-                        $stmt_update_room_status->execute();
-                        if ($stmt_update_room_status->affected_rows === 0) {
-                            // อาจจะไม่มีห้องที่ต้องเปลี่ยนสถานะ หากมีการจัดการห้องไปแล้ว
-                        }
-                        $stmt_update_room_status->close();
-                    }
-
-                    $conn->commit();
-                    $_SESSION['message'] = "เช็คเอ้าท์การจอง #" . htmlspecialchars($reservation_id) . " และห้องพักสำเร็จแล้ว.";
-
-                } catch (Exception $e) {
-                    $conn->rollback();
-                    $_SESSION['error'] = "เช็คเอ้าท์ไม่สำเร็จ: " . $e->getMessage();
-                }
-                break;
-
-            case 'cancel_booking':
-                // สถานะที่สามารถยกเลิกได้: ยืนยันการจองและรอชำระเงิน (1), ชำระเงินสำเร็จรอการตรวจสอบ (2), ชำระเงินสำเร็จ (3), เช็คอินแล้ว (6)
-                $valid_pre_cancel_status_ids = [
-                    $status_id_pending_payment, 
-                    $status_id_payment_pending_review, 
-                    $status_id_payment_confirmed, 
-                    $status_id_checked_in
-                ];
-                $valid_pre_cancel_placeholders = implode(',', array_fill(0, count($valid_pre_cancel_status_ids), '?'));
-                $valid_pre_cancel_types = str_repeat('i', count($valid_pre_cancel_status_ids));
-
-                // เปลี่ยนสถานะการจองเป็น 'ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน 24 ชม.' (4)
-                $cancel_target_status_id = $status_id_cancelled_timeout; // ใช้ ID 4 เป็นตัวอย่าง
-
-                $stmt = $conn->prepare(
-                    "UPDATE reservation SET Booking_status_Id = ? 
-                     WHERE Reservation_Id = ? " . // ใช้ Reservation_Id (ตัวใหญ่)
-                     "AND Province_Id = ? 
-                     AND Booking_status_Id IN ($valid_pre_cancel_placeholders)"
-                );
-                if ($stmt === false) {
-                    throw new Exception("Failed to prepare booking status update (Cancelled) statement: " . $conn->error);
-                }
-
-                $bind_params_cancel_update = array_merge(
-                    [$cancel_target_status_id, $reservation_id, $current_province_id],
-                    $valid_pre_cancel_status_ids
-                );
-                $bind_types_cancel_update = 'isi' . $valid_pre_cancel_types;
-                
-                call_user_func_array([$stmt, 'bind_param'], array_merge([$bind_types_cancel_update], $bind_params_cancel_update));
-                
-                if ($stmt->execute()) {
-                    if ($stmt->affected_rows === 0) {
-                        throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับการยกเลิก.");
-                    }
-
-                    $_SESSION['message'] = "ยกเลิกการจอง #" . htmlspecialchars($reservation_id) . " สำเร็จแล้ว.";
-                    
-                    // ดึง Room_id จาก stay ที่ยังไม่ได้ Check-out เพื่อคืนสถานะห้อง (หากมี)
-                    $stmt_get_active_stays = $conn->prepare("SELECT Room_id FROM stay WHERE Reservation_Id = ? AND Check_out_date IS NULL"); // ใช้ Reservation_Id (ตัวใหญ่)
-                    if ($stmt_get_active_stays === false) {
-                        throw new Exception("Failed to prepare get active stays statement: " . $conn->error);
-                    }
-                    $stmt_get_active_stays->bind_param("s", $reservation_id);
-                    $stmt_get_active_stays->execute();
-                    $result_active_stays = $stmt_get_active_stays->get_result();
-                    $rooms_to_free_on_cancel = [];
-                    while($row = $result_active_stays->fetch_assoc()) {
-                        $rooms_to_free_on_cancel[] = $row['Room_id']; // Room_id ที่ได้มาเป็น VARCHAR
-                    }
-                    $stmt_get_active_stays->close();
-
-                    if (!empty($rooms_to_free_on_cancel)) {
-                        $conn->begin_transaction();
-                        try {
-                            $stmt_update_stay_cancel = $conn->prepare("UPDATE stay SET Check_out_date = ?, Check_out_time = ? WHERE Reservation_Id = ? AND Check_out_date IS NULL"); // ใช้ Reservation_Id (ตัวใหญ่)
-                            if ($stmt_update_stay_cancel === false) {
-                                throw new Exception("Failed to prepare stay update on cancel statement: " . $conn->error);
-                            }
-                            $current_date = date('Y-m-d');
-                            $current_time = date('H:i:s');
-                            $stmt_update_stay_cancel->bind_param("sss", $current_date, $current_time, $reservation_id);
-                            $stmt_update_stay_cancel->execute();
-                            $stmt_update_stay_cancel->close();
-
-                            $placeholders = implode(',', array_fill(0, count($rooms_to_free_on_cancel), '?'));
-                            $types = str_repeat('s', count($rooms_to_free_on_cancel)); // Room_id เป็น VARCHAR จึงใช้ 's'
-                            
-                            $bind_values_for_room_status_cancel = array_merge($rooms_to_free_on_cancel, [$current_province_id]);
-                            $stmt_update_room_status_cancel = $conn->prepare("UPDATE room SET Status = 'AVL' WHERE Room_ID IN ($placeholders) AND Province_id = ?");
-                            if ($stmt_update_room_status_cancel === false) {
-                                throw new Exception("Failed to prepare room status update on cancel statement: " . $conn->error);
-                            }
-                            $stmt_update_room_status_cancel->bind_param($types . 'i', ...$bind_values_for_room_status_cancel);
-
-                            $stmt_update_room_status_cancel->execute();
-                            $stmt_update_room_status_cancel->close();
-                            $conn->commit();
-                        } catch (Exception $e) {
-                            $conn->rollback();
-                            $_SESSION['error'] .= " แต่เกิดข้อผิดพลาดในการคืนสถานะห้อง: " . $e->getMessage();
-                        }
-                    }
-
-                } else {
-                    $_SESSION['error'] = "เกิดข้อผิดพลาดในการยกเลิกการจอง: " . $stmt->error;
-                }
-                $stmt->close();
-                break;
+            }
+        } catch (Exception $e) {
+            $_SESSION['error'] = "เกิดข้อผิดพลาด: " . $e->getMessage();
+            error_log("ERROR: customer_reception.php - " . $e->getMessage()); // บันทึก error ลง log file
         }
     }
-    // Redirect ไปยังหน้าที่ถูกต้อง
     header("Location: customer_reception.php");
     exit();
 }
 
 
+// *** เพิ่ม: ดึงเวลาปัจจุบันของเซิร์ฟเวอร์เพื่อส่งไปยัง JavaScript (เมื่อหน้าโหลดครั้งแรก) ***
+$current_server_time_for_js = date('H:i:s');
+
+
 // --- ส่วนดึงข้อมูลการจองเพื่อแสดงผล (พร้อม Filter) ---
 $filter_status_id = $_GET['filter_status_id'] ?? null;
 $search_query = $_GET['search_query'] ?? '';
-$search_type = $_GET['search_type'] ?? 'guest_name'; // booking_id หรือ guest_name
+$search_type = $_GET['search_type'] ?? 'guest_name';
 
-$sql_bookings = "SELECT r.Reservation_Id, r.Guest_name, r.Number_of_rooms, r.Number_of_adults, r.Number_of_children,
-                        r.Booking_date AS Check_in_date_Reserved, r.Check_out_date, r.Total_price, bs.Booking_status_name, r.Booking_time,
-                        r.Email_member, r.Receipt_id, " . // ดึง Receipt_id จาก reservation
-                        "GROUP_CONCAT(DISTINCT rt.Room_type_name ORDER BY rt.Room_type_name ASC) AS Room_types_booked,
-                        (SELECT COUNT(s.Stay_id) FROM stay s WHERE s.Reservation_Id = r.Reservation_Id AND s.Check_out_date IS NULL) AS current_stays_count
-                 FROM reservation r
-                 JOIN booking_status bs ON r.Booking_status_Id = bs.Booking_status_Id
-                 LEFT JOIN room_type rt ON rt.Room_type_Id = (
-                     SELECT room.Room_type_Id
-                     FROM room
-                     JOIN stay ON room.Room_ID = stay.Room_id
-                     WHERE stay.Reservation_Id = r.Reservation_Id " . // ใช้ Reservation_Id (ตัวใหญ่)
-                     "LIMIT 1
-                 )
-                 WHERE r.Province_Id = ? ";
+$sql_bookings = "SELECT
+    r.Reservation_Id,
+    r.Guest_name,
+    r.Number_of_rooms,
+    r.Number_of_adults,
+    r.Number_of_children,
+    r.Booking_date AS Check_in_date_Reserved,
+    r.Check_out_date,
+    r.Total_price,
+    bs.Booking_status_name,
+    r.Booking_status_Id,
+    r.Booking_time,
+    r.Email_member,
+    r.Receipt_id,
+    GROUP_CONCAT(DISTINCT rt.Room_type_name ORDER BY rt.Room_type_name ASC SEPARATOR ', ') AS Room_types_booked,
+    (SELECT COUNT(s.Stay_id) FROM stay s WHERE s.Reservation_Id = r.Reservation_Id AND s.Check_out_date IS NULL) AS current_stays_count
+FROM
+    reservation r
+JOIN
+    booking_status bs ON r.Booking_status_Id = bs.Booking_status_Id
+LEFT JOIN
+    stay s ON r.Reservation_Id = s.Reservation_Id
+LEFT JOIN
+    room rm ON s.Room_id = rm.Room_ID
+LEFT JOIN
+    room_type rt ON rm.Room_type_Id = rt.Room_type_Id
+WHERE
+    r.Province_Id = ? ";
 
 $params = [$current_province_id];
 $param_types = 'i';
@@ -457,7 +469,7 @@ if ($filter_status_id && $filter_status_id != 'all') {
 if (!empty($search_query)) {
     $search_query_like = '%' . $search_query . '%';
     if ($search_type === 'booking_id') {
-        $sql_bookings .= " AND r.Reservation_Id LIKE ?"; // ใช้ Reservation_Id (ตัวใหญ่)
+        $sql_bookings .= " AND r.Reservation_Id LIKE ?";
         $params[] = $search_query_like;
         $param_types .= 's';
     } elseif ($search_type === 'guest_name') {
@@ -467,24 +479,27 @@ if (!empty($search_query)) {
     }
 }
 
-$sql_bookings .= " GROUP BY r.Reservation_Id ORDER BY r.Booking_date DESC, r.Booking_time DESC"; // ใช้ Reservation_Id (ตัวใหญ่)
-
-// --- เพิ่ม error_log ก่อน prepare เพื่อดีบัก SQL Query ที่สร้างขึ้น ---
-error_log("DEBUG: SQL_BOOKINGS Query: " . $sql_bookings);
+$sql_bookings .= " GROUP BY r.Reservation_Id ORDER BY r.Booking_date DESC, r.Booking_time DESC";
 
 $stmt_bookings = $conn->prepare($sql_bookings);
 if ($stmt_bookings === false) {
     error_log("CRITICAL ERROR: Failed to prepare booking select statement: " . $conn->error);
-    $_SESSION['error'] = "เกิดข้อผิดพลาดในการดึงข้อมูลการจอง: " . $conn->error . " (กรุณาตรวจสอบชื่อคอลัมน์ Reservation_Id, Booking_status_name และ Room_type_name).";
-    header("Location: customer_reception.php");
-    exit();
+    $_SESSION['error'] = "เกิดข้อผิดพลาดในการดึงข้อมูลการจอง: " . $conn->error . " (กรุณาตรวจสอบชื่อคอลัมน์ Reservation_Id, Booking_status_name).";
+} else {
+    if (!empty($params)) {
+        $bind_args = [];
+        $bind_args[] = $param_types;
+        foreach ($params as $key => $value) {
+            $bind_args[] = &$params[$key]; // ส่งเป็น reference
+        }
+        call_user_func_array([$stmt_bookings, 'bind_param'], $bind_args);
+    }
+    $stmt_bookings->execute();
+    $result_bookings = $stmt_bookings->get_result();
+    $bookings = $result_bookings->fetch_all(MYSQLI_ASSOC);
+    $stmt_bookings->close();
 }
 
-$stmt_bookings->bind_param($param_types, ...$params);
-$stmt_bookings->execute();
-$result_bookings = $stmt_bookings->get_result();
-$bookings = $result_bookings->fetch_all(MYSQLI_ASSOC);
-$stmt_bookings->close();
 
 // ดึงห้องว่างสำหรับ Check-in Modal
 $available_rooms = [];
@@ -497,17 +512,21 @@ $stmt_avail_rooms = $conn->prepare($sql_available_rooms);
 if ($stmt_avail_rooms === false) {
     error_log("ERROR: Failed to prepare available rooms select statement: " . $conn->error);
     $_SESSION['error'] = "เกิดข้อผิดพลาดในการดึงข้อมูลห้องว่าง (กรุณาตรวจสอบชื่อคอลัมน์ Room_type_name).";
-    header("Location: customer_reception.php");
-    exit();
+} else {
+    $stmt_avail_rooms->bind_param("i", $current_province_id);
+    $stmt_avail_rooms->execute();
+    $result_avail_rooms = $stmt_avail_rooms->get_result();
+    while ($row = $result_avail_rooms->fetch_assoc()) {
+        $available_rooms[] = $row;
+    }
+    $stmt_avail_rooms->close();
 }
-$stmt_avail_rooms->bind_param("i", $current_province_id);
-$stmt_avail_rooms->execute();
-$result_avail_rooms = $stmt_avail_rooms->get_result();
-while ($row = $result_avail_rooms->fetch_assoc()) {
-    $available_rooms[] = $row;
-}
-$stmt_avail_rooms->close();
 
+
+// ปิดการเชื่อมต่อฐานข้อมูล
+if (isset($conn) && $conn->ping()) {
+    $conn->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -515,13 +534,13 @@ $stmt_avail_rooms->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="../src/images/logo.png" />
     <title>จัดการการจองลูกค้า - Dom Inn Hotel (สาขา: <?= htmlspecialchars($province_name) ?>)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
         /* Basic Reset & Body */
         body {
             font-family: 'Sarabun', sans-serif;
-            /* หรือฟอนต์อื่นที่ต้องการ */
             margin: 0;
             padding: 0;
             background-color: #f4f7f6;
@@ -627,14 +646,12 @@ $stmt_avail_rooms->close();
             border-radius: 8px;
             border: 1px solid #e9ecef;
             align-items: flex-end;
-            /* Align items to the bottom */
         }
 
         .filter-group {
             display: flex;
             flex-direction: column;
             min-width: 150px;
-            /* Ensure inputs have some width */
         }
 
         .filter-form label {
@@ -726,28 +743,40 @@ $stmt_avail_rooms->close();
         }
 
         /* Success green */
-        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม. {
+        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม {
+            background-color: #dc3545;
+            color: white;
+        }
+        /* Danger red */
+        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม. { /* Fix for exact match */
             background-color: #dc3545;
             color: white;
         }
 
+        .status-ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน-24-ชม {
+            background-color: #dc3545;
+            color: white;
+        }
         /* Danger red */
-        .status-ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน-24-ชม. {
+        .status-ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน-24-ชม. { /* Fix for exact match */
             background-color: #dc3545;
             color: white;
         }
 
-        /* Danger red */
-
-        /* สถานะใหม่ที่เราแนะนำให้เพิ่ม */
+        /* สถานะที่เพิ่มใหม่ */
         .status-เช็คอินแล้ว {
             background-color: #007bff;
+            /* สีน้ำเงิน */
             color: white;
         }
 
         /* Primary blue */
-        .status-เสร็จสมบูรณ์ {
+        .status-เสร็จสมบูรณ์,
+        /* ถ้าใช้ชื่อนี้ใน DB (ตามรูป phpMyAdmin ล่าสุด) */
+        .status-เช็คเอาท์แล้ว {
+            /* ถ้าใช้ชื่อนี้ใน DB (ตามที่คุณอาจจะตั้งไว้) */
             background-color: #6c757d;
+            /* สีเทาเข้ม */
             color: white;
         }
 
@@ -1101,7 +1130,7 @@ $stmt_avail_rooms->close();
                     <tr>
                         <th>รหัสการจอง</th>
                         <th>ชื่อลูกค้า</th>
-                        <th>ประเภทห้อง (โดยประมาณ)</th>
+                        <th>ประเภทห้องที่จอง</th>
                         <th>จำนวนห้อง</th>
                         <th>ผู้ใหญ่/เด็ก</th>
                         <th>เช็คอิน</th>
@@ -1114,10 +1143,8 @@ $stmt_avail_rooms->close();
                 <tbody>
                     <?php foreach ($bookings as $booking):
                         $current_status_name = htmlspecialchars($booking['Booking_status_name']);
-                        // ค้นหา ID ของสถานะจากชื่อ
-                        $current_status_obj = array_values(array_filter($booking_statuses, fn($s) => $s['Booking_status_name'] == $current_status_name));
-                        $current_status_id = !empty($current_status_obj) ? $current_status_obj[0]['Booking_status_Id'] : 0;
-                        ?>
+                        $current_status_id = htmlspecialchars($booking['Booking_status_Id']);
+                    ?>
                         <tr>
                             <td><?= htmlspecialchars($booking['Reservation_Id']) ?></td>
                             <td><?= htmlspecialchars($booking['Guest_name']) ?></td>
@@ -1130,63 +1157,51 @@ $stmt_avail_rooms->close();
                             <td><span class="status-badge status-<?= str_replace(' ', '-', $current_status_name) ?>"><?= $current_status_name ?></span></td>
                             <td class="action-buttons-cell">
                                 <button class="btn-view-details"
-                                        data-booking='<?= json_encode($booking, JSON_UNESCAPED_UNICODE) ?>'
-                                        onclick="openBookingDetailsModal(this)">
+                                    data-booking='<?= json_encode($booking, JSON_UNESCAPED_UNICODE) ?>'
+                                    onclick="openBookingDetailsModal(this)">
                                     <i class="fas fa-info-circle"></i> ดูรายละเอียด
                                 </button>
                                 <?php
-                                // เงื่อนไขสำหรับการแสดงปุ่ม "เช็คอิน"
-                                // อนุญาตให้เช็คอินได้ถ้าสถานะเป็น ยืนยันการจองและรอชำระเงิน (1), ชำระเงินสำเร็จรอการตรวจสอบ (2), หรือ ชำระเงินสำเร็จ (3)
-                                $can_check_in = ($current_status_id == $status_id_pending_payment || 
-                                                 $current_status_id == $status_id_payment_pending_review || 
-                                                 $current_status_id == $status_id_payment_confirmed);
+                                $can_check_in = ($current_status_id == $status_id_pending_payment ||
+                                    $current_status_id == $status_id_payment_pending_review ||
+                                    $current_status_id == $status_id_payment_confirmed);
                                 ?>
                                 <?php if ($can_check_in): ?>
                                     <button class="btn-check-in"
-                                            data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
-                                            data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
-                                            data-checkin-date="<?= htmlspecialchars($booking['Check_in_date_Reserved']) ?>"
-                                            data-num-rooms="<?= htmlspecialchars($booking['Number_of_rooms']) ?>"
-                                            onclick="openCheckInModal(this)">
+                                        data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
+                                        data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
+                                        data-checkin-date="<?= htmlspecialchars($booking['Check_in_date_Reserved']) ?>"
+                                        data-num-rooms="<?= htmlspecialchars($booking['Number_of_rooms']) ?>"
+                                        onclick="openCheckInModal(this)">
                                         <i class="fas fa-sign-in-alt"></i> เช็คอิน
                                     </button>
                                 <?php endif; ?>
 
                                 <?php
-                                // เงื่อนไขสำหรับการแสดงปุ่ม "เช็คเอาท์"
-                                // อนุญาตให้เช็คเอาท์ได้ถ้าสถานะเป็น 'เช็คอินแล้ว' (6)
                                 $can_check_out = ($current_status_id == $status_id_checked_in);
                                 ?>
                                 <?php if ($can_check_out): ?>
                                     <button class="btn-check-out"
-                                            data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
-                                            data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
-                                            onclick="openCheckOutModal(this)">
+                                        data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
+                                        data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
+                                        onclick="openCheckOutModal(this)">
                                         <i class="fas fa-sign-out-alt"></i> เช็คเอาท์
                                     </button>
                                 <?php endif; ?>
 
                                 <?php
-                                // เงื่อนไขสำหรับการแสดงปุ่ม "ยกเลิก"
-                                // อนุญาตให้ยกเลิกได้หากสถานะยังไม่ เสร็จสมบูรณ์ (7) หรือถูกยกเลิกไปแล้ว (4, 5)
-                                $can_cancel = !($current_status_id == $status_id_completed || 
-                                                $current_status_id == $status_id_cancelled_timeout || 
-                                                $current_status_id == $status_id_cancelled_incomplete_payment);
+                                $can_cancel = !($current_status_id == $status_id_completed ||
+                                    $current_status_id == $status_id_cancelled_timeout ||
+                                    $current_status_id == $status_id_cancelled_incomplete_payment);
                                 ?>
                                 <?php if ($can_cancel): ?>
-                                     <button class="btn-cancel"
-                                            data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
-                                            data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
-                                            onclick="openCancelBookingModal(this)">
+                                    <button class="btn-cancel"
+                                        data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
+                                        data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
+                                        onclick="openCancelBookingModal(this)">
                                         <i class="fas fa-times-circle"></i> ยกเลิก
                                     </button>
                                 <?php endif; ?>
-                                <button class="btn-update-status"
-                                        data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
-                                        data-current-status-id="<?= htmlspecialchars($current_status_id) ?>"
-                                        onclick="openUpdateStatusModal(this)">
-                                        <i class="fas fa-edit"></i> เปลี่ยนสถานะ
-                                </button>
                             </td>
                         </tr>
                     <?php endforeach; ?>
@@ -1210,7 +1225,7 @@ $stmt_avail_rooms->close();
             <p><b>สถานะ:</b> <span id="modalStatus" class="status-badge"></span></p>
             <p><b>เวลาที่จอง:</b> <span id="modalBookingTime"></span></p>
             <p><b>อีเมลสมาชิก:</b> <span id="modalEmailMember"></span></p>
-            <p><b>รหัสใบเสร็จ:</b> <span id="modalReceiptId"></span></p> <!-- เพิ่มช่องแสดง Receipt_id -->
+            <p><b>รหัสใบเสร็จ:</b> <span id="modalReceiptId"></span></p>
 
             <div class="modal-actions">
                 <button type="button" class="btn-cancel-modal" onclick="closeModal('bookingDetailsModal')">ปิด</button>
@@ -1232,12 +1247,10 @@ $stmt_avail_rooms->close();
 
                 <div class="form-group-modal">
                     <label for="checkInDate">วันที่เช็คอิน:</label>
-                    <input type="date" id="checkInDate" name="checkin_date" value="<?= date('Y-m-d') ?>" required>
+                    <input type="date" id="checkInDate" name="checkin_date" required>
                 </div>
-                <div class="form-group-modal">
-                    <label for="checkInTime">เวลาเช็คอิน:</label>
-                    <input type="time" id="checkInTime" name="checkin_time" value="<?= date('H:i') ?>" required>
-                </div>
+                <!-- *** ปรับปรุง: แสดงเวลาปัจจุบันของเซิร์ฟเวอร์ที่ได้จาก PHP *** -->
+                <p style="font-size: 0.9em; color: #555;">เวลาเช็คอินจะถูกบันทึก ณ เวลาที่ยืนยัน (เวลาเซิร์ฟเวอร์ปัจจุบัน: <span id="currentServerTime"></span>)</p>
                 <div class="form-group-modal">
                     <label>เลือกห้องพักว่างที่ต้องการ (จำนวน <span id="checkInRequiredRooms"></span> ห้อง):</label>
                     <div class="room-selection-container" id="availableRoomsContainer">
@@ -1298,34 +1311,10 @@ $stmt_avail_rooms->close();
         </div>
     </div>
 
-    <!-- Modal for Update Status -->
-    <div id="updateStatusModal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeModal('updateStatusModal')">&times;</span>
-            <h3>เปลี่ยนสถานะการจอง</h3>
-            <p>กำลังเปลี่ยนสถานะการจอง <strong id="updateStatusModalBookingId"></strong></p>
-            <form action="customer_reception.php" method="POST">
-                <input type="hidden" name="action" value="update_status">
-                <input type="hidden" name="reservation_id" id="updateStatusBookingIdHidden">
-                <div class="form-group-modal">
-                    <label for="new_status_id">เลือกสถานะใหม่:</label>
-                    <select id="new_status_id" name="new_status_id" required>
-                        <?php foreach ($booking_statuses as $status): ?>
-                            <option value="<?= htmlspecialchars($status['Booking_status_Id']) ?>">
-                                <?= htmlspecialchars($status['Booking_status_name']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn-cancel-modal" onclick="closeModal('updateStatusModal')">ยกเลิก</button>
-                    <button type="submit" class="btn-update-status">อัปเดตสถานะ</button>
-                </div>
-            </form>
-        </div>
-                        </div>
-    
     <script>
+        // *** เพิ่ม: รับเวลาปัจจุบันของเซิร์ฟเวอร์จาก PHP (เมื่อหน้าโหลดครั้งแรก) ***
+        const initialServerTime = "<?= $current_server_time_for_js ?>";
+
         // Function to open any modal
         function openModal(modalId) {
             document.getElementById(modalId).classList.add('show');
@@ -1366,27 +1355,22 @@ $stmt_avail_rooms->close();
         // --- Check-in Modal ---
         function openCheckInModal(button) {
             const bookingId = button.dataset.bookingId;
-            const guestName = document.getElementById('checkInModalGuestName').textContent; // ดึง Guest_name จาก Modal
-            const checkinDate = button.dataset.checkinDate;
+            const guestName = button.dataset.guestName;
+            const checkinDate = button.dataset.checkinDate; // ใช้ checkinDate จากข้อมูลการจอง
             const numRooms = parseInt(button.dataset.numRooms);
 
             document.getElementById('checkInModalBookingId').textContent = bookingId;
             document.getElementById('checkInModalGuestName').textContent = guestName;
             document.getElementById('checkInBookingIdHidden').value = bookingId;
-            document.getElementById('checkInGuestNameHidden').value = guestName; // ตั้งค่า Guest_name ที่ซ่อนไว้
+            document.getElementById('checkInGuestNameHidden').value = guestName;
             document.getElementById('checkInNumRoomsBooked').value = numRooms;
-            document.getElementById('checkInRequiredRooms').textContent = numRooms; // แสดงจำนวนห้องที่ต้องเลือก
+            document.getElementById('checkInRequiredRooms').textContent = numRooms;
 
-            // *** แก้ไข: ตั้งค่าวันที่และเวลาให้เป็นปัจจุบันเมื่อเปิด Modal ***
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = (now.getMonth() + 1).toString().padStart(2, '0');
-            const day = now.getDate().toString().padStart(2, '0');
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
+            // ตั้งค่าวันที่เช็คอินเริ่มต้นเป็นวันที่จอง (checkinDate)
+            document.getElementById('checkInDate').value = checkinDate;
 
-            document.getElementById('checkInDate').value = `${year}-${month}-${day}`;
-            document.getElementById('checkInTime').value = `${hours}:${minutes}`;
+            // *** ปรับปรุง: แสดงเวลาปัจจุบันของเซิร์ฟเวอร์ที่ได้จาก PHP ***
+            document.getElementById('currentServerTime').textContent = initialServerTime;
 
             document.querySelectorAll('#availableRoomsContainer input[type="checkbox"]').forEach(checkbox => {
                 checkbox.checked = false;
@@ -1428,17 +1412,6 @@ $stmt_avail_rooms->close();
             document.getElementById('cancelBookingModalGuestName').textContent = guestName;
             document.getElementById('cancelBookingIdHidden').value = bookingId;
             openModal('cancelBookingModal');
-        }
-
-        // --- Update Status Modal ---
-        function openUpdateStatusModal(button) {
-            const bookingId = button.dataset.bookingId;
-            const currentStatusId = button.dataset.currentStatusId;
-            document.getElementById('updateStatusModalBookingId').textContent = bookingId;
-            document.getElementById('updateStatusBookingIdHidden').value = bookingId;
-            document.getElementById('new_status_id').value = currentStatusId; // ตั้งค่า selected option เป็นสถานะปัจจุบัน
-
-            openModal('updateStatusModal');
         }
 
         // Close modal when clicking outside (on the overlay)
