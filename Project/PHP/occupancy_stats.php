@@ -583,21 +583,41 @@ $chart_data = [
             margin-bottom: 30px;
         }
 
-        .logout-link {
+        /* --- Updated CSS for Navbar buttons --- */
+        .admin-navbar > div { /* Target the div containing the buttons */
+            display: flex;
+            align-items: center;
+            gap: 10px; /* Space between buttons */
+            margin-left: auto; /* Push the group to the right */
+        }
+
+        .logout-link, .btn-back {
             text-decoration: none;
-            color: #e74c3c;
             font-weight: bold;
             padding: 8px 12px;
             border-radius: 5px;
-            background-color: #fff;
             transition: background-color 0.3s ease;
-            float: right;
-            margin-top: 5px;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        .logout-link {
+            color: #e74c3c;
+            background-color: #fff;
         }
 
         .logout-link:hover {
             background-color: #fdd;
         }
+
+        .btn-back {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-back:hover {
+            background-color: #5a6268;
+        }
+        /* --- End Updated CSS --- */
 
         .summary-table {
             width: 100%;
@@ -620,22 +640,6 @@ $chart_data = [
         .summary-table tbody tr:nth-child(even) {
             background-color: #f8f8f8;
         }
-
-        .btn-back {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #6c757d;
-            color: white;
-            border-radius: 5px;
-            text-decoration: none;
-            text-align: center;
-            transition: background-color 0.3s ease;
-            margin-top: 20px;
-        }
-
-        .btn-back:hover {
-            background-color: #5a6268;
-        }
     </style>
 </head>
 
@@ -647,7 +651,7 @@ $chart_data = [
             <?php endif; ?>
         </span>
         <div>
-            <a href="index.php" class="logout-link">ออกจากระบบ</a>
+            <a href="logout.php" class="logout-link">ออกจากระบบ</a>
             <?php if ($is_officer): ?>
                 <a href="officer.php" class="btn-back">กลับหน้าหลักเจ้าหน้าที่</a>
             <?php elseif ($is_admin): ?>

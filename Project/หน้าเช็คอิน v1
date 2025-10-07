@@ -557,9 +557,6 @@ if (isset($conn) && $conn->ping()) {
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            position: sticky; /* Make header sticky */
-            top: 0;
-            z-index: 100; /* Ensure it stays above other content */
         }
 
         header h1 {
@@ -569,35 +566,19 @@ if (isset($conn) && $conn->ping()) {
 
         .user-info {
             font-size: 1em;
-            display: flex; /* Use flex to align items in user-info */
-            align-items: center;
-            gap: 15px; /* Space between items */
         }
 
         .user-info a {
             color: #ffc107;
             text-decoration: none;
+            margin-left: 15px;
             font-weight: bold;
             transition: color 0.3s ease;
-            white-space: nowrap; /* Prevent text wrapping */
         }
 
         .user-info a:hover {
             color: #fff;
         }
-        .user-info .btn-back { /* Specific styling for btn-back within user-info */
-            background-color: #6c757d;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-        .user-info .btn-back:hover {
-            background-color: #5a6268;
-        }
-
 
         /* Main Content */
         .container {
@@ -702,21 +683,11 @@ if (isset($conn) && $conn->ping()) {
             background-color: #218838;
         }
 
-        /* --- Table Fix Styles --- */
-        .table-responsive-wrapper {
-            overflow-x: auto; /* Enable horizontal scrolling */
-            max-height: 70vh; /* Optional: limit vertical height for table body scrolling */
-            overflow-y: auto; /* Enable vertical scrolling */
-            position: relative; /* Needed for sticky to work relative to this container */
-            border: 1px solid #dee2e6; /* Add border to wrapper for consistent look */
-            border-radius: 8px;
-        }
-
+        /* Table Styles */
         .booking-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 0; /* Remove top margin as container handles spacing */
-            table-layout: fixed; /* Helps with fixed column widths */
+            margin-top: 20px;
         }
 
         .booking-table th,
@@ -724,33 +695,15 @@ if (isset($conn) && $conn->ping()) {
             border: 1px solid #dee2e6;
             padding: 12px 15px;
             text-align: left;
-            vertical-align: top; /* Align text to top when wrapping */
+            vertical-align: middle;
             font-size: 0.95em;
-            /* Remove white-space: nowrap; overflow: hidden; text-overflow: ellipsis; */
-            word-break: break-word; /* Allow text to break within words if too long */
         }
-
-        /* Define specific column widths (adjust as needed based on your data) */
-        .booking-table th:nth-child(1), .booking-table td:nth-child(1) { width: 120px; } /* รหัสการจอง */
-        .booking-table th:nth-child(2), .booking-table td:nth-child(2) { width: 120px; } /* ชื่อลูกค้า */
-        .booking-table th:nth-child(3), .booking-table td:nth-child(3) { width: 150px; } /* ประเภทห้องที่จอง */
-        .booking-table th:nth-child(4), .booking-table td:nth-child(4) { width: 80px; }  /* จำนวนห้อง */
-        .booking-table th:nth-child(5), .booking-table td:nth-child(5) { width: 80px; }  /* ผู้ใหญ่/เด็ก */
-        .booking-table th:nth-child(6), .booking-table td:nth-child(6) { width: 100px; } /* เช็คอิน */
-        .booking-table th:nth-child(7), .booking-table td:nth-child(7) { width: 100px; } /* เช็คเอาท์ */
-        .booking-table th:nth-child(8), .booking-table td:nth-child(8) { width: 100px; } /* ราคา */
-        .booking-table th:nth-child(9), .booking-table td:nth-child(9) { width: 150px; } /* สถานะ */
-        .booking-table th:nth-child(10),.booking-table td:nth-child(10) { width: 200px; } /* ดำเนินการ - ต้องกว้างพอสำหรับปุ่ม */
-
 
         .booking-table th {
             background-color: #e9ecef;
             color: #495057;
             font-weight: 600;
             text-transform: uppercase;
-            position: sticky; /* Make headers sticky */
-            top: 0; /* Stick to the top of the scrolling container */
-            z-index: 20; /* Ensure headers are above body content */
         }
 
         .booking-table tbody tr:nth-child(odd) {
@@ -761,33 +714,6 @@ if (isset($conn) && $conn->ping()) {
             background-color: #e2f3ff;
         }
 
-        /* Sticky first column */
-        .booking-table th:first-child,
-        .booking-table td:first-child {
-            position: sticky;
-            left: 0;
-            z-index: 21; /* Ensure first column is above other sticky headers and content */
-            background-color: inherit; /* Inherit background to match row stripes */
-        }
-        /* Specific backgrounds for sticky first column to maintain stripe effect */
-        .booking-table th:first-child {
-            background-color: #e9ecef; /* Match header background */
-        }
-        .booking-table tbody tr:nth-child(odd) td:first-child {
-            background-color: #fcfdfe;
-        }
-        .booking-table tbody tr:nth-child(even) td:first-child {
-            background-color: #f8f8f8;
-        }
-
-
-        /* Special case for the top-left corner (both sticky) */
-        .booking-table th:first-child {
-            z-index: 22; /* Highest z-index for the corner cell */
-        }
-        /* --- End Table Fix Styles --- */
-
-
         /* Status Badges - ปรับให้ตรงกับชื่อสถานะใน DB */
         .status-badge {
             display: inline-block;
@@ -795,8 +721,7 @@ if (isset($conn) && $conn->ping()) {
             border-radius: 5px;
             font-weight: bold;
             font-size: 0.85em;
-            white-space: normal; /* Allow badge text to wrap if it's very long */
-            word-break: break-word;
+            white-space: nowrap;
         }
 
         /* จากภาพ phpMyAdmin */
@@ -859,10 +784,6 @@ if (isset($conn) && $conn->ping()) {
 
 
         /* Action Buttons in Table */
-        .action-buttons-cell {
-            min-width: 250px; /* Ensure enough width for buttons */
-            white-space: normal; /* Allow buttons to wrap if necessary */
-        }
         .action-buttons-cell button,
         .action-buttons-cell a {
             padding: 7px 12px;
@@ -871,12 +792,10 @@ if (isset($conn) && $conn->ping()) {
             cursor: pointer;
             font-size: 0.85em;
             margin-right: 5px;
-            margin-bottom: 5px; /* Add small margin for wrapped buttons */
             transition: background-color 0.2s ease, transform 0.2s ease;
             text-decoration: none;
             display: inline-block;
             text-align: center;
-            white-space: nowrap; /* Keep button text on one line */
         }
 
         .btn-view-details {
@@ -1162,8 +1081,8 @@ if (isset($conn) && $conn->ping()) {
         <div class="user-info">
             สวัสดี, <?php echo htmlspecialchars($officer_fname . " " . $officer_lname); ?>
             (สาขา: <?php echo htmlspecialchars($province_name); ?>)
-            <a href="logout.php" class="logout-link">ออกจากระบบ</a>
-            <a href="officer.php" class="logout-link">กลับเจ้าหน้าที่ดูแลระบบ</a>
+            <a href="index.php">ออกจากระบบ</a>
+            <a href="officer.php" class="btn-back">กลับเจ้าหน้าที่ดูแลระบบ</a>
         </div>
     </header>
 
@@ -1206,90 +1125,88 @@ if (isset($conn) && $conn->ping()) {
         <?php if (empty($bookings)): ?>
             <p style="text-align: center; padding: 20px; font-size: 1.1em; color: #666;">ไม่พบข้อมูลการจองตามเงื่อนไขที่เลือก.</p>
         <?php else: ?>
-            <div class="table-responsive-wrapper">
-                <table class="booking-table">
-                    <thead>
+            <table class="booking-table">
+                <thead>
+                    <tr>
+                        <th>รหัสการจอง</th>
+                        <th>ชื่อลูกค้า</th>
+                        <th>ประเภทห้องที่จอง</th>
+                        <th>จำนวนห้อง</th>
+                        <th>ผู้ใหญ่/เด็ก</th>
+                        <th>เช็คอิน</th>
+                        <th>เช็คเอาท์</th>
+                        <th>ราคา</th>
+                        <th>สถานะ</th>
+                        <th>ดำเนินการ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($bookings as $booking):
+                        $current_status_name = htmlspecialchars($booking['Booking_status_name']);
+                        $current_status_id = htmlspecialchars($booking['Booking_status_Id']);
+                    ?>
                         <tr>
-                            <th>รหัสการจอง</th>
-                            <th>ชื่อลูกค้า</th>
-                            <th>ประเภทห้องที่จอง</th>
-                            <th>จำนวนห้อง</th>
-                            <th>ผู้ใหญ่/เด็ก</th>
-                            <th>เช็คอิน</th>
-                            <th>เช็คเอาท์</th>
-                            <th>ราคา</th>
-                            <th>สถานะ</th>
-                            <th>ดำเนินการ</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($bookings as $booking):
-                            $current_status_name = htmlspecialchars($booking['Booking_status_name']);
-                            $current_status_id = htmlspecialchars($booking['Booking_status_Id']);
-                        ?>
-                            <tr>
-                                <td><?= htmlspecialchars($booking['Reservation_Id']) ?></td>
-                                <td><?= htmlspecialchars($booking['Guest_name']) ?></td>
-                                <td><?= htmlspecialchars($booking['Room_types_booked'] ?? 'ไม่ระบุ') ?></td>
-                                <td><?= htmlspecialchars($booking['Number_of_rooms']) ?></td>
-                                <td><?= htmlspecialchars($booking['Number_of_adults']) ?> / <?= htmlspecialchars($booking['Number_of_children']) ?></td>
-                                <td><?= htmlspecialchars($booking['Check_in_date_Reserved']) ?></td>
-                                <td><?= htmlspecialchars($booking['Check_out_date']) ?></td>
-                                <td>฿<?= number_format($booking['Total_price'], 2) ?></td>
-                                <td><span class="status-badge status-<?= str_replace(' ', '-', $current_status_name) ?>"><?= $current_status_name ?></span></td>
-                                <td class="action-buttons-cell">
-                                    <button class="btn-view-details"
-                                        data-booking='<?= json_encode($booking, JSON_UNESCAPED_UNICODE) ?>'
-                                        onclick="openBookingDetailsModal(this)">
-                                        <i class="fas fa-info-circle"></i> ดูรายละเอียด
+                            <td><?= htmlspecialchars($booking['Reservation_Id']) ?></td>
+                            <td><?= htmlspecialchars($booking['Guest_name']) ?></td>
+                            <td><?= htmlspecialchars($booking['Room_types_booked'] ?? 'ไม่ระบุ') ?></td>
+                            <td><?= htmlspecialchars($booking['Number_of_rooms']) ?></td>
+                            <td><?= htmlspecialchars($booking['Number_of_adults']) ?> / <?= htmlspecialchars($booking['Number_of_children']) ?></td>
+                            <td><?= htmlspecialchars($booking['Check_in_date_Reserved']) ?></td>
+                            <td><?= htmlspecialchars($booking['Check_out_date']) ?></td>
+                            <td>฿<?= number_format($booking['Total_price'], 2) ?></td>
+                            <td><span class="status-badge status-<?= str_replace(' ', '-', $current_status_name) ?>"><?= $current_status_name ?></span></td>
+                            <td class="action-buttons-cell">
+                                <button class="btn-view-details"
+                                    data-booking='<?= json_encode($booking, JSON_UNESCAPED_UNICODE) ?>'
+                                    onclick="openBookingDetailsModal(this)">
+                                    <i class="fas fa-info-circle"></i> ดูรายละเอียด
+                                </button>
+                                <?php
+                                $can_check_in = ($current_status_id == $status_id_pending_payment ||
+                                    $current_status_id == $status_id_payment_pending_review ||
+                                    $current_status_id == $status_id_payment_confirmed);
+                                ?>
+                                <?php if ($can_check_in): ?>
+                                    <button class="btn-check-in"
+                                        data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
+                                        data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
+                                        data-checkin-date="<?= htmlspecialchars($booking['Check_in_date_Reserved']) ?>"
+                                        data-num-rooms="<?= htmlspecialchars($booking['Number_of_rooms']) ?>"
+                                        onclick="openCheckInModal(this)">
+                                        <i class="fas fa-sign-in-alt"></i> เช็คอิน
                                     </button>
-                                    <?php
-                                    $can_check_in = ($current_status_id == $status_id_pending_payment ||
-                                        $current_status_id == $status_id_payment_pending_review ||
-                                        $current_status_id == $status_id_payment_confirmed);
-                                    ?>
-                                    <?php if ($can_check_in): ?>
-                                        <button class="btn-check-in"
-                                            data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
-                                            data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
-                                            data-checkin-date="<?= htmlspecialchars($booking['Check_in_date_Reserved']) ?>"
-                                            data-num-rooms="<?= htmlspecialchars($booking['Number_of_rooms']) ?>"
-                                            onclick="openCheckInModal(this)">
-                                            <i class="fas fa-sign-in-alt"></i> เช็คอิน
-                                        </button>
-                                    <?php endif; ?>
+                                <?php endif; ?>
 
-                                    <?php
-                                    $can_check_out = ($current_status_id == $status_id_checked_in);
-                                    ?>
-                                    <?php if ($can_check_out): ?>
-                                        <button class="btn-check-out"
-                                            data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
-                                            data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
-                                            onclick="openCheckOutModal(this)">
-                                            <i class="fas fa-sign-out-alt"></i> เช็คเอาท์
-                                        </button>
-                                    <?php endif; ?>
+                                <?php
+                                $can_check_out = ($current_status_id == $status_id_checked_in);
+                                ?>
+                                <?php if ($can_check_out): ?>
+                                    <button class="btn-check-out"
+                                        data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
+                                        data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
+                                        onclick="openCheckOutModal(this)">
+                                        <i class="fas fa-sign-out-alt"></i> เช็คเอาท์
+                                    </button>
+                                <?php endif; ?>
 
-                                    <?php
-                                    $can_cancel = !($current_status_id == $status_id_completed ||
-                                        $current_status_id == $status_id_cancelled_timeout ||
-                                        $current_status_id == $status_id_cancelled_incomplete_payment);
-                                    ?>
-                                    <?php if ($can_cancel): ?>
-                                        <button class="btn-cancel"
-                                            data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
-                                            data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
-                                            onclick="openCancelBookingModal(this)">
-                                            <i class="fas fa-times-circle"></i> ยกเลิก
-                                        </button>
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div> <!-- Close table-responsive-wrapper -->
+                                <?php
+                                $can_cancel = !($current_status_id == $status_id_completed ||
+                                    $current_status_id == $status_id_cancelled_timeout ||
+                                    $current_status_id == $status_id_cancelled_incomplete_payment);
+                                ?>
+                                <?php if ($can_cancel): ?>
+                                    <button class="btn-cancel"
+                                        data-booking-id="<?= htmlspecialchars($booking['Reservation_Id']) ?>"
+                                        data-guest-name="<?= htmlspecialchars($booking['Guest_name']) ?>"
+                                        onclick="openCancelBookingModal(this)">
+                                        <i class="fas fa-times-circle"></i> ยกเลิก
+                                    </button>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
         <?php endif; ?>
     </main>
 
