@@ -400,7 +400,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $_SESSION['error'] .= " แต่เกิดข้อผิดพลาดในการคืนสถานะห้อง: " . $e->getMessage();
                             }
                         }
-
                     } else {
                         throw new Exception("เกิดข้อผิดพลาดในการยกเลิกการจอง: " . $stmt->error);
                     }
@@ -608,8 +607,10 @@ if (isset($conn) && $conn->ping()) {
         /* Main Content */
         .container {
             /* เดิม: max-width: 1200px; */
-            max-width: 1600px; /* เพิ่มความกว้างสูงสุดของ container */
-            width: 95%; /* ใช้ 95% ของความกว้างหน้าจอเพื่อให้ยืดหยุ่นมากขึ้น */
+            max-width: 1600px;
+            /* เพิ่มความกว้างสูงสุดของ container */
+            width: 95%;
+            /* ใช้ 95% ของความกว้างหน้าจอเพื่อให้ยืดหยุ่นมากขึ้น */
             margin: 30px auto;
             background-color: #fff;
             padding: 25px;
@@ -726,13 +727,15 @@ if (isset($conn) && $conn->ping()) {
         }
 
         .booking-table {
-            width: 100%; /* ให้ตารางกว้างเต็มพื้นที่ของ wrapper */
+            width: 100%;
+            /* ให้ตารางกว้างเต็มพื้นที่ของ wrapper */
             border-collapse: collapse;
             margin-top: 0;
             /* Remove top margin as container handles spacing */
             table-layout: fixed;
             /* Helps with fixed column widths */
-            /* min-width: 1550px; */ /* เพิ่ม min-width หากต้องการให้ตารางมีขนาดต่ำสุดที่กว้างขึ้น */
+            /* min-width: 1550px; */
+            /* เพิ่ม min-width หากต้องการให้ตารางมีขนาดต่ำสุดที่กว้างขึ้น */
         }
 
         .booking-table th,
@@ -1250,7 +1253,7 @@ if (isset($conn) && $conn->ping()) {
         <div class="user-info">
             สวัสดี, <?php echo htmlspecialchars($officer_fname . " " . $officer_lname); ?>
             (สาขา: <?php echo htmlspecialchars($province_name); ?>)
-            <a href="logout.php" class="logout-link">ออกจากระบบ</a>
+            <a href="index.php" class="logout-link">ออกจากระบบ</a>
             <a href="officer.php" class="logout-link">กลับเจ้าหน้าที่ดูแลระบบ</a>
         </div>
     </header>

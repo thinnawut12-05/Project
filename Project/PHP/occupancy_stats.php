@@ -651,7 +651,7 @@ $chart_data = [
             <?php endif; ?>
         </span>
         <div>
-            <a href="logout.php" class="logout-link">ออกจากระบบ</a>
+            <!-- <a href="index.php" class="logout-link">ออกจากระบบ</a> -->
             <?php if ($is_officer): ?>
                 <a href="officer.php" class="btn-back">กลับหน้าหลักเจ้าหน้าที่</a>
             <?php elseif ($is_admin): ?>
