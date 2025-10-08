@@ -672,7 +672,7 @@ $conn->close();
         <div class="user-info">
             สวัสดี, <?= htmlspecialchars($officer_fname . " " . $officer_lname); ?>
             (สาขา: <?= htmlspecialchars($province_name); ?>)
-            <a href="index.php">ออกจากระบบ</a>
+            <!-- <a href="index.php">ออกจากระบบ</a> -->
             <a href="officer.php">กลับหน้าหลักเจ้าหน้าที่</a>
         </div>
     </header>

@@ -1253,7 +1253,7 @@ if (isset($conn) && $conn->ping()) {
         <div class="user-info">
             สวัสดี, <?php echo htmlspecialchars($officer_fname . " " . $officer_lname); ?>
             (สาขา: <?php echo htmlspecialchars($province_name); ?>)
-            <a href="index.php" class="logout-link">ออกจากระบบ</a>
+            <!-- <a href="index.php" class="logout-link">ออกจากระบบ</a> -->
             <a href="officer.php" class="logout-link">กลับเจ้าหน้าที่ดูแลระบบ</a>
         </div>
     </header>
