@@ -167,7 +167,7 @@ if ($province_id) {
             <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
             <a href="./details.php">รายละเอียดต่างๆ</a>
             <a href="./booking_status_pending.php">การจองของฉัน</a>
-            <a href="./success_booking.php">คะแนน</a>
+            <a href="./score.php">คะแนน</a>
         </nav>
         <?php if ($full_name && $full_name !== ' '): ?>
             <div class="user-display">
