@@ -442,7 +442,7 @@ $result = $conn->query($sql_select);
 <body>
     <div class="admin-navbar">
         <div class="welcome-text">ยินดีต้อนรับ, <?= htmlspecialchars($_SESSION['admin_name'] ?? 'Admin') ?></div>
-        <a href="index.php" class="logout-link">ออกจากระบบ</a>
+        <!-- <a href="index.php" class="logout-link">ออกจากระบบ</a> -->
         <a href="admin-home.php" class="btn-back">กลับหน้าผู้ดูแลระบบ</a>
     </div>
 
