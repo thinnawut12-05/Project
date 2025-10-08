@@ -75,7 +75,7 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
     }
 
     .container {
-      max-width: 1500px;
+      max-width: 1600px;
       margin: 40px auto;
       background: #fff;
       border-radius: 15px;

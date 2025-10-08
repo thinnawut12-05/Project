@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $conn->begin_transaction();
                     try {
-                        $stmt_get_reservation_details = $conn->prepare("SELECT Email_member, Guest_name, Receipt_id FROM reservation WHERE Reservation_Id = ?");
+                        $stmt_get_reservation_details = $conn->prepare("SELECT Email_member, Guest_name, Receipt_id, Booking_status_Id FROM reservation WHERE Reservation_Id = ?");
                         if ($stmt_get_reservation_details === false) {
                             throw new Exception("Failed to prepare reservation details fetch statement: " . $conn->error);
                         }
@@ -155,38 +155,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $member_email = null;
                         $guest_name_from_reservation = null;
                         $receipt_id_from_reservation = null;
+                        $booking_status_before_checkin = null;
                         if ($row_reservation_details = $result_reservation_details->fetch_assoc()) {
                             $member_email = $row_reservation_details['Email_member'];
                             $guest_name_from_reservation = $row_reservation_details['Guest_name'];
                             $receipt_id_from_reservation = $row_reservation_details['Receipt_id'];
+                            $booking_status_before_checkin = $row_reservation_details['Booking_status_Id'];
                         } else {
                             throw new Exception("ไม่พบข้อมูลการจองสำหรับ Reservation ID: " . htmlspecialchars($reservation_id));
                         }
                         $stmt_get_reservation_details->close();
 
-                        $receipt_id_for_stay = (!empty($receipt_id_from_reservation) && is_numeric($receipt_id_from_reservation)) ? (int)$receipt_id_from_reservation : NULL;
+                        // *** แก้ไข: ตรวจสอบสถานะก่อนเช็คอิน ต้องเป็น "ชำระเงินสำเร็จ" เท่านั้น ***
+                        if ($booking_status_before_checkin != $status_id_payment_confirmed) {
+                            throw new Exception("สถานะการจองไม่ถูกต้องสำหรับเช็คอิน (ต้องเป็น 'ชำระเงินสำเร็จ').");
+                        }
 
-                        $valid_pre_checkin_status_ids = [$status_id_pending_payment, $status_id_payment_pending_review, $status_id_payment_confirmed];
-                        $valid_pre_checkin_placeholders = implode(',', array_fill(0, count($valid_pre_checkin_status_ids), '?'));
-                        $valid_pre_checkin_types = str_repeat('i', count($valid_pre_checkin_status_ids));
+                        $receipt_id_for_stay = (!empty($receipt_id_from_reservation) && is_numeric($receipt_id_from_reservation)) ? (int)$receipt_id_from_reservation : NULL;
 
                         $stmt_update_booking = $conn->prepare(
                             "UPDATE reservation SET Booking_status_Id = ?
-                            WHERE Reservation_Id = ? AND Province_Id = ? AND Booking_status_Id IN ($valid_pre_checkin_placeholders)"
+                            WHERE Reservation_Id = ? AND Province_Id = ? AND Booking_status_Id = ?"
                         );
                         if ($stmt_update_booking === false) {
                             throw new Exception("Failed to prepare booking status update statement: " . $conn->error);
                         }
 
-                        $bind_params_booking_update = array_merge(
-                            [$status_id_checked_in, $reservation_id, $current_province_id],
-                            $valid_pre_checkin_status_ids
-                        );
-                        $bind_types_booking_update = 'isi' . $valid_pre_checkin_types;
-                        call_user_func_array([$stmt_update_booking, 'bind_param'], array_merge([$bind_types_booking_update], $bind_params_booking_update));
+                        $stmt_update_booking->bind_param("isii", $status_id_checked_in, $reservation_id, $current_province_id, $status_id_payment_confirmed);
                         $stmt_update_booking->execute();
                         if ($stmt_update_booking->affected_rows === 0) {
-                            throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับเช็คอิน (ต้องเป็นสถานะ 'ยืนยันการจองและรอชำระเงิน', 'ชำระเงินสำเร็จรอการตรวจสอบ' หรือ 'ชำระเงินสำเร็จ').");
+                            throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับเช็คอิน (ต้องเป็นสถานะ 'ชำระเงินสำเร็จ').");
                         }
                         $stmt_update_booking->close();
 
@@ -557,9 +555,11 @@ if (isset($conn) && $conn->ping()) {
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            position: sticky; /* Make header sticky */
+            position: sticky;
+            /* Make header sticky */
             top: 0;
-            z-index: 100; /* Ensure it stays above other content */
+            z-index: 100;
+            /* Ensure it stays above other content */
         }
 
         header h1 {
@@ -569,9 +569,11 @@ if (isset($conn) && $conn->ping()) {
 
         .user-info {
             font-size: 1em;
-            display: flex; /* Use flex to align items in user-info */
+            display: flex;
+            /* Use flex to align items in user-info */
             align-items: center;
-            gap: 15px; /* Space between items */
+            gap: 15px;
+            /* Space between items */
         }
 
         .user-info a {
@@ -579,13 +581,16 @@ if (isset($conn) && $conn->ping()) {
             text-decoration: none;
             font-weight: bold;
             transition: color 0.3s ease;
-            white-space: nowrap; /* Prevent text wrapping */
+            white-space: nowrap;
+            /* Prevent text wrapping */
         }
 
         .user-info a:hover {
             color: #fff;
         }
-        .user-info .btn-back { /* Specific styling for btn-back within user-info */
+
+        .user-info .btn-back {
+            /* Specific styling for btn-back within user-info */
             background-color: #6c757d;
             color: white;
             padding: 8px 12px;
@@ -594,6 +599,7 @@ if (isset($conn) && $conn->ping()) {
             font-weight: bold;
             transition: background-color 0.3s ease;
         }
+
         .user-info .btn-back:hover {
             background-color: #5a6268;
         }
@@ -601,7 +607,9 @@ if (isset($conn) && $conn->ping()) {
 
         /* Main Content */
         .container {
-            max-width: 1200px;
+            /* เดิม: max-width: 1200px; */
+            max-width: 1600px; /* เพิ่มความกว้างสูงสุดของ container */
+            width: 95%; /* ใช้ 95% ของความกว้างหน้าจอเพื่อให้ยืดหยุ่นมากขึ้น */
             margin: 30px auto;
             background-color: #fff;
             padding: 25px;
@@ -704,19 +712,27 @@ if (isset($conn) && $conn->ping()) {
 
         /* --- Table Fix Styles --- */
         .table-responsive-wrapper {
-            overflow-x: auto; /* Enable horizontal scrolling */
-            max-height: 70vh; /* Optional: limit vertical height for table body scrolling */
-            overflow-y: auto; /* Enable vertical scrolling */
-            position: relative; /* Needed for sticky to work relative to this container */
-            border: 1px solid #dee2e6; /* Add border to wrapper for consistent look */
+            overflow-x: auto;
+            /* Enable horizontal scrolling */
+            max-height: 70vh;
+            /* Optional: limit vertical height for table body scrolling */
+            overflow-y: auto;
+            /* Enable vertical scrolling */
+            position: relative;
+            /* Needed for sticky to work relative to this container */
+            border: 1px solid #dee2e6;
+            /* Add border to wrapper for consistent look */
             border-radius: 8px;
         }
 
         .booking-table {
-            width: 100%;
+            width: 100%; /* ให้ตารางกว้างเต็มพื้นที่ของ wrapper */
             border-collapse: collapse;
-            margin-top: 0; /* Remove top margin as container handles spacing */
-            table-layout: fixed; /* Helps with fixed column widths */
+            margin-top: 0;
+            /* Remove top margin as container handles spacing */
+            table-layout: fixed;
+            /* Helps with fixed column widths */
+            /* min-width: 1550px; */ /* เพิ่ม min-width หากต้องการให้ตารางมีขนาดต่ำสุดที่กว้างขึ้น */
         }
 
         .booking-table th,
@@ -724,23 +740,74 @@ if (isset($conn) && $conn->ping()) {
             border: 1px solid #dee2e6;
             padding: 12px 15px;
             text-align: left;
-            vertical-align: top; /* Align text to top when wrapping */
+            vertical-align: top;
+            /* Align text to top when wrapping */
             font-size: 0.95em;
-            /* Remove white-space: nowrap; overflow: hidden; text-overflow: ellipsis; */
-            word-break: break-word; /* Allow text to break within words if too long */
+            word-break: break-word;
+            /* Allow text to break within words if too long */
         }
 
         /* Define specific column widths (adjust as needed based on your data) */
-        .booking-table th:nth-child(1), .booking-table td:nth-child(1) { width: 120px; } /* รหัสการจอง */
-        .booking-table th:nth-child(2), .booking-table td:nth-child(2) { width: 120px; } /* ชื่อลูกค้า */
-        .booking-table th:nth-child(3), .booking-table td:nth-child(3) { width: 150px; } /* ประเภทห้องที่จอง */
-        .booking-table th:nth-child(4), .booking-table td:nth-child(4) { width: 80px; }  /* จำนวนห้อง */
-        .booking-table th:nth-child(5), .booking-table td:nth-child(5) { width: 80px; }  /* ผู้ใหญ่/เด็ก */
-        .booking-table th:nth-child(6), .booking-table td:nth-child(6) { width: 100px; } /* เช็คอิน */
-        .booking-table th:nth-child(7), .booking-table td:nth-child(7) { width: 100px; } /* เช็คเอาท์ */
-        .booking-table th:nth-child(8), .booking-table td:nth-child(8) { width: 100px; } /* ราคา */
-        .booking-table th:nth-child(9), .booking-table td:nth-child(9) { width: 150px; } /* สถานะ */
-        .booking-table th:nth-child(10),.booking-table td:nth-child(10) { width: 200px; } /* ดำเนินการ - ต้องกว้างพอสำหรับปุ่ม */
+        .booking-table th:nth-child(1),
+        .booking-table td:nth-child(1) {
+            width: 120px;
+        }
+
+        /* รหัสการจอง */
+        .booking-table th:nth-child(2),
+        .booking-table td:nth-child(2) {
+            width: 120px;
+        }
+
+        /* ชื่อลูกค้า */
+        .booking-table th:nth-child(3),
+        .booking-table td:nth-child(3) {
+            width: 200px;
+        }
+
+        /* ประเภทห้องที่จอง (เพิ่มความกว้าง) */
+        .booking-table th:nth-child(4),
+        .booking-table td:nth-child(4) {
+            width: 80px;
+        }
+
+        /* จำนวนห้อง */
+        .booking-table th:nth-child(5),
+        .booking-table td:nth-child(5) {
+            width: 80px;
+        }
+
+        /* ผู้ใหญ่/เด็ก */
+        .booking-table th:nth-child(6),
+        .booking-table td:nth-child(6) {
+            width: 100px;
+        }
+
+        /* เช็คอิน */
+        .booking-table th:nth-child(7),
+        .booking-table td:nth-child(7) {
+            width: 100px;
+        }
+
+        /* เช็คเอาท์ */
+        .booking-table th:nth-child(8),
+        .booking-table td:nth-child(8) {
+            width: 100px;
+        }
+
+        /* ราคา */
+        .booking-table th:nth-child(9),
+        .booking-table td:nth-child(9) {
+            width: 250px;
+        }
+
+        /* สถานะ (เพิ่มความกว้าง) */
+        .booking-table th:nth-child(10),
+        .booking-table td:nth-child(10) {
+            width: 300px;
+        }
+
+        /* ดำเนินการ (เพิ่มความกว้างเพื่อให้ปุ่มแสดงผลได้ดีขึ้น) */
 
 
         .booking-table th {
@@ -748,9 +815,12 @@ if (isset($conn) && $conn->ping()) {
             color: #495057;
             font-weight: 600;
             text-transform: uppercase;
-            position: sticky; /* Make headers sticky */
-            top: 0; /* Stick to the top of the scrolling container */
-            z-index: 20; /* Ensure headers are above body content */
+            position: sticky;
+            /* Make headers sticky */
+            top: 0;
+            /* Stick to the top of the scrolling container */
+            z-index: 20;
+            /* Ensure headers are above body content */
         }
 
         .booking-table tbody tr:nth-child(odd) {
@@ -766,16 +836,22 @@ if (isset($conn) && $conn->ping()) {
         .booking-table td:first-child {
             position: sticky;
             left: 0;
-            z-index: 21; /* Ensure first column is above other sticky headers and content */
-            background-color: inherit; /* Inherit background to match row stripes */
+            z-index: 21;
+            /* Ensure first column is above other sticky headers and content */
+            background-color: inherit;
+            /* Inherit background to match row stripes */
         }
+
         /* Specific backgrounds for sticky first column to maintain stripe effect */
         .booking-table th:first-child {
-            background-color: #e9ecef; /* Match header background */
+            background-color: #e9ecef;
+            /* Match header background */
         }
+
         .booking-table tbody tr:nth-child(odd) td:first-child {
             background-color: #fcfdfe;
         }
+
         .booking-table tbody tr:nth-child(even) td:first-child {
             background-color: #f8f8f8;
         }
@@ -783,8 +859,10 @@ if (isset($conn) && $conn->ping()) {
 
         /* Special case for the top-left corner (both sticky) */
         .booking-table th:first-child {
-            z-index: 22; /* Highest z-index for the corner cell */
+            z-index: 22;
+            /* Highest z-index for the corner cell */
         }
+
         /* --- End Table Fix Styles --- */
 
 
@@ -795,7 +873,8 @@ if (isset($conn) && $conn->ping()) {
             border-radius: 5px;
             font-weight: bold;
             font-size: 0.85em;
-            white-space: normal; /* Allow badge text to wrap if it's very long */
+            white-space: normal;
+            /* Allow badge text to wrap if it's very long */
             word-break: break-word;
         }
 
@@ -822,8 +901,10 @@ if (isset($conn) && $conn->ping()) {
             background-color: #dc3545;
             color: white;
         }
+
         /* Danger red */
-        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม { /* Fix for exact match */
+        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม {
+            /* Fix for exact match */
             background-color: #dc3545;
             color: white;
         }
@@ -832,8 +913,10 @@ if (isset($conn) && $conn->ping()) {
             background-color: #dc3545;
             color: white;
         }
+
         /* Danger red */
-        .status-ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน-24-ชม { /* Fix for exact match */
+        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม {
+            /* Fix for exact match */
             background-color: #dc3545;
             color: white;
         }
@@ -860,9 +943,12 @@ if (isset($conn) && $conn->ping()) {
 
         /* Action Buttons in Table */
         .action-buttons-cell {
-            min-width: 250px; /* Ensure enough width for buttons */
-            white-space: normal; /* Allow buttons to wrap if necessary */
+            min-width: 250px;
+            /* Ensure enough width for buttons */
+            white-space: normal;
+            /* Allow buttons to wrap if necessary */
         }
+
         .action-buttons-cell button,
         .action-buttons-cell a {
             padding: 7px 12px;
@@ -871,12 +957,14 @@ if (isset($conn) && $conn->ping()) {
             cursor: pointer;
             font-size: 0.85em;
             margin-right: 5px;
-            margin-bottom: 5px; /* Add small margin for wrapped buttons */
+            margin-bottom: 5px;
+            /* Add small margin for wrapped buttons */
             transition: background-color 0.2s ease, transform 0.2s ease;
             text-decoration: none;
             display: inline-block;
             text-align: center;
-            white-space: nowrap; /* Keep button text on one line */
+            white-space: nowrap;
+            /* Keep button text on one line */
         }
 
         .btn-view-details {
@@ -1244,9 +1332,8 @@ if (isset($conn) && $conn->ping()) {
                                         <i class="fas fa-info-circle"></i> ดูรายละเอียด
                                     </button>
                                     <?php
-                                    $can_check_in = ($current_status_id == $status_id_pending_payment ||
-                                        $current_status_id == $status_id_payment_pending_review ||
-                                        $current_status_id == $status_id_payment_confirmed);
+                                    // *** แก้ไข: ปุ่มเช็คอินจะแสดงเมื่อสถานะเป็น "ชำระเงินสำเร็จ" เท่านั้น ***
+                                    $can_check_in = ($current_status_id == $status_id_payment_confirmed);
                                     ?>
                                     <?php if ($can_check_in): ?>
                                         <button class="btn-check-in"
