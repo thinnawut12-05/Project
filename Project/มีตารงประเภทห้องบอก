@@ -763,55 +763,54 @@ if (isset($conn) && $conn->ping()) {
         }
 
         /* ชื่อลูกค้า */
-        /*
         .booking-table th:nth-child(3),
         .booking-table td:nth-child(3) {
             width: 200px;
         }
-        */
-        /* ประเภทห้องที่จอง (ถูกลบออก) */
-        .booking-table th:nth-child(3),
-        .booking-table td:nth-child(3) {
-            width: 80px;
-        }
 
-        /* จำนวนห้อง (เดิม nth-child(4)) */
+        /* ประเภทห้องที่จอง (เพิ่มความกว้าง) */
         .booking-table th:nth-child(4),
         .booking-table td:nth-child(4) {
             width: 80px;
         }
 
-        /* ผู้ใหญ่/เด็ก (เดิม nth-child(5)) */
+        /* จำนวนห้อง */
         .booking-table th:nth-child(5),
         .booking-table td:nth-child(5) {
-            width: 100px;
+            width: 80px;
         }
 
-        /* เช็คอิน (เดิม nth-child(6)) */
+        /* ผู้ใหญ่/เด็ก */
         .booking-table th:nth-child(6),
         .booking-table td:nth-child(6) {
             width: 100px;
         }
 
-        /* เช็คเอาท์ (เดิม nth-child(7)) */
+        /* เช็คอิน */
         .booking-table th:nth-child(7),
         .booking-table td:nth-child(7) {
             width: 100px;
         }
 
-        /* ราคา (เดิม nth-child(8)) */
+        /* เช็คเอาท์ */
         .booking-table th:nth-child(8),
         .booking-table td:nth-child(8) {
+            width: 100px;
+        }
+
+        /* ราคา */
+        .booking-table th:nth-child(9),
+        .booking-table td:nth-child(9) {
             width: 250px;
         }
 
-        /* สถานะ (เดิม nth-child(9)) */
-        .booking-table th:nth-child(9),
-        .booking-table td:nth-child(9) {
+        /* สถานะ (เพิ่มความกว้าง) */
+        .booking-table th:nth-child(10),
+        .booking-table td:nth-child(10) {
             width: 300px;
         }
 
-        /* ดำเนินการ (เดิม nth-child(10)) */
+        /* ดำเนินการ (เพิ่มความกว้างเพื่อให้ปุ่มแสดงผลได้ดีขึ้น) */
 
 
         .booking-table th {
@@ -1304,7 +1303,7 @@ if (isset($conn) && $conn->ping()) {
                         <tr>
                             <th>รหัสการจอง</th>
                             <th>ชื่อลูกค้า</th>
-                            <!-- <th>ประเภทห้องที่จอง</th> --> <!-- ลบคอลัมน์นี้ออก -->
+                            <th>ประเภทห้องที่จอง</th>
                             <th>จำนวนห้อง</th>
                             <th>ผู้ใหญ่/เด็ก</th>
                             <th>เช็คอิน</th>
@@ -1322,7 +1321,7 @@ if (isset($conn) && $conn->ping()) {
                             <tr>
                                 <td><?= htmlspecialchars($booking['Reservation_Id']) ?></td>
                                 <td><?= htmlspecialchars($booking['Guest_name']) ?></td>
-                                <!-- <td><?= htmlspecialchars($booking['Room_types_booked'] ?? 'ไม่ระบุ') ?></td> --> <!-- ลบคอลัมน์นี้ออก -->
+                                <td><?= htmlspecialchars($booking['Room_types_booked'] ?? 'ไม่ระบุ') ?></td>
                                 <td><?= htmlspecialchars($booking['Number_of_rooms']) ?></td>
                                 <td><?= htmlspecialchars($booking['Number_of_adults']) ?> / <?= htmlspecialchars($booking['Number_of_children']) ?></td>
                                 <td><?= htmlspecialchars($booking['Check_in_date_Reserved']) ?></td>
@@ -1400,7 +1399,6 @@ if (isset($conn) && $conn->ping()) {
             <p><b>เวลาที่จอง:</b> <span id="modalBookingTime"></span></p>
             <p><b>อีเมลสมาชิก:</b> <span id="modalEmailMember"></span></p>
             <p><b>รหัสใบเสร็จ:</b> <span id="modalReceiptId"></span></p>
-            <p><b>ประเภทห้องที่จอง:</b> <span id="modalRoomTypesBooked"></span></p> <!-- ยังคงแสดงใน modal -->
 
             <div class="modal-actions">
                 <button type="button" class="btn-cancel-modal" onclick="closeModal('bookingDetailsModal')">ปิด</button>
@@ -1523,7 +1521,6 @@ if (isset($conn) && $conn->ping()) {
             document.getElementById('modalBookingTime').textContent = booking.Booking_time ? booking.Booking_time : 'ไม่ระบุ';
             document.getElementById('modalEmailMember').textContent = booking.Email_member ? booking.Email_member : 'ไม่มี';
             document.getElementById('modalReceiptId').textContent = booking.Receipt_id ? booking.Receipt_id : 'ไม่มี'; // แสดง Receipt_id
-            document.getElementById('modalRoomTypesBooked').textContent = booking.Room_types_booked ? booking.Room_types_booked : 'ไม่ระบุ'; // แสดงประเภทห้องใน modal
 
             openModal('bookingDetailsModal');
         }
@@ -1594,7 +1591,7 @@ if (isset($conn) && $conn->ping()) {
         window.addEventListener('click', function(event) {
             document.querySelectorAll('.modal.show').forEach(modal => {
                 if (event.target == modal) {
-                    closeModal(modal.id);
+                    modal.classList.remove('show');
                 }
             });
         });
