@@ -5,15 +5,26 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 session_start();
 
-// ตรวจสอบการล็อกอินของแอดมินหรือเจ้าหน้าที่ที่ได้รับสิทธิ์
-if (!isset($_SESSION['Email_Officer'])) {
-    header("Location: login.php"); // เปลี่ยนเส้นทางไปหน้า login หากยังไม่ได้ล็อกอิน
+// --- ขั้นตอนที่ 1: แก้ไขการตรวจสอบการล็อกอิน ---
+// ตรวจสอบว่าแอดมินล็อกอินอยู่หรือไม่ โดยใช้เซสชันที่ตั้งค่าจาก login.php
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header("Location: login.php"); // ถ้าไม่ได้ล็อกอินเป็นแอดมิน ให้เปลี่ยนเส้นทางไปหน้า login
     exit();
 }
+// --- สิ้นสุดการแก้ไขการตรวจสอบการล็อกอิน ---
 
-$current_logged_in_officer_email = $_SESSION['Email_Officer'] ?? '';
-$First_name = $_SESSION['First_name'] ?? '';
-$Last_name = $_SESSION['Last_name'] ?? '';
+
+if (!$conn) {
+    die("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้: " . mysqli_connect_error());
+}
+$conn->set_charset("utf8");
+
+// --- ขั้นตอนที่ 2: แก้ไขการกำหนดอีเมลผู้ใช้งานปัจจุบัน ---
+// กำหนดอีเมลของผู้ใช้งานปัจจุบัน (แอดมินที่ล็อกอินอยู่)
+// เพื่อใช้ในการป้องกันการลบบัญชีตัวเอง และการอัปเดตเซสชันเมื่อแก้ไขอีเมลตัวเอง
+$current_logged_in_officer_email = $_SESSION['Email_Admin'] ?? '';
+$First_name = $_SESSION['First_name'] ?? ''; // ชื่อของแอดมิน
+$Last_name = $_SESSION['Last_name'] ?? '';   // นามสกุลของแอดมิน
 $full_name = trim($First_name . ' ' . $Last_name);
 
 if (isset($conn)) {
@@ -39,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (empty($email_to_delete)) {
         $_SESSION['manage_officers_message'] = '<div class="alert error"><i class="fas fa-times-circle"></i> ไม่พบอีเมลเจ้าหน้าที่ที่ต้องการลบ.</div>';
     } else {
-        // ตรวจสอบว่าไม่ได้พยายามลบตัวเอง
+        // ตรวจสอบว่าไม่ได้พยายามลบตัวเอง (ซึ่งตอนนี้คือ Admin ที่ล็อกอินอยู่)
         if ($email_to_delete === $current_logged_in_officer_email) {
             $_SESSION['manage_officers_message'] = '<div class="alert error"><i class="fas fa-exclamation-triangle"></i> คุณไม่สามารถลบบัญชีของตัวเองได้!</div>';
         } else {
@@ -149,12 +160,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         call_user_func_array([$stmt_update, 'bind_param'], $bind_args);
 
         if ($stmt_update->execute()) {
-            if ($stmt_update->affected_rows > 0 || $email_officer === $original_email) { // ถ้าไม่มีการเปลี่ยนแปลงข้อมูลอื่น แต่เปลี่ยนอีเมลก็จะนับว่า affected_rows > 0
+            if ($stmt_update->affected_rows > 0 || $email_officer === $original_email) {
                 $_SESSION['manage_officers_message'] = '<div class="alert success"><i class="fas fa-check-circle"></i> อัปเดตข้อมูลเจ้าหน้าที่ <strong>' . htmlspecialchars($original_email) . '</strong> สำเร็จแล้ว.</div>';
-                // ถ้าแก้ไขอีเมลของตัวเอง ต้องอัปเดต session ด้วย
+                // --- ขั้นตอนที่ 3: แก้ไขการอัปเดตเซสชันเมื่อแก้ไขอีเมลตัวเอง ---
+                // ถ้าแก้ไขอีเมลของตัวเอง (ซึ่งตอนนี้คือ Admin ที่ล็อกอินอยู่) ต้องอัปเดต $_SESSION['Email_Admin'] ด้วย
                 if ($original_email === $current_logged_in_officer_email) {
-                    $_SESSION['Email_Officer'] = $email_officer;
+                    $_SESSION['Email_Admin'] = $email_officer; // อัปเดต Email_Admin ใน session
                 }
+                // --- สิ้นสุดการแก้ไขการอัปเดตเซสชัน ---
             } else {
                 $_SESSION['manage_officers_message'] = '<div class="alert info"><i class="fas fa-info-circle"></i> ไม่มีการเปลี่ยนแปลงข้อมูลสำหรับเจ้าหน้าที่ <strong>' . htmlspecialchars($original_email) . '</strong>.</div>';
             }
@@ -180,7 +193,7 @@ if (isset($_SESSION['manage_officers_message'])) {
 $filter_province_id = $_GET['filter_province_id'] ?? 'all';
 $search_query = $_GET['search_query'] ?? '';
 
-$sql_select_officers = "SELECT Email_Officer, Title_name, First_name, Last_name, Gender, Phone_number, Email_Admin, p.Province_name 
+$sql_select_officers = "SELECT Email_Officer, Title_name, First_name, Last_name, Gender, Phone_number, Email_Admin, p.Province_name
                         FROM officer o
                         LEFT JOIN province p ON o.Province_id = p.Province_Id";
 $conditions = [];
@@ -544,6 +557,18 @@ if (isset($conn) && $conn->ping()) {
             margin-top: 0;
             margin-bottom: 25px;
             font-size: 1.8em;
+            text-align: center; /* จัดให้อยู่ตรงกลาง */
+        }
+
+        .modal-content p {
+            font-size: 1.1em;
+            text-align: center;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .modal-content strong {
+            color: #dc3545; /* สีแดงสำหรับเน้นอีเมลที่จะลบ */
         }
 
         .modal-content .form-group {
@@ -552,12 +577,38 @@ if (isset($conn) && $conn->ping()) {
 
         .modal-content .form-group label {
             font-size: 0.9em;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .modal-content input[type="email"],
+        .modal-content input[type="password"],
+        .modal-content input[type="text"],
+        .modal-content select {
+            width: calc(100% - 24px); /* Full width minus padding */
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            font-size: 1em;
+            box-sizing: border-box;
+            margin-top: 5px;
+        }
+
+        .modal-content .radio-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 5px;
+        }
+
+        .modal-content .radio-group input[type="radio"] {
+            margin-right: 5px;
         }
 
         .modal-actions {
             display: flex;
-            justify-content: flex-end;
-            gap: 10px;
+            justify-content: center; /* เปลี่ยนเป็น center เพื่อให้อยู่ตรงกลาง */
+            gap: 15px; /* เพิ่มระยะห่างระหว่างปุ่ม */
             margin-top: 25px;
         }
 
@@ -568,6 +619,7 @@ if (isset($conn) && $conn->ping()) {
             cursor: pointer;
             transition: background-color 0.3s ease;
             border: none;
+            min-width: 100px;
         }
 
         .modal-actions .btn-cancel-modal {
@@ -579,13 +631,19 @@ if (isset($conn) && $conn->ping()) {
             background-color: #5a6268;
         }
 
-        .modal-actions .btn-save-changes {
+        .modal-actions .btn-save-changes,
+        .modal-actions .btn-confirm-delete { /* เพิ่มสำหรับปุ่มยืนยันการลบ */
             background-color: #28a745;
             color: white;
         }
-
         .modal-actions .btn-save-changes:hover {
             background-color: #218838;
+        }
+        .modal-actions .btn-confirm-delete {
+            background-color: #dc3545; /* สีแดงสำหรับการลบ */
+        }
+        .modal-actions .btn-confirm-delete:hover {
+            background-color: #c82333;
         }
     </style>
 </head>
@@ -634,8 +692,8 @@ if (isset($conn) && $conn->ping()) {
                         <th>สาขา</th>
                         <th>ดำเนินการ</th>
                     </tr>
-                </thead>
-                <tbody>
+</thead>
+<tbody>
                     <?php if (empty($officers)): ?>
                         <tr>
                             <td colspan="9" style="text-align: center; padding: 20px;">ไม่พบเจ้าหน้าที่ตามเงื่อนไขที่เลือก.</td>
@@ -659,16 +717,12 @@ if (isset($conn) && $conn->ping()) {
                                         <i class="fas fa-edit"></i> แก้ไข
                                     </button>
 
-                                    <!-- Delete Form -->
-                                    <form action="manage_officers.php" method="POST" style="display:inline;"
-                                        onsubmit="return confirm('คุณแน่ใจหรือไม่ที่จะลบเจ้าหน้าที่: <?= htmlspecialchars($officer['Email_Officer']) ?>? \n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้!');">
-                                        <input type="hidden" name="action" value="delete_officer">
-                                        <input type="hidden" name="email_to_delete" value="<?= htmlspecialchars($officer['Email_Officer']) ?>">
-                                        <button type="submit" class="btn-delete"
-                                            <?= ($officer['Email_Officer'] === $current_logged_in_officer_email) ? 'disabled title="ไม่สามารถลบบัญชีตัวเองได้"' : '' ?>>
-                                            <i class="fas fa-trash-alt"></i> ลบ
-                                        </button>
-                                    </form>
+                                    <!-- Delete Button (triggers custom popup) -->
+                                    <button type="button" class="btn-delete"
+                                        onclick="openDeleteConfirmationModal('<?= htmlspecialchars($officer['Email_Officer']) ?>')"
+                                        <?= ($officer['Email_Officer'] === $current_logged_in_officer_email) ? 'disabled title="ไม่สามารถลบบัญชีตัวเองได้"' : '' ?>>
+                                        <i class="fas fa-trash-alt"></i> ลบ
+                                    </button>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -764,6 +818,25 @@ if (isset($conn) && $conn->ping()) {
         </div>
     </div>
 
+    <!-- NEW: Modal for Delete Confirmation -->
+    <div id="deleteConfirmationModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('deleteConfirmationModal')">&times;</span>
+            <h3>ยืนยันการลบเจ้าหน้าที่</h3>
+            <p>คุณแน่ใจหรือไม่ที่จะลบเจ้าหน้าที่: <br> <strong><span id="officerEmailToDelete"></span></strong>?</p>
+            <p style="color: #dc3545; font-weight: bold;">การดำเนินการนี้ไม่สามารถย้อนกลับได้!</p>
+            <form action="manage_officers.php" method="POST" id="deleteOfficerForm">
+                <input type="hidden" name="action" value="delete_officer">
+                <input type="hidden" name="email_to_delete" id="deleteEmailOfficer">
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel-modal" onclick="closeModal('deleteConfirmationModal')">ยกเลิก</button>
+                    <button type="submit" class="btn-confirm-delete"><i class="fas fa-trash-alt"></i> ยืนยันการลบ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+
     <script>
         // Function to open any modal
         function openModal(modalId) {
@@ -774,13 +847,16 @@ if (isset($conn) && $conn->ping()) {
         function closeModal(modalId) {
             document.getElementById(modalId).classList.remove('show');
             // Reset form fields when closing the modal
-            const form = document.getElementById('editOfficerForm');
-            if (form) {
-                form.reset();
-                // Clear password fields manually as form.reset() might not clear them reliably
-                document.getElementById('edit_Password').value = '';
-                document.getElementById('edit_Confirm_Password').value = '';
+            if (modalId === 'editOfficerModal') {
+                const form = document.getElementById('editOfficerForm');
+                if (form) {
+                    form.reset();
+                    // Clear password fields manually as form.reset() might not clear them reliably
+                    document.getElementById('edit_Password').value = '';
+                    document.getElementById('edit_Confirm_Password').value = '';
+                }
             }
+            // For delete modal, no form reset is typically needed as it's just confirmation
         }
 
         // Open Edit Officer Modal and populate data
@@ -810,6 +886,14 @@ if (isset($conn) && $conn->ping()) {
 
             openModal('editOfficerModal');
         }
+
+        // NEW: Function to open Delete Confirmation Modal
+        function openDeleteConfirmationModal(email) {
+            document.getElementById('officerEmailToDelete').textContent = email;
+            document.getElementById('deleteEmailOfficer').value = email; // Set hidden input value for form submission
+            openModal('deleteConfirmationModal');
+        }
+
 
         // Close modal when clicking outside (on the overlay)
         window.addEventListener('click', function(event) {

@@ -404,7 +404,6 @@ $guest_phone_display = $receipt_data['Member_Phone_number'] ?? $receipt_data['Re
         <div class="action-buttons">
             <a href="booking_status_pending.php">กลับสู่สถานะการจองของฉัน</a>
             <a href="home.php">กลับหน้าหลัก</a>
-            <!-- <button onclick="window.print()">พิมพ์ใบเสร็จ</button> -->
         </div>
     </div>
 </body>

@@ -64,23 +64,18 @@ $selected_province_id = $_GET['province_filter'] ?? ''; // สำหรับ Ad
 
 // *** แก้ไขตรงนี้: รวม Booking_status_Id = 7 (เช็คเอาท์แล้ว) เข้าไปด้วย ***
 $sql_conditions_array = ["r.Booking_status_Id IN (3, 6, 7)"]; // 3: ชำระเงินสำเร็จ, 6: เช็คอินแล้ว, 7: เช็คเอาท์แล้ว
-
+$sql_bind_params_values = []; // Array to store actual parameter values
+$sql_bind_types_string = ""; // String to store parameter types (e.g., "ii")
 
 // กำหนดค่า bind_params สำหรับ Province_Id (ถ้ามี) ก่อนเงื่อนไขวันที่
-$bind_types = "";
-$bind_params = [];
-$province_condition_added = false; // Flag to ensure province param is only added once
-
 if ($is_officer && $user_province_id_filter !== null) {
     $sql_conditions_array[] = "r.Province_Id = ?";
-    $bind_types .= "i";
-    $bind_params[] = (int)$user_province_id_filter;
-    $province_condition_added = true;
+    $sql_bind_types_string .= "i";
+    $sql_bind_params_values[] = (int)$user_province_id_filter;
 } elseif ($is_admin && !empty($selected_province_id)) {
     $sql_conditions_array[] = "r.Province_Id = ?";
-    $bind_types .= "i";
-    $bind_params[] = (int)$selected_province_id;
-    $province_condition_added = true;
+    $sql_bind_types_string .= "i";
+    $sql_bind_params_values[] = (int)$selected_province_id;
 }
 
 
@@ -114,17 +109,17 @@ if ($filter_type == 'today') {
     if (!empty($custom_year) && !empty($custom_month)) {
         $chart_title .= " เดือน " . $custom_month . " ปี " . $custom_year;
         $sql_conditions_array[] = "YEAR(r.Booking_date) = ? AND MONTH(r.Booking_date) = ?";
-        $bind_types .= "ii";
-        $bind_params[] = (int)$custom_year;
-        $bind_params[] = (int)$custom_month;
+        $sql_bind_types_string .= "ii";
+        $sql_bind_params_values[] = (int)$custom_year;
+        $sql_bind_params_values[] = (int)$custom_month;
         $sql_select_date_part = "DAY(r.Booking_date) AS label_period_day, p.Province_name, r.Province_Id";
         $sql_group_by_date = "GROUP BY DAY(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY DAY(r.Booking_date) ASC, p.Province_name ASC";
     } elseif (!empty($custom_year)) {
         $chart_title .= " ปี " . $custom_year;
         $sql_conditions_array[] = "YEAR(r.Booking_date) = ?";
-        $bind_types .= "i";
-        $bind_params[] = (int)$custom_year;
+        $sql_bind_types_string .= "i";
+        $sql_bind_params_values[] = (int)$custom_year;
         $sql_select_date_part = "MONTH(r.Booking_date) AS label_period_month_num, p.Province_name, r.Province_Id";
         $sql_group_by_date = "GROUP BY MONTH(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY MONTH(r.Booking_date) ASC, p.Province_name ASC";
@@ -132,8 +127,8 @@ if ($filter_type == 'today') {
         $month_name_for_title = (new DateTime('2000-' . $custom_month . '-01'))->format('F');
         $chart_title .= " เดือน " . $month_name_for_title . " (ทุกปี)";
         $sql_conditions_array[] = "MONTH(r.Booking_date) = ?";
-        $bind_types .= "i";
-        $bind_params[] = (int)$custom_month;
+        $sql_bind_types_string .= "i";
+        $sql_bind_params_values[] = (int)$custom_month;
         $sql_select_date_part = "YEAR(r.Booking_date) AS label_period_year, p.Province_name, r.Province_Id";
         $sql_group_by_date = "GROUP BY YEAR(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY YEAR(r.Booking_date) ASC, p.Province_name ASC";
@@ -141,26 +136,51 @@ if ($filter_type == 'today') {
         // หากเลือก Custom แต่ไม่ได้ระบุอะไรเลย ให้กลับไปเริ่มต้นที่เดือนนี้
         $filter_type = 'this_month';
         $chart_title = "สรุปยอดเข้าพักและจำนวนห้องที่จอง เดือนนี้ (" . date('m/Y') . ")";
-        $sql_conditions_array = ["r.Booking_status_Id IN (3, 6, 7)", "MONTH(r.Booking_date) = MONTH(CURDATE())", "YEAR(r.Booking_date) = YEAR(CURDATE())"];
-        // ถ้าเป็น officer ให้กรองข้อมูลตามจังหวัดของตัวเอง
-        if ($is_officer && $user_province_id_filter !== null) {
-            $sql_conditions_array[] = "r.Province_Id = ?";
-            // bind_params และ bind_types สำหรับ Province_Id ถูกเพิ่มไปแล้วด้านบนสุด
-        } elseif ($is_admin && !empty($selected_province_id)) {
-             $sql_conditions_array[] = "r.Province_Id = ?";
-            // bind_params และ bind_types สำหรับ Province_Id ถูกเพิ่มไปแล้วด้านบนสุด
-        }
+        // Conditions for this_month
+        $sql_conditions_array[] = "MONTH(r.Booking_date) = MONTH(CURDATE()) AND YEAR(r.Booking_date) = YEAR(CURDATE())";
+        // Date part for this_month
         $sql_select_date_part = "DAY(r.Booking_date) AS label_period_day, p.Province_name, r.Province_Id";
         $sql_group_by_date = "GROUP BY DAY(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY DAY(r.Booking_date) ASC, p.Province_name ASC";
+        // No additional bind params for this_month (CURDATE() is handled by SQL)
     }
 }
 
 $sql_conditions = implode(" AND ", $sql_conditions_array);
 
 
-// --- ดึงข้อมูลสำหรับกราฟและตารางสรุป ---
-$sql_summary = "SELECT
+// --- NEW: ดึงข้อมูลสรุปจำนวนเงินทั้งหมดและจำนวนผู้เข้าพักทั้งหมด ---
+$sql_overall_summary = "SELECT
+                            COALESCE(SUM(r.Total_price), 0) AS grand_total_amount,
+                            COALESCE(SUM(r.Number_of_adults + r.Number_of_children), 0) AS grand_total_guests
+                        FROM reservation r
+                        WHERE " . $sql_conditions;
+
+$stmt_overall_summary = $conn->prepare($sql_overall_summary);
+if ($stmt_overall_summary === false) {
+    die("Error preparing overall summary statement: " . $conn->error);
+}
+
+// ผูกพารามิเตอร์สำหรับ overall summary query
+if (!empty($sql_bind_types_string)) {
+    $bind_params_with_references_overall = [];
+    $bind_params_with_references_overall[] = $sql_bind_types_string;
+    foreach ($sql_bind_params_values as $key => $value) {
+        $bind_params_with_references_overall[] = &$sql_bind_params_values[$key];
+    }
+    call_user_func_array([$stmt_overall_summary, 'bind_param'], $bind_params_with_references_overall);
+}
+$stmt_overall_summary->execute();
+$result_overall_summary = $stmt_overall_summary->get_result();
+$overall_summary_data = $result_overall_summary->fetch_assoc();
+$stmt_overall_summary->close();
+
+$grand_total_amount = $overall_summary_data['grand_total_amount'] ?? 0;
+$grand_total_guests = $overall_summary_data['grand_total_guests'] ?? 0;
+
+
+// --- ดึงข้อมูลสำหรับกราฟ (per period) ---
+$sql_summary_chart = "SELECT
                     " . $sql_select_date_part . ",
                     SUM(r.Number_of_adults + r.Number_of_children) AS total_occupancy,
                     SUM(r.Number_of_rooms) AS total_rooms
@@ -171,47 +191,39 @@ $sql_summary = "SELECT
                 " . $sql_order_by_date;
 
 
-$stmt_summary = $conn->prepare($sql_summary);
+$stmt_summary_chart = $conn->prepare($sql_summary_chart);
 
-if ($stmt_summary === false) {
-    die("Error preparing summary statement: " . $conn->error);
+if ($stmt_summary_chart === false) {
+    die("Error preparing summary chart statement: " . $conn->error);
 }
 
-// ผูกพารามิเตอร์ (แก้ไขเพื่อส่งเป็น reference)
-if (!empty($bind_types)) {
-    $bind_params_with_references = [];
-    $bind_params_with_references[] = $bind_types; // Argument แรกคือ string ชนิดข้อมูล
-    foreach ($bind_params as $key => $value) {
-        $bind_params_with_references[] = &$bind_params[$key]; // ส่งแต่ละ parameter เป็น reference
+// ผูกพารามิเตอร์สำหรับ per-period summary query (ใช้ $sql_bind_types_string และ $sql_bind_params_values เดียวกัน)
+if (!empty($sql_bind_types_string)) {
+    $bind_params_with_references_chart = [];
+    $bind_params_with_references_chart[] = $sql_bind_types_string;
+    foreach ($sql_bind_params_values as $key => $value) {
+        $bind_params_with_references_chart[] = &$sql_bind_params_values[$key];
     }
-    call_user_func_array([$stmt_summary, 'bind_param'], $bind_params_with_references);
+    call_user_func_array([$stmt_summary_chart, 'bind_param'], $bind_params_with_references_chart);
 }
-$stmt_summary->execute();
-$result_summary = $stmt_summary->get_result();
+$stmt_summary_chart->execute();
+$result_summary_chart = $stmt_summary_chart->get_result();
 
-$summary_data = []; // เก็บข้อมูลสรุปสำหรับตาราง
 $chart_labels = [];
 $chart_occupancy_data = [];
 $chart_rooms_data = [];
 
 $month_names_for_chart = [
-    1 => "ม.ค.",
-    2 => "ก.พ.",
-    3 => "มี.ค.",
-    4 => "เม.ย.",
-    5 => "พ.ค.",
-    6 => "มิ.ย.",
-    7 => "ก.ค.",
-    8 => "ส.ค.",
-    9 => "ก.ย.",
-    10 => "ต.ค.",
-    11 => "พ.ย.",
-    12 => "ธ.ค."
+    1 => "ม.ค.", 2 => "ก.พ.", 3 => "มี.ค.", 4 => "เม.ย.", 5 => "พ.ค.", 6 => "มิ.ย.",
+    7 => "ก.ค.", 8 => "ส.ค.", 9 => "ก.ย.", 10 => "ต.ค.", 11 => "พ.ย.", 12 => "ธ.ค."
+];
+$month_names_full = [
+    1 => "มกราคม", 2 => "กุมภาพันธ์", 3 => "มีนาคม", 4 => "เมษายน", 5 => "พฤษภาคม", 6 => "มิถุนายน",
+    7 => "กรกฎาคม", 8 => "สิงหาคม", 9 => "กันยายน", 10 => "ตุลาคม", 11 => "พฤศจิกายน", 12 => "ธันวาคม"
 ];
 
-while ($row = $result_summary->fetch_assoc()) {
-    $summary_data[] = $row; // เก็บทุกแถวสำหรับตารางแสดงผล
 
+while ($row = $result_summary_chart->fetch_assoc()) {
     $occupancy_count = $row['total_occupancy'] ?? 0;
     $rooms_count = $row['total_rooms'] ?? 0;
 
@@ -238,7 +250,7 @@ while ($row = $result_summary->fetch_assoc()) {
     $chart_occupancy_data[] = $occupancy_count;
     $chart_rooms_data[] = $rooms_count;
 }
-$stmt_summary->close();
+$stmt_summary_chart->close();
 
 
 // --- ดึงปีและเดือนที่มีข้อมูลสำหรับการกรองแบบ Custom (สำหรับ Admin) ---
@@ -307,18 +319,18 @@ JOIN
     province p ON rm.Province_Id = p.Province_Id
 WHERE 1=1"; // Base condition
 
-$damage_bind_types = "";
-$damage_bind_params = [];
+$damage_bind_types_string = "";
+$damage_bind_params_values = [];
 
 // Apply province filter to room damages query
 if ($is_officer && $user_province_id_filter !== null) {
     $sql_room_damages .= " AND rm.Province_Id = ?";
-    $damage_bind_types .= "i";
-    $damage_bind_params[] = (int)$user_province_id_filter;
+    $damage_bind_types_string .= "i";
+    $damage_bind_params_values[] = (int)$user_province_id_filter;
 } elseif ($is_admin && !empty($selected_province_id)) {
     $sql_room_damages .= " AND rm.Province_Id = ?";
-    $damage_bind_types .= "i";
-    $damage_bind_params[] = (int)$selected_province_id;
+    $damage_bind_types_string .= "i";
+    $damage_bind_params_values[] = (int)$selected_province_id;
 }
 // ถ้า Admin และ $selected_province_id ว่างเปล่า (เลือก "ทุกสาขา") จะไม่มีเงื่อนไข Province_Id เพิ่มเติม
 // ทำให้ดึงความเสียหายทั้งหมดมาแสดง (แต่จะใส่ชื่อสาขาใน label กราฟ)
@@ -332,11 +344,11 @@ if ($stmt_room_damages === false) {
     error_log("Error preparing room_damages statement: " . $conn->error);
     // $_SESSION['error'] = "เกิดข้อผิดพลาดในการดึงข้อมูลความเสียหายของห้องพัก: " . $conn->error; // อาจแสดงให้ผู้ใช้เห็น
 } else {
-    if (!empty($damage_bind_types)) {
+    if (!empty($damage_bind_types_string)) {
         $damage_bind_params_with_references = [];
-        $damage_bind_params_with_references[] = $damage_bind_types;
-        foreach ($damage_bind_params as $key => $value) {
-            $damage_bind_params_with_references[] = &$damage_bind_params[$key];
+        $damage_bind_params_with_references[] = $damage_bind_types_string;
+        foreach ($damage_bind_params_values as $key => $value) {
+            $damage_bind_params_with_references[] = &$damage_bind_params_values[$key];
         }
         call_user_func_array([$stmt_room_damages, 'bind_param'], $damage_bind_params_with_references);
     }
@@ -619,27 +631,44 @@ $chart_data = [
         }
         /* --- End Updated CSS --- */
 
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
+        /* NEW CSS for Overall Summary Cards */
+        .overall-summary-cards {
+            display: flex;
+            justify-content: center; /* Center cards horizontally */
+            gap: 20px; /* Space between cards */
             margin-top: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap; /* Allow cards to wrap on smaller screens */
         }
 
-        .summary-table th,
-        .summary-table td {
-            border: 1px solid #eee;
-            padding: 10px;
+        .summary-card {
+            background-color: #f8f9fa; /* Light background for cards */
+            border: 1px solid #e2e6ea;
+            border-radius: 8px;
+            padding: 20px 30px;
             text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            flex: 1; /* Allow cards to grow */
+            min-width: 250px; /* Minimum width for each card */
+            max-width: 45%; /* Max width to allow two cards per row on larger screens */
         }
 
-        .summary-table thead th {
-            background-color: #3498db;
-            color: #fff;
+        .summary-card h4 {
+            color: #34495e;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.2em;
         }
 
-        .summary-table tbody tr:nth-child(even) {
-            background-color: #f8f8f8;
+        .summary-card .summary-value {
+            font-size: 2.2em; /* Larger font for the value */
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
         }
+        /* END NEW CSS */
+
+        /* Removed old summary-table CSS */
     </style>
 </head>
 
@@ -651,7 +680,6 @@ $chart_data = [
             <?php endif; ?>
         </span>
         <div>
-            <!-- <a href="index.php" class="logout-link">ออกจากระบบ</a> -->
             <?php if ($is_officer): ?>
                 <a href="officer.php" class="btn-back">กลับหน้าหลักเจ้าหน้าที่</a>
             <?php elseif ($is_admin): ?>
@@ -700,20 +728,6 @@ $chart_data = [
                 <select name="custom_month" id="custom_month">
                     <option value="">เลือกเดือน</option>
                     <?php
-                    $month_names_full = [
-                        1 => "มกราคม",
-                        2 => "กุมภาพันธ์",
-                        3 => "มีนาคม",
-                        4 => "เมษายน",
-                        5 => "พฤษภาคม",
-                        6 => "มิถุนายน",
-                        7 => "กรกฎาคม",
-                        8 => "สิงหาคม",
-                        9 => "กันยายน",
-                        10 => "ตุลาคม",
-                        11 => "พฤศจิกายน",
-                        12 => "ธันวาคม"
-                    ];
                     foreach ($all_months as $month_num): ?>
                         <option value="<?= htmlspecialchars($month_num) ?>" <?= ($custom_month == $month_num ? 'selected' : '') ?>>
                             <?= htmlspecialchars($month_names_full[$month_num]) ?>
@@ -744,53 +758,37 @@ $chart_data = [
             <canvas id="occupancyChart"></canvas>
         </div>
 
-        <h3>ตารางสรุปข้อมูล</h3>
-        <table class="summary-table">
-            <thead>
-                <tr>
-                    <th>ช่วงเวลา</th>
-                    <?php if ($is_admin || ($is_officer && $user_province_name)): // แสดงคอลัมน์สาขา ถ้าเป็น Admin หรือ Officer ที่มีชื่อจังหวัด
-                    ?>
-                        <th>สาขา</th>
-                    <?php endif; ?>
-                    <th>จำนวนผู้เข้าพักทั้งหมด</th>
-                    <th>จำนวนห้องที่จอง</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php if (empty($summary_data)): ?>
-                    <tr>
-                        <td colspan="<?= ($is_admin || ($is_officer && $user_province_name)) ? '4' : '3' ?>">ไม่พบข้อมูลในช่วงเวลาที่เลือก</td>
-                    </tr>
-                <?php else: ?>
-                    <?php foreach ($summary_data as $data_row): ?>
-                        <tr>
-                            <td>
-                                <?php
-                                // กำหนด Label สำหรับตาราง
-                                if (isset($data_row['label_period_day'])) {
-                                    echo "วันที่ " . htmlspecialchars($data_row['label_period_day']);
-                                } elseif (isset($data_row['label_period_month_num'])) {
-                                    echo htmlspecialchars($month_names_full[$data_row['label_period_month_num']]);
-                                } elseif (isset($data_row['label_period_year'])) {
-                                    echo "ปี " . htmlspecialchars($data_row['label_period_year']);
-                                } elseif (isset($data_row['label_period_time'])) {
-                                    echo htmlspecialchars($data_row['label_period_time']);
-                                } else {
-                                    echo "ไม่ระบุ";
-                                }
-                                ?>
-                            </td>
-                            <?php if ($is_admin || ($is_officer && $user_province_name)): ?>
-                                <td><?= htmlspecialchars($data_row['Province_name'] ?? 'ไม่ระบุ') ?></td>
-                            <?php endif; ?>
-                            <td><?= htmlspecialchars($data_row['total_occupancy']) ?> คน</td>
-                            <td><?= htmlspecialchars($data_row['total_rooms']) ?> ห้อง</td>
-                        </tr>
-                    <?php endforeach; ?>
+        <!-- NEW: Overall Summary Cards -->
+        <h3 style="margin-top: 30px;">สรุปข้อมูลโดยรวม
+            <?php if ($is_officer && $user_province_name): ?>
+                ของสาขา<?= htmlspecialchars($user_province_name) ?>
+            <?php elseif ($is_admin && !empty($selected_province_id)):
+                $selected_province_name_for_summary = '';
+                foreach($all_provinces as $prov) {
+                    if ($prov['Province_Id'] == $selected_province_id) {
+                        $selected_province_name_for_summary = $prov['Province_name'];
+                        break;
+                    }
+                }
+                if ($selected_province_name_for_summary): ?>
+                    ของสาขา<?= htmlspecialchars($selected_province_name_for_summary) ?>
                 <?php endif; ?>
-            </tbody>
-        </table>
+            <?php else: ?>
+                ทั้งหมด
+            <?php endif; ?>
+        </h3>
+        <div class="overall-summary-cards">
+            <div class="summary-card">
+                <h4>สรุปจำนวนเงินทั้งหมด</h4>
+                <p class="summary-value"><?= number_format($grand_total_amount, 2) ?> บาท</p>
+            </div>
+            <div class="summary-card">
+                <h4>สรุปจำนวนผู้เข้าพักทั้งหมด</h4>
+                <p class="summary-value"><?= number_format($grand_total_guests) ?> คน</p>
+            </div>
+        </div>
+        <!-- END NEW: Overall Summary Cards -->
+
 
         <!-- เพิ่มส่วนนี้สำหรับแสดงกราฟมูลค่าความเสียหายของห้องพัก -->
         <h3 style="margin-top: 50px;">กราฟแสดงมูลค่าความเสียหายของห้องพักแต่ละรายการ</h3>

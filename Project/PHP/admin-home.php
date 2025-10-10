@@ -50,13 +50,13 @@ $admin_name = "คุณ" . $admin_first_name . " " . $admin_last_name;
         <div class="admin-menu">
             <a href="admin.php" class="menu-item">
                 <div class="icon">💰</div>
-                <span>ตรวจสอบจำนวนเงิน</span>
+                <span>ตรวจสอบการชำระเงิน</span>
             </a>
             <a href="add_officer.php" class="menu-item">
                 <div class="icon">➕</div>
                 <span>เพิ่มเจ้าหน้าที่</span>
             </a>
-             <a href="delete_officer.php" class="menu-item">
+             <a href="manage_officers.php" class="menu-item">
                 <div class="icon">➖</div>
                 <span>ลบเจ้าหน้าที่</span>
             </a>

@@ -51,7 +51,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       $stmt->bind_param("sssssss", $First_name, $Last_name, $Email_member, $Phone_Number, $Title_name, $Gender, $hashedPassword);
 
       if ($stmt->execute()) {
-        $success = "สมัครสมาชิกสำเร็จแล้ว!";
+        // *** ส่วนที่แก้ไข: Redirect ไป login.php พร้อมส่ง message ***
+        $successMessage = "สมัครสมาชิกสำเร็จแล้ว! กรุณาเข้าสู่ระบบ";
+        header("Location: ./login.php?status=success&message=" . urlencode($successMessage));
+        exit; // สำคัญมาก: ต้องเรียก exit หลังจาก header redirect
       } else {
         $error = "เกิดข้อผิดพลาด: " . $stmt->error;
       }
@@ -72,7 +75,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   <title>สมัครสมาชิก | Dom inn</title>
    <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="../CSS/css/member.css">
+  <link rel="stylesheet" href="../CSS/css/me.css">
   <script>
     function showPopup(message, color = 'red') {
       const popup = document.createElement('div');
@@ -94,6 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         popup.style.opacity = 0;
         setTimeout(() => document.body.removeChild(popup), 500);
       }, 2000);
+      return popup;
     }
   </script>
 </head>
@@ -107,19 +111,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <h2>สมัครสมาชิก</h2>
 
       <div id="php-alert">
-        <?php if ($error): ?>
+        <?php if ($error): // แสดง popup error หากมี ?>
           <script>
             window.onload = function() {
               showPopup("<?= addslashes($error) ?>", "red");
             }
           </script>
-        <?php elseif ($success): ?>
-          <script>
-            window.onload = function() {
-              showPopup("<?= addslashes($success) ?>", "green");
-            }
-          </script>
         <?php endif; ?>
+        <!-- ไม่ต้องมี elseif ($success) ที่นี่แล้ว เพราะ PHP header redirect จะทำงานก่อน -->
       </div>
 
       <div class="input-group">
@@ -168,7 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       </div>
 
       <div class="input-group">
-        <label for="Last_name">นาสกุล</label>
+        <label for="Last_name">นามสกุล</label>
         <input
           type="text"
           id="Last_name"

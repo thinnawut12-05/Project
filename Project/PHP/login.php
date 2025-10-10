@@ -6,8 +6,23 @@ session_start();
 
 include 'db.php'; // เชื่อมต่อฐานข้อมูล
 $error = '';
+// เพิ่มตัวแปรสำหรับข้อความแจ้งเตือนที่มาจาก URL
+$loginMessage = ''; 
 $_SESSION['First_name'] = "";
 $_SESSION['Last_name'] = "";
+
+// *** ส่วนที่แก้ไข: ตรวจสอบพารามิเตอร์ใน URL ***
+if (isset($_GET['status']) && isset($_GET['message'])) {
+    $status = $_GET['status'];
+    $msg = urldecode($_GET['message']); // ถอดรหัส URL
+
+    if ($status === 'success') {
+        $loginMessage = $msg;
+    }
+    // สามารถเพิ่มเงื่อนไขสำหรับ 'error' status ได้ในอนาคต หากต้องการส่งข้อความ error จากหน้าอื่นมาที่นี่
+}
+// *** จบส่วนที่แก้ไข ***
+
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
   $email = trim($_POST['Email_member'] ?? '');
@@ -17,31 +32,31 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $error = "กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน";
   } else {
     $stmt = $conn->prepare("SELECT Email_member, Password, First_name, Last_name FROM member WHERE Email_member = ?");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$stmt->store_result();
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
+    $stmt->store_result();
 
-if ($stmt->num_rows === 1) {
-    // bind ทั้งหมดจาก statement เดียว
-    $stmt->bind_result($emailDB, $hashedPassword, $first, $last);
-    $stmt->fetch();
+    if ($stmt->num_rows === 1) {
+        // bind ทั้งหมดจาก statement เดียว
+        $stmt->bind_result($emailDB, $hashedPassword, $first, $last);
+        $stmt->fetch();
 
-    if (password_verify($password, $hashedPassword)) {
-        $_SESSION['loggedin'] = true;
-        $_SESSION['email'] = $emailDB;
-        $_SESSION['First_name'] = $first;
-        $_SESSION['Last_name'] = $last;
+        if (password_verify($password, $hashedPassword)) {
+            $_SESSION['loggedin'] = true;
+            $_SESSION['email'] = $emailDB;
+            $_SESSION['First_name'] = $first;
+            $_SESSION['Last_name'] = $last;
 
-        header("Location: home.php");
-        exit;
+            header("Location: home.php");
+            exit;
+        } else {
+            $error = "รหัสผ่านไม่ถูกต้อง";
+        }
     } else {
-        $error = "รหัสผ่านไม่ถูกต้อง";
+        $error = "ไม่พบอีเมลในระบบ";
     }
-} else {
-    $error = "ไม่พบอีเมลในระบบ";
-}
 
-$stmt->close();
+    $stmt->close();
   }
 }
 ?>
@@ -53,7 +68,7 @@ $stmt->close();
   <title>เข้าสู่ระบบ | Dom inn</title>
    <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="../CSS/css/lo.css" />
+  <link rel="stylesheet" href="../CSS/css/loo.css" />
   <script>
     function showPopup(message, color = 'red') {
       const popup = document.createElement('div');
@@ -90,7 +105,13 @@ $stmt->close();
       <?php if ($error): ?>
         <script>
           window.onload = function() {
-            showPopup("<?= $error ?>", "red");
+            showPopup("<?= addslashes($error) ?>", "red"); // ใช้ addslashes เพื่อป้องกันปัญหา quotes
+          }
+        </script>
+      <?php elseif ($loginMessage): // *** ส่วนที่แก้ไข: แสดง popup สำหรับข้อความที่มาจาก URL *** ?>
+        <script>
+          window.onload = function() {
+            showPopup("<?= addslashes($loginMessage) ?>", "green");
           }
         </script>
       <?php endif; ?>

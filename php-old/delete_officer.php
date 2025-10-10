@@ -5,15 +5,26 @@ ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 session_start();
 
-// ตรวจสอบการล็อกอินของแอดมินหรือเจ้าหน้าที่ที่ได้รับสิทธิ์
-if (!isset($_SESSION['Email_Officer'])) {
-    header("Location: login.php"); // เปลี่ยนเส้นทางไปหน้า login หากยังไม่ได้ล็อกอิน
+// --- ขั้นตอนที่ 1: แก้ไขการตรวจสอบการล็อกอิน ---
+// ตรวจสอบว่าแอดมินล็อกอินอยู่หรือไม่ โดยใช้เซสชันที่ตั้งค่าจาก login.php
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+    header("Location: login.php"); // ถ้าไม่ได้ล็อกอินเป็นแอดมิน ให้เปลี่ยนเส้นทางไปหน้า login
     exit();
 }
+// --- สิ้นสุดการแก้ไขการตรวจสอบการล็อกอิน ---
 
-$current_logged_in_officer_email = $_SESSION['Email_Officer'] ?? '';
-$First_name = $_SESSION['First_name'] ?? '';
-$Last_name = $_SESSION['Last_name'] ?? '';
+
+if (!$conn) {
+    die("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้: " . mysqli_connect_error());
+}
+$conn->set_charset("utf8");
+
+// --- ขั้นตอนที่ 2: แก้ไขการกำหนดอีเมลผู้ใช้งานปัจจุบัน ---
+// กำหนดอีเมลของผู้ใช้งานปัจจุบัน (แอดมินที่ล็อกอินอยู่)
+// เพื่อใช้ในการป้องกันการลบบัญชีตัวเอง และการอัปเดตเซสชันเมื่อแก้ไขอีเมลตัวเอง
+$current_logged_in_officer_email = $_SESSION['Email_Admin'] ?? '';
+$First_name = $_SESSION['First_name'] ?? ''; // ชื่อของแอดมิน
+$Last_name = $_SESSION['Last_name'] ?? '';   // นามสกุลของแอดมิน
 $full_name = trim($First_name . ' ' . $Last_name);
 
 if (isset($conn)) {
@@ -39,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     if (empty($email_to_delete)) {
         $_SESSION['manage_officers_message'] = '<div class="alert error"><i class="fas fa-times-circle"></i> ไม่พบอีเมลเจ้าหน้าที่ที่ต้องการลบ.</div>';
     } else {
-        // ตรวจสอบว่าไม่ได้พยายามลบตัวเอง
+        // ตรวจสอบว่าไม่ได้พยายามลบตัวเอง (ซึ่งตอนนี้คือ Admin ที่ล็อกอินอยู่)
         if ($email_to_delete === $current_logged_in_officer_email) {
             $_SESSION['manage_officers_message'] = '<div class="alert error"><i class="fas fa-exclamation-triangle"></i> คุณไม่สามารถลบบัญชีของตัวเองได้!</div>';
         } else {
@@ -149,12 +160,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         call_user_func_array([$stmt_update, 'bind_param'], $bind_args);
 
         if ($stmt_update->execute()) {
-            if ($stmt_update->affected_rows > 0 || $email_officer === $original_email) { // ถ้าไม่มีการเปลี่ยนแปลงข้อมูลอื่น แต่เปลี่ยนอีเมลก็จะนับว่า affected_rows > 0
+            if ($stmt_update->affected_rows > 0 || $email_officer === $original_email) {
                 $_SESSION['manage_officers_message'] = '<div class="alert success"><i class="fas fa-check-circle"></i> อัปเดตข้อมูลเจ้าหน้าที่ <strong>' . htmlspecialchars($original_email) . '</strong> สำเร็จแล้ว.</div>';
-                // ถ้าแก้ไขอีเมลของตัวเอง ต้องอัปเดต session ด้วย
+                // --- ขั้นตอนที่ 3: แก้ไขการอัปเดตเซสชันเมื่อแก้ไขอีเมลตัวเอง ---
+                // ถ้าแก้ไขอีเมลของตัวเอง (ซึ่งตอนนี้คือ Admin ที่ล็อกอินอยู่) ต้องอัปเดต $_SESSION['Email_Admin'] ด้วย
                 if ($original_email === $current_logged_in_officer_email) {
-                    $_SESSION['Email_Officer'] = $email_officer;
+                    $_SESSION['Email_Admin'] = $email_officer; // อัปเดต Email_Admin ใน session
                 }
+                // --- สิ้นสุดการแก้ไขการอัปเดตเซสชัน ---
             } else {
                 $_SESSION['manage_officers_message'] = '<div class="alert info"><i class="fas fa-info-circle"></i> ไม่มีการเปลี่ยนแปลงข้อมูลสำหรับเจ้าหน้าที่ <strong>' . htmlspecialchars($original_email) . '</strong>.</div>';
             }

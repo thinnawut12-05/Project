@@ -150,6 +150,17 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
       color: #e74c3c;
       border: 1px solid #ff7675;
     }
+    .s6 { /* สถานะ: เช็คอินแล้ว */
+        background: #e0ffe0;
+        color: #1a8b4b;
+        border: 1px solid #1abc9c;
+    }
+    .s7 { /* สถานะ: เช็คเอาท์แล้ว */
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
 
     .no-booking {
       text-align: center;
@@ -230,7 +241,6 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
           <?php foreach ($bookings as $b): ?>
             <tr>
               <td><?= htmlspecialchars($b['Reservation_Id']) ?></td>
-              <td><?= htmlspecialchars($b['Guest_name']) ?></td>
               <td><?= htmlspecialchars(date('d/m/Y H:i:s', strtotime($b['Booking_time']))) ?></td>
               <td><?= htmlspecialchars($b['Province_name'] ?? 'ไม่ระบุ') ?></td>
               <td><?= htmlspecialchars($b['Number_of_rooms']) ?></td>
@@ -249,14 +259,15 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
                 ?>
                   <a href="payment.php?reservation_id=<?= htmlspecialchars($b['Reservation_Id']) ?>" class="action-button">ชำระเงิน</a>
                 <?php 
-                elseif ($b['Booking_status_Id'] == 3 && !empty($b['Receipt_Id'])): // สถานะ 3: ยืนยันการจองและชำระเงินแล้ว (และมี Receipt_Id)
+                // *** ส่วนที่แก้ไข: เพิ่มสถานะ 6 (เช็คอินแล้ว) เข้าไปในเงื่อนไขการดูใบเสร็จ ***
+                elseif (($b['Booking_status_Id'] == 3 || $b['Booking_status_Id'] == 6 || $b['Booking_status_Id'] == 7) && !empty($b['Receipt_Id'])): // สถานะ 3: ชำระเงินแล้ว, 6: เช็คอินแล้ว, หรือ 7: เช็คเอาท์แล้ว
                 ?>
                   <a href="receipt_details.php?receipt_id=<?= htmlspecialchars($b['Receipt_Id']) ?>" target="_blank" class="action-button view-receipt">ดูใบเสร็จ</a>
                 <?php
                 elseif ($b['Booking_status_Id'] == 2): // สถานะ 2: ชำระเงินสำเร็จรอตรวจสอบ
                 ?>
                   <span class="action-button disabled">รอการตรวจสอบ</span>
-                <?php else: // สถานะอื่นๆ (เช่น ยกเลิก, ปฏิเสธ) หรือสถานะ 3 แต่ไม่มี Receipt_Id
+                <?php else: // สถานะอื่นๆ (เช่น ยกเลิก, ปฏิเสธ)
                 ?>
                   <span class="action-button disabled">ไม่มี</span>
                 <?php endif; ?>

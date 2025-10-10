@@ -6,10 +6,11 @@ error_reporting(E_ALL);
 session_start();
 
 // ตรวจสอบการล็อกอินของแอดมินหรือเจ้าหน้าที่ที่ได้รับสิทธิ์
-if (!isset($_SESSION['Email_Officer'])) {
-    header("Location: login.php"); // เปลี่ยนเส้นทางไปหน้า login หากยังไม่ได้ล็อกอิน
-    exit();
+if (!$conn) {
+    die("❌ ไม่สามารถเชื่อมต่อฐานข้อมูลได้: " . mysqli_connect_error());
 }
+$conn->set_charset("utf8");
+
 
 $First_name = $_SESSION['First_name'] ?? '';
 $Last_name = $_SESSION['Last_name'] ?? '';
