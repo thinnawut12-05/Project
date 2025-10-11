@@ -21,7 +21,8 @@ $sql = "SELECT r.Reservation_Id, r.Guest_name, r.Booking_time, r.Number_of_rooms
                b.Booking_status_name,
                p.Province_name,
                r.stars,
-               r.comment
+               r.comment,
+               r.rating_timestamp    /* *** เพิ่ม: ดึงคอลัมน์ rating_timestamp *** */
         FROM reservation r
         LEFT JOIN booking_status b ON r.Booking_status_Id = b.Booking_status_Id
         LEFT JOIN province p ON r.Province_Id = p.Province_Id
@@ -41,6 +42,12 @@ $stmt->close();
 // กำหนด ID ของสถานะ "เช็คเอาท์แล้ว" (เสร็จสมบูรณ์) และ "เช็คอินแล้ว"
 $status_id_completed = 7; // ตรวจสอบว่า ID 7 ใน booking_status table คือ 'เช็คเอาท์แล้ว'
 $status_id_checked_in = 6; // ตรวจสอบว่า ID 6 ใน booking_status table คือ 'เช็คอินแล้ว'
+
+$First_name = $_SESSION['First_name'] ?? '';
+$Last_name = $_SESSION['Last_name'] ?? '';
+$full_name = trim($First_name . ' ' . $Last_name);
+$checkin_date = $_GET['checkin_date'] ?? '';
+$checkout_date = $_GET['checkout_date'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -50,6 +57,11 @@ $status_id_checked_in = 6; // ตรวจสอบว่า ID 6 ใน booking
   <title>ให้คะแนนการจอง</title>
   <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap">
+  <!-- *** เพิ่ม: ลิงก์ไปยัง ino.css สำหรับสไตล์ของ Header *** -->
+  <link rel="stylesheet" href="../CSS/css/ino.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x5l5x"
+    crossorigin="anonymous" />
   <style>
     body {
       font-family: 'Kanit', sans-serif;
@@ -58,14 +70,22 @@ $status_id_checked_in = 6; // ตรวจสอบว่า ID 6 ใน booking
       padding: 0;
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      flex-direction: column; /* จัดเรียงองค์ประกอบในแนวตั้ง */
+      align-items: center; /* จัดกึ่งกลางแนวนอน */
+    }
+
+    /* *** เพิ่มสไตล์สำหรับ Header เพื่อให้ Navbar แสดงผลได้ดีขึ้น *** */
+    header {
+      width: 100%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* เพิ่มเงาให้ Header */
+      z-index: 100; /* ให้ Header อยู่ด้านบนสุด */
+      position: sticky; /* ทำให้ Header ติดอยู่ด้านบนเมื่อเลื่อนหน้าจอ */
+      top: 0;
     }
 
     .container {
       max-width: 1000px;
-      margin: 40px auto;
+      margin: 40px auto; /* ปรับ margin-top เพื่อไม่ให้ชน Header */
       background: #fff;
       border-radius: 15px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
@@ -210,6 +230,13 @@ $status_id_checked_in = 6; // ตรวจสอบว่า ID 6 ใน booking
       margin-top: 10px;
     }
 
+    /* เพิ่มสไตล์สำหรับวันที่ให้คะแนน */
+    .rated-date {
+        font-size: 0.85rem;
+        color: #888;
+        margin-top: 5px;
+    }
+
     .status-badge {
       padding: 6px 12px;
       border-radius: 20px;
@@ -277,9 +304,52 @@ $status_id_checked_in = 6; // ตรวจสอบว่า ID 6 ใน booking
       }
     }
   </style>
+  <!-- สำหรับโปรไฟล์เท่านั้น -->
+  <style>
+    .profile-link,
+    .profile-link:visited {
+      text-decoration: none;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .profile-link:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .profile-link:active {
+      color: #ffffff;
+    }
+  </style>
+  <!-- สำหรับโปรไฟล์เท่านั้น End-->
 </head>
 
 <body>
+    <!-- *** แทรก Header จาก index.php *** -->
+    <header>
+      <section class="logo">
+        <a href="./home.php">
+          <img src="../src/images/4.png" width="50" height="50" alt="Dom Inn Logo" />
+        </a>
+      </section>
+      <nav>
+        <a href="./type.php">ประเภทห้องพัก</a>
+        <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
+        <a href="./details.php">รายละเอียดต่างๆ</a>
+        <a href="./booking_status_pending.php">การจองของฉัน</a>
+        <a href="./score.php">คะแนน</a>
+      </nav>
+          <?php if ($full_name && $full_name !== ' '): ?>
+      <div class="user-display">
+        <a href="profile.php" class="profile-link"><?= htmlspecialchars($full_name) ?></a>
+      </div>
+    <?php endif; ?>
+    </header>
+    <!-- *** สิ้นสุด Header ที่แทรกเข้ามา *** -->
+
   <div class="container">
     <h2>ให้คะแนนการจองของคุณ</h2>
 
@@ -344,6 +414,10 @@ $status_id_checked_in = 6; // ตรวจสอบว่า ID 6 ใน booking
                   <p class="rated-comment"><?= htmlspecialchars($b['comment']) ?></p>
                 <?php else: ?>
                   <p class="rated-comment">ไม่มีคอมเมนต์</p>
+                <?php endif; ?>
+                <?php /* *** เพิ่ม: แสดงวันที่ให้คะแนนล่าสุดหากมีข้อมูล *** */ ?>
+                <?php if ($b['rating_timestamp']): ?>
+                  <p class="rated-date">ให้คะแนนล่าสุด: <?= htmlspecialchars(date('d/m/Y H:i:s', strtotime($b['rating_timestamp']))) ?></p>
                 <?php endif; ?>
               </div>
             <?php

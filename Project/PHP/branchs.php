@@ -18,6 +18,13 @@ $conn->set_charset("utf8");
 // ดึงข้อมูลจังหวัด + ที่อยู่ + เบอร์โทร
 $sql = "SELECT Province_name, Address, Phone FROM province";
 $result = $conn->query($sql);
+
+$First_name = $_SESSION['First_name'] ?? '';
+$Last_name = $_SESSION['Last_name'] ?? '';
+$full_name = trim($First_name . ' ' . $Last_name);
+$checkin_date = $_GET['checkin_date'] ?? '';
+$checkout_date = $_GET['checkout_date'] ?? '';
+
 ?>
 
 <!DOCTYPE html>
@@ -34,26 +41,47 @@ $result = $conn->query($sql);
       integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x5l5x"
       crossorigin="anonymous" />
 </head>
+<!-- สำหรับโปรไฟล์เท่านั้น -->
+  <style>
+    .profile-link,
+    .profile-link:visited {
+      text-decoration: none;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
 
+    .profile-link:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .profile-link:active {
+      color: #ffffff;
+    }
+  </style>
+  <!-- สำหรับโปรไฟล์เท่านั้น End-->
 <body>
     <!-- *** แทนที่ Header เดิมด้วย Header จาก index.php *** -->
     <header>
       <section class="logo">
-        <a href="./index.php">
+        <a href="./home.php">
           <img src="../src/images/4.png" width="50" height="50" alt="Dom Inn Logo" />
         </a>
       </section>
       <nav>
-        <a href="./index-type.php">ประเภทห้องพัก</a>
-        <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
-        <a href="./details.php">รายละเอียดต่างๆ</a>
-        <a href="#">การจองของฉัน</a> <!-- หากมีหน้านี้ ให้เปลี่ยน # เป็น path ที่ถูกต้อง -->
-        <a href="./summary.php">คะแนน</a>
+        <a href="./type.php">ประเภทห้องพัก</a>
+        <a href="./branchs.php">สาขาโรงแรมดอม อินน์</a>
+        <a href="./detailsm.php">รายละเอียดต่างๆ</a>
+        <a href="./booking_status_pending.php">การจองของฉัน</a> <!-- หากมีหน้านี้ ให้เปลี่ยน # เป็น path ที่ถูกต้อง -->
+        <a href="./score.php">คะแนน</a>
       </nav>
-      <nav>
-        <a href="./member.php">สมัครสมาชิก</a>
-        <a href="./login.php">เข้าสู่ระบบ</a>
-      </nav>
+         <?php if ($full_name && $full_name !== ' '): ?>
+      <div class="user-display">
+        <a href="profile.php" class="profile-link"><?= htmlspecialchars($full_name) ?></a>
+      </div>
+    <?php endif; ?>
     </header>
     <!-- *** สิ้นสุด Header ที่เพิ่มเข้ามา *** -->
 

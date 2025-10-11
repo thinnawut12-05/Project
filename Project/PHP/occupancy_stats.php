@@ -85,129 +85,138 @@ $sql_group_by_date = "";
 $sql_order_by_date = "";
 
 
-// --- สร้างเงื่อนไขและส่วนของ SQL ตาม filter_type ---
+// --- สร้างเงื่อนไขและส่วนของ SQL ตาม filter_type (สำหรับ reservation) ---
+// เงื่อนไขสำหรับ reservation
+$reservation_sql_conditions_array = ["r.Booking_status_Id IN (3, 6, 7)"];
+$reservation_sql_bind_params_values = [];
+$reservation_sql_bind_types_string = "";
+
+if ($is_officer && $user_province_id_filter !== null) {
+    $reservation_sql_conditions_array[] = "r.Province_Id = ?";
+    $reservation_sql_bind_types_string .= "i";
+    $reservation_sql_bind_params_values[] = (int)$user_province_id_filter;
+} elseif ($is_admin && !empty($selected_province_id)) {
+    $reservation_sql_conditions_array[] = "r.Province_Id = ?";
+    $reservation_sql_bind_types_string .= "i";
+    $reservation_sql_bind_params_values[] = (int)$selected_province_id;
+}
+
 if ($filter_type == 'today') {
     $chart_title .= " วันนี้ (" . date('d/m/Y') . ")";
-    $sql_conditions_array[] = "r.Booking_date = CURDATE()";
+    $reservation_sql_conditions_array[] = "r.Booking_date = CURDATE()";
     $sql_select_date_part = "DATE_FORMAT(r.Booking_date, '%H:00') AS label_period_time, p.Province_name, r.Province_Id";
     $sql_group_by_date = "GROUP BY DATE_FORMAT(r.Booking_date, '%H:00'), p.Province_name, r.Province_Id";
     $sql_order_by_date = "ORDER BY label_period_time ASC, p.Province_name ASC";
 } elseif ($filter_type == 'this_month') {
     $chart_title .= " เดือนนี้ (" . date('m/Y') . ")";
-    $sql_conditions_array[] = "MONTH(r.Booking_date) = MONTH(CURDATE()) AND YEAR(r.Booking_date) = YEAR(CURDATE())";
+    $reservation_sql_conditions_array[] = "MONTH(r.Booking_date) = MONTH(CURDATE()) AND YEAR(r.Booking_date) = YEAR(CURDATE())";
     $sql_select_date_part = "DAY(r.Booking_date) AS label_period_day, p.Province_name, r.Province_Id";
     $sql_group_by_date = "GROUP BY DAY(r.Booking_date), p.Province_name, r.Province_Id";
     $sql_order_by_date = "ORDER BY DAY(r.Booking_date) ASC, p.Province_name ASC";
 } elseif ($filter_type == 'this_year') {
     $chart_title .= " ปีนี้ (" . date('Y') . ")";
-    $sql_conditions_array[] = "YEAR(r.Booking_date) = YEAR(CURDATE())";
+    $reservation_sql_conditions_array[] = "YEAR(r.Booking_date) = YEAR(CURDATE())";
     $sql_select_date_part = "MONTH(r.Booking_date) AS label_period_month_num, p.Province_name, r.Province_Id";
     $sql_group_by_date = "GROUP BY MONTH(r.Booking_date), p.Province_name, r.Province_Id";
     $sql_order_by_date = "ORDER BY MONTH(r.Booking_date) ASC, p.Province_name ASC";
 } elseif ($filter_type == 'custom') {
-    // ต้องตรวจสอบว่ามีพารามิเตอร์ custom_year/month หรือไม่ มิฉะนั้นจะ fallback
     if (!empty($custom_year) && !empty($custom_month)) {
         $chart_title .= " เดือน " . $custom_month . " ปี " . $custom_year;
-        $sql_conditions_array[] = "YEAR(r.Booking_date) = ? AND MONTH(r.Booking_date) = ?";
-        $sql_bind_types_string .= "ii";
-        $sql_bind_params_values[] = (int)$custom_year;
-        $sql_bind_params_values[] = (int)$custom_month;
+        $reservation_sql_conditions_array[] = "YEAR(r.Booking_date) = ? AND MONTH(r.Booking_date) = ?";
+        $reservation_sql_bind_types_string .= "ii";
+        $reservation_sql_bind_params_values[] = (int)$custom_year;
+        $reservation_sql_bind_params_values[] = (int)$custom_month;
         $sql_select_date_part = "DAY(r.Booking_date) AS label_period_day, p.Province_name, r.Province_Id";
         $sql_group_by_date = "GROUP BY DAY(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY DAY(r.Booking_date) ASC, p.Province_name ASC";
     } elseif (!empty($custom_year)) {
         $chart_title .= " ปี " . $custom_year;
-        $sql_conditions_array[] = "YEAR(r.Booking_date) = ?";
-        $sql_bind_types_string .= "i";
-        $sql_bind_params_values[] = (int)$custom_year;
+        $reservation_sql_conditions_array[] = "YEAR(r.Booking_date) = ?";
+        $reservation_sql_bind_types_string .= "i";
+        $reservation_sql_bind_params_values[] = (int)$custom_year;
         $sql_select_date_part = "MONTH(r.Booking_date) AS label_period_month_num, p.Province_name, r.Province_Id";
         $sql_group_by_date = "GROUP BY MONTH(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY MONTH(r.Booking_date) ASC, p.Province_name ASC";
     } elseif (!empty($custom_month)) {
         $month_name_for_title = (new DateTime('2000-' . $custom_month . '-01'))->format('F');
         $chart_title .= " เดือน " . $month_name_for_title . " (ทุกปี)";
-        $sql_conditions_array[] = "MONTH(r.Booking_date) = ?";
-        $sql_bind_types_string .= "i";
-        $sql_bind_params_values[] = (int)$custom_month;
+        $reservation_sql_conditions_array[] = "MONTH(r.Booking_date) = ?";
+        $reservation_sql_bind_types_string .= "i";
+        $reservation_sql_bind_params_values[] = (int)$custom_month;
         $sql_select_date_part = "YEAR(r.Booking_date) AS label_period_year, p.Province_name, r.Province_Id";
         $sql_group_by_date = "GROUP BY YEAR(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY YEAR(r.Booking_date) ASC, p.Province_name ASC";
     } else {
-        // หากเลือก Custom แต่ไม่ได้ระบุอะไรเลย ให้กลับไปเริ่มต้นที่เดือนนี้
-        $filter_type = 'this_month';
+        $filter_type = 'this_month'; // Fallback
         $chart_title = "สรุปยอดเข้าพักและจำนวนห้องที่จอง เดือนนี้ (" . date('m/Y') . ")";
-        // Conditions for this_month
-        $sql_conditions_array[] = "MONTH(r.Booking_date) = MONTH(CURDATE()) AND YEAR(r.Booking_date) = YEAR(CURDATE())";
-        // Date part for this_month
+        $reservation_sql_conditions_array[] = "MONTH(r.Booking_date) = MONTH(CURDATE()) AND YEAR(r.Booking_date) = YEAR(CURDATE())";
         $sql_select_date_part = "DAY(r.Booking_date) AS label_period_day, p.Province_name, r.Province_Id";
         $sql_group_by_date = "GROUP BY DAY(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY DAY(r.Booking_date) ASC, p.Province_name ASC";
-        // No additional bind params for this_month (CURDATE() is handled by SQL)
     }
 }
+$reservation_sql_conditions = implode(" AND ", $reservation_sql_conditions_array);
 
-$sql_conditions = implode(" AND ", $sql_conditions_array);
 
-
-// --- NEW: ดึงข้อมูลสรุปจำนวนเงินทั้งหมดและจำนวนผู้เข้าพักทั้งหมด ---
-$sql_overall_summary = "SELECT
+// --- NEW: ดึงข้อมูลสรุปจำนวนเงินทั้งหมดและจำนวนผู้เข้าพักทั้งหมด (reservation) ---
+$sql_overall_summary_reservation = "SELECT
                             COALESCE(SUM(r.Total_price), 0) AS grand_total_amount,
                             COALESCE(SUM(r.Number_of_adults + r.Number_of_children), 0) AS grand_total_guests
                         FROM reservation r
-                        WHERE " . $sql_conditions;
+                        WHERE " . $reservation_sql_conditions;
 
-$stmt_overall_summary = $conn->prepare($sql_overall_summary);
-if ($stmt_overall_summary === false) {
-    die("Error preparing overall summary statement: " . $conn->error);
+$stmt_overall_summary_reservation = $conn->prepare($sql_overall_summary_reservation);
+if ($stmt_overall_summary_reservation === false) {
+    die("Error preparing overall summary statement (reservation): " . $conn->error);
 }
 
-// ผูกพารามิเตอร์สำหรับ overall summary query
-if (!empty($sql_bind_types_string)) {
-    $bind_params_with_references_overall = [];
-    $bind_params_with_references_overall[] = $sql_bind_types_string;
-    foreach ($sql_bind_params_values as $key => $value) {
-        $bind_params_with_references_overall[] = &$sql_bind_params_values[$key];
+// ผูกพารามิเตอร์สำหรับ overall summary query (reservation)
+if (!empty($reservation_sql_bind_types_string)) {
+    $bind_params_with_references_overall_reservation = [];
+    $bind_params_with_references_overall_reservation[] = $reservation_sql_bind_types_string;
+    foreach ($reservation_sql_bind_params_values as $key => $value) {
+        $bind_params_with_references_overall_reservation[] = &$reservation_sql_bind_params_values[$key];
     }
-    call_user_func_array([$stmt_overall_summary, 'bind_param'], $bind_params_with_references_overall);
+    call_user_func_array([$stmt_overall_summary_reservation, 'bind_param'], $bind_params_with_references_overall_reservation);
 }
-$stmt_overall_summary->execute();
-$result_overall_summary = $stmt_overall_summary->get_result();
-$overall_summary_data = $result_overall_summary->fetch_assoc();
-$stmt_overall_summary->close();
+$stmt_overall_summary_reservation->execute();
+$result_overall_summary_reservation = $stmt_overall_summary_reservation->get_result();
+$overall_summary_data_reservation = $result_overall_summary_reservation->fetch_assoc();
+$stmt_overall_summary_reservation->close();
 
-$grand_total_amount = $overall_summary_data['grand_total_amount'] ?? 0;
-$grand_total_guests = $overall_summary_data['grand_total_guests'] ?? 0;
+$grand_total_amount = $overall_summary_data_reservation['grand_total_amount'] ?? 0;
+$grand_total_guests = $overall_summary_data_reservation['grand_total_guests'] ?? 0;
 
 
-// --- ดึงข้อมูลสำหรับกราฟ (per period) ---
-$sql_summary_chart = "SELECT
+// --- ดึงข้อมูลสำหรับกราฟ (per period - reservation) ---
+$sql_summary_chart_reservation = "SELECT
                     " . $sql_select_date_part . ",
                     SUM(r.Number_of_adults + r.Number_of_children) AS total_occupancy,
                     SUM(r.Number_of_rooms) AS total_rooms
                 FROM reservation r
                 LEFT JOIN province p ON r.Province_Id = p.Province_Id
-                WHERE " . $sql_conditions . "
+                WHERE " . $reservation_sql_conditions . "
                 " . $sql_group_by_date . "
                 " . $sql_order_by_date;
 
 
-$stmt_summary_chart = $conn->prepare($sql_summary_chart);
+$stmt_summary_chart_reservation = $conn->prepare($sql_summary_chart_reservation);
 
-if ($stmt_summary_chart === false) {
-    die("Error preparing summary chart statement: " . $conn->error);
+if ($stmt_summary_chart_reservation === false) {
+    die("Error preparing summary chart statement (reservation): " . $conn->error);
 }
 
-// ผูกพารามิเตอร์สำหรับ per-period summary query (ใช้ $sql_bind_types_string และ $sql_bind_params_values เดียวกัน)
-if (!empty($sql_bind_types_string)) {
-    $bind_params_with_references_chart = [];
-    $bind_params_with_references_chart[] = $sql_bind_types_string;
-    foreach ($sql_bind_params_values as $key => $value) {
-        $bind_params_with_references_chart[] = &$sql_bind_params_values[$key];
+// ผูกพารามิเตอร์สำหรับ per-period summary query (reservation)
+if (!empty($reservation_sql_bind_types_string)) {
+    $bind_params_with_references_chart_reservation = [];
+    $bind_params_with_references_chart_reservation[] = $reservation_sql_bind_types_string;
+    foreach ($reservation_sql_bind_params_values as $key => $value) {
+        $bind_params_with_references_chart_reservation[] = &$reservation_sql_bind_params_values[$key];
     }
-    call_user_func_array([$stmt_summary_chart, 'bind_param'], $bind_params_with_references_chart);
+    call_user_func_array([$stmt_summary_chart_reservation, 'bind_param'], $bind_params_with_references_chart_reservation);
 }
-$stmt_summary_chart->execute();
-$result_summary_chart = $stmt_summary_chart->get_result();
+$stmt_summary_chart_reservation->execute();
+$result_summary_chart_reservation = $stmt_summary_chart_reservation->get_result();
 
 $chart_labels = [];
 $chart_occupancy_data = [];
@@ -223,7 +232,7 @@ $month_names_full = [
 ];
 
 
-while ($row = $result_summary_chart->fetch_assoc()) {
+while ($row = $result_summary_chart_reservation->fetch_assoc()) {
     $occupancy_count = $row['total_occupancy'] ?? 0;
     $rooms_count = $row['total_rooms'] ?? 0;
 
@@ -250,7 +259,7 @@ while ($row = $result_summary_chart->fetch_assoc()) {
     $chart_occupancy_data[] = $occupancy_count;
     $chart_rooms_data[] = $rooms_count;
 }
-$stmt_summary_chart->close();
+$stmt_summary_chart_reservation->close();
 
 
 // --- ดึงปีและเดือนที่มีข้อมูลสำหรับการกรองแบบ Custom (สำหรับ Admin) ---
@@ -298,9 +307,84 @@ if ($is_admin) {
 }
 
 
-// --- ปรับปรุง: ดึงข้อมูลความเสียหายของห้องพัก (room_damages) พร้อมการกรองตามสาขา ---
+// --- ปรับปรุง: ดึงข้อมูลความเสียหายของห้องพัก (room_damages) พร้อมการกรองตามสาขาและช่วงเวลา ---
+$damage_sql_conditions_array = ["1=1"]; // Base condition for room_damages
+$damage_sql_bind_params_values = [];
+$damage_sql_bind_types_string = "";
+
+// Apply province filter to room damages query
+if ($is_officer && $user_province_id_filter !== null) {
+    $damage_sql_conditions_array[] = "rm.Province_Id = ?";
+    $damage_sql_bind_types_string .= "i";
+    $damage_sql_bind_params_values[] = (int)$user_province_id_filter;
+} elseif ($is_admin && !empty($selected_province_id)) {
+    $damage_sql_conditions_array[] = "rm.Province_Id = ?";
+    $damage_sql_bind_types_string .= "i";
+    $damage_sql_bind_params_values[] = (int)$selected_province_id;
+}
+
+// Apply date filter to room damages query
+if ($filter_type == 'today') {
+    $damage_sql_conditions_array[] = "rd.Damage_date = CURDATE()";
+} elseif ($filter_type == 'this_month') {
+    $damage_sql_conditions_array[] = "MONTH(rd.Damage_date) = MONTH(CURDATE()) AND YEAR(rd.Damage_date) = YEAR(CURDATE())";
+} elseif ($filter_type == 'this_year') {
+    $damage_sql_conditions_array[] = "YEAR(rd.Damage_date) = YEAR(CURDATE())";
+} elseif ($filter_type == 'custom') {
+    if (!empty($custom_year) && !empty($custom_month)) {
+        $damage_sql_conditions_array[] = "YEAR(rd.Damage_date) = ? AND MONTH(rd.Damage_date) = ?";
+        $damage_sql_bind_types_string .= "ii";
+        $damage_sql_bind_params_values[] = (int)$custom_year;
+        $damage_sql_bind_params_values[] = (int)$custom_month;
+    } elseif (!empty($custom_year)) {
+        $damage_sql_conditions_array[] = "YEAR(rd.Damage_date) = ?";
+        $damage_sql_bind_types_string .= "i";
+        $damage_sql_bind_params_values[] = (int)$custom_year;
+    } elseif (!empty($custom_month)) {
+        $damage_sql_conditions_array[] = "MONTH(rd.Damage_date) = ?";
+        $damage_sql_bind_types_string .= "i";
+        $damage_sql_bind_params_values[] = (int)$custom_month;
+    } else {
+        // Fallback for custom empty: apply this_month logic
+        $damage_sql_conditions_array[] = "MONTH(rd.Damage_date) = MONTH(CURDATE()) AND YEAR(rd.Damage_date) = YEAR(CURDATE())";
+    }
+}
+$damage_sql_conditions = implode(" AND ", $damage_sql_conditions_array);
+
+
+// --- NEW: ดึงข้อมูลสรุปมูลค่าความเสียหายทั้งหมด (damage_value) ---
+$sql_overall_damage_summary = "SELECT
+                                COALESCE(SUM(rd.Damage_value), 0) AS grand_total_damage_value
+                            FROM room_damages rd
+                            JOIN room rm ON rd.Room_Id = rm.Room_ID
+                            WHERE " . $damage_sql_conditions;
+
+$stmt_overall_damage_summary = $conn->prepare($sql_overall_damage_summary);
+if ($stmt_overall_damage_summary === false) {
+    die("Error preparing overall damage summary statement: " . $conn->error);
+}
+
+// ผูกพารามิเตอร์สำหรับ overall damage summary query
+if (!empty($damage_sql_bind_types_string)) {
+    $bind_params_with_references_overall_damage = [];
+    $bind_params_with_references_overall_damage[] = $damage_sql_bind_types_string;
+    foreach ($damage_sql_bind_params_values as $key => $value) {
+        $bind_params_with_references_overall_damage[] = &$damage_sql_bind_params_values[$key];
+    }
+    call_user_func_array([$stmt_overall_damage_summary, 'bind_param'], $bind_params_with_references_overall_damage);
+}
+$stmt_overall_damage_summary->execute();
+$result_overall_damage_summary = $stmt_overall_damage_summary->get_result();
+$overall_damage_summary_data = $result_overall_damage_summary->fetch_assoc();
+$stmt_overall_damage_summary->close();
+
+$grand_total_damage_value = $overall_damage_summary_data['grand_total_damage_value'] ?? 0;
+
+
+
+// --- ปรับปรุง: ดึงข้อมูลความเสียหายของห้องพัก (room_damages) พร้อมการกรองตามสาขา (สำหรับกราฟแต่ละรายการ) ---
 $room_damages_data = [];
-$sql_room_damages = "SELECT
+$sql_room_damages_for_chart = "SELECT
     rd.Damage_Id,
     rd.Stay_Id,
     rd.Room_Id,
@@ -317,40 +401,22 @@ JOIN
     room rm ON rd.Room_Id = rm.Room_ID
 JOIN
     province p ON rm.Province_Id = p.Province_Id
-WHERE 1=1"; // Base condition
+WHERE " . $damage_sql_conditions; // ใช้เงื่อนไขที่สร้างสำหรับ Damage
 
-$damage_bind_types_string = "";
-$damage_bind_params_values = [];
+$sql_room_damages_for_chart .= " ORDER BY rd.Damage_date DESC";
 
-// Apply province filter to room damages query
-if ($is_officer && $user_province_id_filter !== null) {
-    $sql_room_damages .= " AND rm.Province_Id = ?";
-    $damage_bind_types_string .= "i";
-    $damage_bind_params_values[] = (int)$user_province_id_filter;
-} elseif ($is_admin && !empty($selected_province_id)) {
-    $sql_room_damages .= " AND rm.Province_Id = ?";
-    $damage_bind_types_string .= "i";
-    $damage_bind_params_values[] = (int)$selected_province_id;
-}
-// ถ้า Admin และ $selected_province_id ว่างเปล่า (เลือก "ทุกสาขา") จะไม่มีเงื่อนไข Province_Id เพิ่มเติม
-// ทำให้ดึงความเสียหายทั้งหมดมาแสดง (แต่จะใส่ชื่อสาขาใน label กราฟ)
-
-
-$sql_room_damages .= " ORDER BY rd.Damage_date DESC";
-
-$stmt_room_damages = $conn->prepare($sql_room_damages);
+$stmt_room_damages = $conn->prepare($sql_room_damages_for_chart);
 
 if ($stmt_room_damages === false) {
-    error_log("Error preparing room_damages statement: " . $conn->error);
-    // $_SESSION['error'] = "เกิดข้อผิดพลาดในการดึงข้อมูลความเสียหายของห้องพัก: " . $conn->error; // อาจแสดงให้ผู้ใช้เห็น
+    error_log("Error preparing room_damages statement for chart: " . $conn->error);
 } else {
-    if (!empty($damage_bind_types_string)) {
-        $damage_bind_params_with_references = [];
-        $damage_bind_params_with_references[] = $damage_bind_types_string;
-        foreach ($damage_bind_params_values as $key => $value) {
-            $damage_bind_params_with_references[] = &$damage_bind_params_values[$key];
+    if (!empty($damage_sql_bind_types_string)) {
+        $damage_bind_params_with_references_chart = [];
+        $damage_bind_params_with_references_chart[] = $damage_sql_bind_types_string;
+        foreach ($damage_sql_bind_params_values as $key => $value) {
+            $damage_bind_params_with_references_chart[] = &$damage_sql_bind_params_values[$key];
         }
-        call_user_func_array([$stmt_room_damages, 'bind_param'], $damage_bind_params_with_references);
+        call_user_func_array([$stmt_room_damages, 'bind_param'], $damage_bind_params_with_references_chart);
     }
     $stmt_room_damages->execute();
     $result_room_damages = $stmt_room_damages->get_result();
@@ -364,7 +430,7 @@ if ($stmt_room_damages === false) {
 }
 
 
-// --- เตรียมข้อมูลสำหรับกราฟความเสียหาย ---
+// --- เตรียมข้อมูลสำหรับกราฟความเสียหายแต่ละรายการ ---
 $damage_chart_labels = [];
 $damage_chart_values = [];
 $damage_chart_title = 'มูลค่าความเสียหายของห้องพักแต่ละรายการ';
@@ -650,7 +716,7 @@ $chart_data = [
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
             flex: 1; /* Allow cards to grow */
             min-width: 250px; /* Minimum width for each card */
-            max-width: 45%; /* Max width to allow two cards per row on larger screens */
+            max-width: 30%; /* ปรับ Max width เพื่อให้แสดง 3 การ์ดต่อแถว */
         }
 
         .summary-card h4 {
@@ -785,6 +851,10 @@ $chart_data = [
             <div class="summary-card">
                 <h4>สรุปจำนวนผู้เข้าพักทั้งหมด</h4>
                 <p class="summary-value"><?= number_format($grand_total_guests) ?> คน</p>
+            </div>
+            <div class="summary-card">
+                <h4>สรุปมูลค่าความเสียหายทั้งหมด</h4>
+                <p class="summary-value"><?= number_format($grand_total_damage_value, 2) ?> บาท</p>
             </div>
         </div>
         <!-- END NEW: Overall Summary Cards -->

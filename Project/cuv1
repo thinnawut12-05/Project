@@ -72,7 +72,6 @@ $status_id_cancelled_timeout = 4; // ยกเลิกการจองเน�
 $status_id_cancelled_incomplete_payment = 5; // ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน 24 ชม.
 $status_id_checked_in = 6; // เช็คอินแล้ว
 $status_id_completed = 7; // เสร็จสมบูรณ์ (หรือ "เช็คเอาท์แล้ว" ตามที่คุณเปลี่ยนชื่อ)
-$status_id_late_checkin_adjusted = 8; // *** เพิ่ม: สถานะเช็คอินล่าช้า/ถูกปรับ (สมมติ ID เป็น 8) ***
 
 
 // --- ฟังก์ชันสำหรับสร้าง ID ที่ไม่ซ้ำกันและเป็นสตริงตัวเลข/ตัวอักษร (สำหรับ Stay_id) ---
@@ -243,33 +242,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $checkout_date = date('Y-m-d');
                     $checkout_time = date('H:i:s'); // ค่าเวลาปัจจุบัน
 
-                    // *** แก้ไข: อัปเดตสถานะการจองในตาราง 'reservation' เป็น 'เสร็จสมบูรณ์' (Booking_status_Id = 7)
-                    // เพิ่มสถานะที่อนุญาตให้เช็คเอาท์ได้ (Checked-in หรือ Late Check-in/Adjusted)
-                    $valid_pre_checkout_status_ids = [
-                        $status_id_checked_in,
-                        $status_id_late_checkin_adjusted // อนุญาตให้เช็คเอาท์จากสถานะนี้
-                    ];
-                    $pre_checkout_placeholders = implode(',', array_fill(0, count($valid_pre_checkout_status_ids), '?'));
-                    $pre_checkout_types = str_repeat('i', count($valid_pre_checkout_status_ids));
-
+                    // อัปเดตสถานะการจองในตาราง 'reservation' เป็น 'เสร็จสมบูรณ์' (Booking_status_Id = 7)
                     $stmt_update_reservation_status = $conn->prepare(
                         "UPDATE reservation SET Booking_status_Id = ?
-                        WHERE Reservation_Id = ? AND Province_Id = ? AND Booking_status_Id IN ($pre_checkout_placeholders)"
+                        WHERE Reservation_Id = ? AND Province_Id = ? AND Booking_status_Id = ?"
                     );
                     if ($stmt_update_reservation_status === false) {
                         throw new Exception("Failed to prepare booking status update (Completed) statement: " . $conn->error);
                     }
-                    $bind_params_checkout_update = array_merge(
-                        [$status_id_completed, $reservation_id, $current_province_id],
-                        $valid_pre_checkout_status_ids
-                    );
-                    $bind_types_checkout_update = 'isi' . $pre_checkout_types;
-
-                    call_user_func_array([$stmt_update_reservation_status, 'bind_param'], array_merge([$bind_types_checkout_update], $bind_params_checkout_update));
-
+                    $stmt_update_reservation_status->bind_param("isii", $status_id_completed, $reservation_id, $current_province_id, $status_id_checked_in);
                     $stmt_update_reservation_status->execute();
                     if ($stmt_update_reservation_status->affected_rows === 0) {
-                        throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับเช็คเอาท์ (ต้องเป็นสถานะ 'เช็คอินแล้ว' หรือ 'เช็คอินล่าช้า/ถูกปรับ').");
+                        throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับเช็คเอาท์ (ต้องเป็นสถานะ 'เช็คอินแล้ว').");
                     }
                     $stmt_update_reservation_status->close();
 
@@ -340,13 +324,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $status_id_pending_payment,
                         $status_id_payment_pending_review,
                         $status_id_payment_confirmed,
-                        $status_id_checked_in,
-                        $status_id_late_checkin_adjusted // สามารถยกเลิกสถานะนี้ได้เช่นกัน
+                        $status_id_checked_in
                     ];
                     $valid_pre_cancel_placeholders = implode(',', array_fill(0, count($valid_pre_cancel_status_ids), '?'));
                     $valid_pre_cancel_types = str_repeat('i', count($valid_pre_cancel_status_ids));
 
-                    $cancel_target_status_id = $status_id_cancelled_timeout; // สามารถเปลี่ยนเป็น status_id_cancelled_by_officer หากมี
+                    $cancel_target_status_id = $status_id_cancelled_timeout;
 
                     $stmt = $conn->prepare(
                         "UPDATE reservation SET Booking_status_Id = ?
@@ -479,14 +462,6 @@ if ($filter_status_id && $filter_status_id != 'all') {
     $params[] = $filter_status_id;
     $param_types .= 'i';
 }
-// เพิ่มเงื่อนไขเพื่อไม่แสดงสถานะ "เสร็จสมบูรณ์" (เช็คเอาท์แล้ว) ตามค่าเริ่มต้นของการดึงข้อมูล
-// หากต้องการให้แสดงเมื่อเลือก filter "ทั้งหมด" หรือ "เช็คเอาท์แล้ว" ก็จะถูก override ด้วย filter ด้านบน
-else {
-    $sql_bookings .= " AND r.Booking_status_Id != ?";
-    $params[] = $status_id_completed;
-    $param_types .= 'i';
-}
-
 
 if (!empty($search_query)) {
     $search_query_like = '%' . $search_query . '%';
@@ -968,11 +943,6 @@ if (isset($conn) && $conn->ping()) {
         }
 
         /* Secondary gray */
-        /* *** เพิ่ม: สไตล์สำหรับสถานะ "เช็คอินล่าช้า/ถูกปรับ" *** */
-        .status-เช็คอินล่าช้า-ถูกปรับ {
-            background-color: #fd7e14; /* สีส้ม */
-            color: white;
-        }
 
 
         /* Action Buttons in Table */
@@ -1326,7 +1296,7 @@ if (isset($conn) && $conn->ping()) {
 
         <!-- Booking List Table -->
         <?php if (empty($bookings)): ?>
-            <p style="text-align: center; padding: 20px; font-size: 1.1em; color: #666;">ไม่พบข้อมูลการจองณตอนนี้!!.</p>
+            <p style="text-align: center; padding: 20px; font-size: 1.1em; color: #666;">ไม่พบข้อมูลการจองตามเงื่อนไขที่เลือก.</p>
         <?php else: ?>
             <div class="table-responsive-wrapper">
                 <table class="booking-table">
@@ -1346,11 +1316,6 @@ if (isset($conn) && $conn->ping()) {
                     </thead>
                     <tbody>
                         <?php foreach ($bookings as $booking):
-                            // *** เพิ่มเงื่อนไขนี้เพื่อไม่แสดงข้อมูลที่สถานะเป็น "เสร็จสมบูรณ์" (เช็คเอาท์แล้ว) ***
-                            if ($booking['Booking_status_Id'] == $status_id_completed) {
-                                continue; // ข้ามการแสดงผลแถวนี้
-                            }
-
                             $current_status_name = htmlspecialchars($booking['Booking_status_name']);
                             $current_status_id = htmlspecialchars($booking['Booking_status_Id']);
                         ?>
@@ -1386,8 +1351,7 @@ if (isset($conn) && $conn->ping()) {
                                     <?php endif; ?>
 
                                     <?php
-                                    // *** แก้ไข: ปุ่มเช็คเอาท์จะแสดงเมื่อสถานะเป็น "เช็คอินแล้ว" หรือ "เช็คอินล่าช้า/ถูกปรับ" ***
-                                    $can_check_out = ($current_status_id == $status_id_checked_in || $current_status_id == $status_id_late_checkin_adjusted);
+                                    $can_check_out = ($current_status_id == $status_id_checked_in);
                                     ?>
                                     <?php if ($can_check_out): ?>
                                         <button class="btn-check-out"

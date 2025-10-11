@@ -1,5 +1,5 @@
 <?php
-session_start();
+session_start(); // *** เพิ่ม: เริ่ม session สำหรับเช็คสมาชิก ***
 include 'db.php'; // ตรวจสอบให้แน่ใจว่า db.php อยู่ในตำแหน่งที่ถูกต้อง
 
 // เปิดการแสดงข้อผิดพลาดทั้งหมดสำหรับการดีบัก
@@ -25,8 +25,7 @@ if (empty($email_member)) {
 }
 
 // --- 3. ดึงข้อมูลการจองทั้งหมดของลูกค้าจากฐานข้อมูล ---
-// *** แก้ไข: เพิ่ม r.Booking_time, r.Total_price และ r.Receipt_Id เข้ามาใน SELECT statement ***
-$sql = "SELECT r.Reservation_Id, r.Guest_name, r.Booking_time, r.Number_of_rooms, 
+$sql = "SELECT r.Reservation_Id, r.Guest_name, r.Booking_time, r.Number_of_rooms,
                r.Number_of_adults, r.Number_of_children,
                r.Booking_date, r.Check_out_date, r.Booking_status_Id, r.Total_price, r.Receipt_Id,
                b.Booking_status_name,
@@ -56,31 +55,55 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close(); // ปิด statement
 $conn->close(); // ปิดการเชื่อมต่อฐานข้อมูลเมื่อเสร็จสิ้น
+
+$First_name = $_SESSION['First_name'] ?? '';
+$Last_name = $_SESSION['Last_name'] ?? '';
+$full_name = trim($First_name . ' ' . $Last_name);
+$checkin_date = $_GET['checkin_date'] ?? '';
+$checkout_date = $_GET['checkout_date'] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="th">
 
 <head>
   <meta charset="UTF-8">
-  <title>สถานะการจอง - HOP INN</title>
+  <title>สถานะการจองของคุณ</title>
   <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;700&display=swap">
+  <!-- *** เพิ่ม: ลิงก์ไปยัง ino.css สำหรับสไตล์ของ Header *** -->
+  <link rel="stylesheet" href="../CSS/css/ino.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x5l5x"
+    crossorigin="anonymous" />
   <style>
     body {
       font-family: 'Kanit', sans-serif;
-      /* background: linear-gradient(120deg, #a8edea, #fed6e3); */
       margin: 0;
       padding: 0;
       background-color: #f0f2f5; /* เพิ่มพื้นหลังสีอ่อน */
+      display: flex; /* เพื่อให้ Header และ Container จัดเรียงกัน */
+      flex-direction: column; /* จัดเรียงในแนวตั้ง */
+      align-items: center; /* จัดกึ่งกลางแนวนอน */
+      min-height: 100vh; /* ความสูงเต็มหน้าจอ */
+    }
+    /* *** เพิ่มสไตล์สำหรับ Header เพื่อให้ Navbar แสดงผลได้ดีขึ้น *** */
+    header {
+      width: 100%;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* เพิ่มเงาให้ Header */
+      z-index: 100; /* ให้ Header อยู่ด้านบนสุด */
+      position: sticky; /* ทำให้ Header ติดอยู่ด้านบนเมื่อเลื่อนหน้าจอ */
+      top: 0;
     }
 
     .container {
       max-width: 1600px;
-      margin: 40px auto;
+      margin: 40px auto; /* ปรับ margin-top เพื่อไม่ให้ชน Header */
       background: #fff;
       border-radius: 15px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
       padding: 32px 20px;
+      width: 95%; /* ใช้ความกว้าง 95% เพื่อให้ยืดหยุ่นมากขึ้น */
+      box-sizing: border-box; /* ให้ padding นับรวมในความกว้าง */
     }
 
     h2 {
@@ -108,6 +131,19 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
       white-space: nowrap; /* Force all text in cells to a single line */
       vertical-align: middle; /* จัดให้เนื้อหาอยู่กึ่งกลางแนวตั้ง */
     }
+    /* ปรับความกว้างของแต่ละคอลัมน์เพื่อไม่ให้ตารางดูแน่นเกินไป */
+    th:nth-child(1), td:nth-child(1) { width: 100px; } /* รหัสการจอง */
+    th:nth-child(2), td:nth-child(2) { width: 140px; } /* ชื่อผู้จอง */
+    th:nth-child(3), td:nth-child(3) { width: 150px; } /* เวลาจอง */
+    th:nth-child(4), td:nth-child(4) { width: 120px; } /* ชื่อสาขา */
+    th:nth-child(5), td:nth-child(5) { width: 90px; }  /* จำนวนห้อง */
+    th:nth-child(6), td:nth-child(6) { width: 80px; }  /* ผู้ใหญ่ */
+    th:nth-child(7), td:nth-child(7) { width: 80px; }  /* เด็ก */
+    th:nth-child(8), td:nth-child(8) { width: 120px; } /* วันเข้าพัก */
+    th:nth-child(9), td:nth-child(9) { width: 120px; } /* วันเช็คเอาท์ */
+    th:nth-child(10), td:nth-child(10) { width: 150px; } /* สถานะ */
+    th:nth-child(11), td:nth-child(11) { width: 150px; } /* การดำเนินการ */
+
 
     th {
       background: #74b9ff;
@@ -178,6 +214,7 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
       text-decoration: none;
       font-weight: 600;
       transition: 0.3s;
+      margin-top: 20px;
     }
 
     .back-btn:hover {
@@ -216,6 +253,50 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
 </head>
 
 <body>
+    <!-- *** แทรก Header จาก index.php *** -->
+    <header>
+      <section class="logo">
+        <a href="./home.php">
+          <img src="../src/images/4.png" width="50" height="50" alt="Dom Inn Logo" />
+          
+        </a>
+      </section>
+      <nav>
+        <a href="./index-type.php">ประเภทห้องพัก</a>
+        <a href="./branchs.php">สาขาโรงแรมดอม อินน์</a>
+        <a href="./detailsm.php">รายละเอียดต่างๆ</a>
+        <a href="./booking_status_pending.php">การจองของฉัน</a>
+        <a href="./score.php">คะแนน</a>
+      </nav>
+          <?php if ($full_name && $full_name !== ' '): ?>
+      <div class="user-display">
+        <a href="profile.php" class="profile-link"><?= htmlspecialchars($full_name) ?></a>
+      </div>
+    <?php endif; ?>
+    </header>
+    <!-- สำหรับโปรไฟล์เท่านั้น -->
+  <style>
+    .profile-link,
+    .profile-link:visited {
+      text-decoration: none;
+      color: #ffffff;
+      padding: 8px 12px;
+      border-radius: 5px;
+      transition: background-color 0.3s ease;
+    }
+
+    .profile-link:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .profile-link:active {
+      color: #ffffff;
+    }
+  </style>
+  <!-- สำหรับโปรไฟล์เท่านั้น End-->
+    <!-- *** สิ้นสุด Header ที่แทรกเข้ามา *** -->
+
   <div class="container">
     <h2>สถานะการจองของคุณ</h2>
     <?php if (count($bookings) === 0): ?>
@@ -241,6 +322,7 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
           <?php foreach ($bookings as $b): ?>
             <tr>
               <td><?= htmlspecialchars($b['Reservation_Id']) ?></td>
+              <td><?= htmlspecialchars($b['Guest_name']) ?></td>
               <td><?= htmlspecialchars(date('d/m/Y H:i:s', strtotime($b['Booking_time']))) ?></td>
               <td><?= htmlspecialchars($b['Province_name'] ?? 'ไม่ระบุ') ?></td>
               <td><?= htmlspecialchars($b['Number_of_rooms']) ?></td>
@@ -258,7 +340,7 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
                 if ($b['Booking_status_Id'] == 1): // สถานะ 1: ยืนยันการจองและรอการชำระเงิน
                 ?>
                   <a href="payment.php?reservation_id=<?= htmlspecialchars($b['Reservation_Id']) ?>" class="action-button">ชำระเงิน</a>
-                <?php 
+                <?php
                 // *** ส่วนที่แก้ไข: เพิ่มสถานะ 6 (เช็คอินแล้ว) เข้าไปในเงื่อนไขการดูใบเสร็จ ***
                 elseif (($b['Booking_status_Id'] == 3 || $b['Booking_status_Id'] == 6 || $b['Booking_status_Id'] == 7) && !empty($b['Receipt_Id'])): // สถานะ 3: ชำระเงินแล้ว, 6: เช็คอินแล้ว, หรือ 7: เช็คเอาท์แล้ว
                 ?>

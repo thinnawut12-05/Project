@@ -1,9 +1,16 @@
 <?php
 session_start(); // *** เพิ่ม: เริ่ม session สำหรับเช็คสมาชิก (จำเป็นสำหรับ navbar ที่มีการเปลี่ยนสถานะ) ***
 // ไฟล์ details.php นี้ไม่จำเป็นต้อง include 'db.php' เนื่องจากไม่ได้ดึงข้อมูลจากฐานข้อมูลโดยตรง
+$First_name = $_SESSION['First_name'] ?? '';
+$Last_name = $_SESSION['Last_name'] ?? '';
+$full_name = trim($First_name . ' ' . $Last_name);
+$checkin_date = $_GET['checkin_date'] ?? '';
+$checkout_date = $_GET['checkout_date'] ?? '';
 ?>
+
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/png" href="../src/images/logo.png" />
@@ -18,31 +25,54 @@ session_start(); // *** เพิ่ม: เริ่ม session สำหรั
     <!-- *** เพิ่ม: ลิงก์ไปยัง ino.css สำหรับสไตล์ของ Header *** -->
     <link rel="stylesheet" href="../CSS/css/ino.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-      integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x5l5x"
-      crossorigin="anonymous" />
+        integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x5l5x"
+        crossorigin="anonymous" />
 
 </head>
+
 <body>
     <!-- *** แทนที่ Header เดิมด้วย Header จาก index.php *** -->
     <header>
-      <section class="logo">
-        <a href="./index.php">
-          <img src="../src/images/4.png" width="50" height="50" alt="Dom Inn Logo" />
-        </a>
-      </section>
-      <nav>
-        <a href="./index-type.php">ประเภทห้องพัก</a>
-        <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
-        <a href="./details.php">รายละเอียดต่างๆ</a>
-        <a href="#">การจองของฉัน</a> <!-- หากมีหน้านี้ ให้เปลี่ยน # เป็น path ที่ถูกต้อง -->
-        <a href="./summary.php">คะแนน</a>
-      </nav>
-      <nav>
-        <a href="./member.php">สมัครสมาชิก</a>
-        <a href="./login.php">เข้าสู่ระบบ</a>
-      </nav>
+        <section class="logo">
+            <a href="./home.php">
+                <img src="../src/images/4.png" width="50" height="50" alt="Dom Inn Logo" />
+            </a>
+        </section>
+        <nav>
+            <a href="./type.php">ประเภทห้องพัก</a>
+            <a href="./branchs.php">สาขาโรงแรมดอม อินน์</a>
+            <a href="./detailsm.php">รายละเอียดต่างๆ</a>
+            <a href="./booking_status_pending.php">การจองของฉัน</a> <!-- หากมีหน้านี้ ให้เปลี่ยน # เป็น path ที่ถูกต้อง -->
+            <a href="./score.php">คะแนน</a>
+        </nav>
+        <?php if ($full_name && $full_name !== ' '): ?>
+            <div class="user-display">
+                <a href="profile.php" class="profile-link"><?= htmlspecialchars($full_name) ?></a>
+            </div>
+        <?php endif; ?>
     </header>
     <!-- *** สิ้นสุด Header ที่เพิ่มเข้ามา *** -->
+    <!-- สำหรับโปรไฟล์เท่านั้น -->
+    <style>
+        .profile-link,
+        .profile-link:visited {
+            text-decoration: none;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .profile-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+        }
+
+        .profile-link:active {
+            color: #ffffff;
+        }
+    </style>
+    <!-- สำหรับโปรไฟล์เท่านั้น End-->
 
     <div class="details-container">
         <h1>เกี่ยวกับโรงแรมดอม อินน์ (DOM INN Hotel)</h1>
@@ -102,4 +132,5 @@ session_start(); // *** เพิ่ม: เริ่ม session สำหรั
     </div>
 
 </body>
+
 </html>

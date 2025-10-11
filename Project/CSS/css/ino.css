@@ -12,6 +12,14 @@ header {
   /* ลองเปลี่ยนสีตรงนี้ดูครับ */
   padding: 10px 20px;
 }
+header2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  /* ลองเปลี่ยนสีตรงนี้ดูครับ */
+  padding: 10px 20px;
+}
 
 nav a {
   margin: 0 10px;

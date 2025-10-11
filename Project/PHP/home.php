@@ -84,8 +84,8 @@ if ($result_provinces = $conn->query($sql_provinces)) {
     </section>
     <nav>
       <a href="./type.php">ประเภทห้องพัก</a>
-      <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
-      <a href="./details.php">รายละเอียดต่างๆ</a>
+      <a href="./branchs.php">สาขาโรงแรมดอม อินน์</a>
+      <a href="./detailsm.php">รายละเอียดต่างๆ</a>
       <a href="./booking_status_pending.php">การจองของฉัน</a>
       <a href="./score.php">คะแนน</a>
     </nav>
