@@ -21,6 +21,20 @@ if ($conn->connect_error) {
 // 3. ดึงข้อมูลเจ้าหน้าที่ที่เข้าสู่ระบบจาก session
 $loggedInOfficerEmail = $_SESSION['Email_Officer'];
 $officerProvinceId = $_SESSION['Province_id'];
+$officerProvinceName = ''; // สร้างตัวแปรสำหรับเก็บชื่อจังหวัด
+
+// ดึงชื่อจังหวัดจาก Province_id
+$stmtProvince = $conn->prepare("SELECT Province_name FROM province WHERE Province_id = ?");
+$stmtProvince->bind_param("i", $officerProvinceId);
+$stmtProvince->execute();
+$resultProvince = $stmtProvince->get_result();
+if ($resultProvince->num_rows > 0) {
+    $rowProvince = $resultProvince->fetch_assoc();
+    $officerProvinceName = $rowProvince['Province_name'];
+} else {
+    $officerProvinceName = "ไม่พบสาขา"; // กรณีไม่พบชื่อจังหวัด
+}
+$stmtProvince->close();
 
 $message = '';
 $error = '';
@@ -80,10 +94,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room_confirmed']))
 
         if ($stmt->execute()) {
             $message = "เพิ่มห้องพัก <strong>" . htmlspecialchars($roomId) . "</strong> สำเร็จแล้ว!";
-            // เคลียร์ค่าในฟอร์มหลังจากเพิ่มสำเร็จ (ถ้าต้องการ)
-            // หรือสามารถ redirect ไปหน้า dashboard ได้
-            // header("Location: officer_dashboard.php?message=" . urlencode($message));
-            // exit;
         } else {
             $error = "เกิดข้อผิดพลาดในการเพิ่มห้องพัก: " . $stmt->error;
         }
@@ -356,8 +366,8 @@ $conn->close();
         <a href="officer.php" class="btn-back">กลับหน้าเจ้าหน้าที่ดูแลระบบ</a>
         <h1>เพิ่มห้องพักใหม่</h1>
         
-        <?php if (!empty($loggedInOfficerEmail) && $officerProvinceId !== null): ?>
-            <p>เจ้าหน้าที่: <strong><?php echo htmlspecialchars($loggedInOfficerEmail); ?> (สาขา: <?php echo htmlspecialchars($officerProvinceId); ?>)</strong></p>
+        <?php if (!empty($loggedInOfficerEmail) && $officerProvinceName !== null): ?>
+            <p>เจ้าหน้าที่: <strong><?php echo htmlspecialchars($loggedInOfficerEmail); ?> (สาขา: <?php echo htmlspecialchars($officerProvinceName); ?>)</strong></p>
         <?php endif; ?>
 
         <?php if (!empty($message)): ?>
