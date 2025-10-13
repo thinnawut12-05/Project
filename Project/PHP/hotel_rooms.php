@@ -76,7 +76,7 @@ if ($province_id) {
             $row['capacity'] = $row['Number_of_people_staying'] . " คน";
             $row['guests'] = "2 ผู้ใหญ่, 1 เด็ก";
             $row['bed_type'] = "1 เตียงใหญ่";
-            $row['images'] = ["../src/images/1.jpg", "../src/images/6.avif"];
+            $row['images'] = ["../src/images/1.jpg", "../src/images/6.avif", "../src/images/59.jpg"];
         } elseif ($row['Room_type_Id'] == 2) {
             $row['name'] = "ห้องมาตรฐาน เตียงคู่";
             $row['description'] = "ห้องพักมาตรฐานเตียงคู่ขนาด 17.28 ตร.ม. ไม่มีระเบียงที่สร้างเคียงรบกวนจากถนน ทุกห้องมีสิ่งอำนวยความสะดวกครบครัน 
@@ -84,7 +84,7 @@ if ($province_id) {
             $row['capacity'] = $row['Number_of_people_staying'] . " คน";
             $row['guests'] = "2 ผู้ใหญ่, 1 เด็ก";
             $row['bed_type'] = "2 เตียงเดี่ยว";
-            $row['images'] = ["../src/images/2.jpg", "../src/images/6.avif"];
+            $row['images'] = ["../src/images/2.jpg", "../src/images/6.avif", "../src/images/59.jpg"];
         }
         $row['price'] = number_format($row['Price'], 2);
         $rooms[] = $row;
