@@ -102,79 +102,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     try {
         switch ($action) {
-            case 'walk_in_check_in':
+           case 'walk_in_check_in':
                 $guest_name = trim($_POST['guest_name'] ?? '');
-                $contact_phone = trim($_POST['contact_phone'] ?? ''); // เก็บไว้ใช้สำหรับ stay หรือแสดงผล
+                $contact_phone = trim($_POST['contact_phone'] ?? '');
                 $checkin_date = $_POST['checkin_date'] ?? date('Y-m-d');
-                $checkout_date = $_POST['checkout_date'] ?? date('Y-m-d', strtotime('+1 day')); // Default next day
+                $checkout_date = $_POST['checkout_date'] ?? date('Y-m-d', strtotime('+1 day'));
                 $num_adults = (int)($_POST['num_adults'] ?? 1);
                 $num_children = (int)($_POST['num_children'] ?? 0);
                 $selected_room_id = $_POST['selected_room_id'] ?? null;
-                $room_type_id = $_POST['room_type_id'] ?? null; // สมมติว่าส่ง room_type_id มาด้วยจาก form
-                $room_price = (float)($_POST['room_price'] ?? 0); // สมมติว่าส่งราคาห้องมาด้วย
+                // room_type_id และ room_price ไม่ได้ใช้ในการคำนวณราคาสำหรับ Walk-in แล้ว แต่ยังคงรับค่าไว้ได้หากต้องการใช้ในส่วนอื่น
+                // $room_type_id = $_POST['room_type_id'] ?? null;
+                // $room_price = (float)($_POST['room_price'] ?? 0);
 
-                if (empty($guest_name) || empty($contact_phone) || empty($selected_room_id) || empty($room_type_id) || $room_price <= 0) {
+                if (empty($guest_name) || empty($contact_phone) || empty($selected_room_id)) {
                     throw new Exception("กรุณากรอกข้อมูลการเช็คอินหน้าเคาน์เตอร์ให้ครบถ้วน.");
                 }
 
                 $conn->begin_transaction();
 
+                // คำนวณจำนวนวันเข้าพัก
+                $checkin_datetime = new DateTime($checkin_date);
+                $checkout_datetime = new DateTime($checkout_date);
+                $interval = $checkin_datetime->diff($checkout_datetime);
+                $num_days = $interval->days;
+
+                if ($num_days <= 0) {
+                    throw new Exception("วันที่เช็คเอาท์ต้องมากกว่าวันที่เช็คอินอย่างน้อย 1 วัน.");
+                }
+
+                $daily_rate = 930.00; // อัตราค่าห้องพักต่อคืน
+                $calculated_total_price = $num_days * $daily_rate;
+
                 // 1. สร้าง Reservation ID ใหม่สำหรับ Walk-in
                 $reservation_id = generateUniqueId($conn, 'reservation', 'Reservation_Id');
-                $total_price = $room_price; // สำหรับ walk-in ราคาคือราคาห้อง
 
                 // 2. สร้างรายการจองในตาราง reservation
                 $stmt_insert_reservation = $conn->prepare(
-                    "INSERT INTO reservation (Reservation_Id, Guest_name, Number_of_rooms, Number_of_adults, Number_of_children, 
-                                            Booking_date, Check_out_date, Email_member, Province_Id, Booking_status_Id, 
-                                            Booking_time, Total_price) 
+                    "INSERT INTO reservation (Reservation_Id, Guest_name, Number_of_rooms, Number_of_adults, Number_of_children,
+                                            Booking_date, Check_out_date, Email_member, Province_Id, Booking_status_Id,
+                                            Booking_time, Total_price)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)"
                 );
                 if ($stmt_insert_reservation === false) { throw new Exception("Failed to prepare reservation insert statement: " . $conn->error); }
                 
-                // สำหรับ walk-in, Email_member จะใช้ email ของสมาชิก Walk-in ทั่วไป
-                $generic_email_member = "walkin@example.com"; // <--- เปลี่ยนกลับมาใช้ email นี้
+                $generic_email_member = "walkin@example.com"; 
                 $num_rooms = 1; // สำหรับ Walk-in ทีละห้อง
 
                 $stmt_insert_reservation->bind_param(
-                    "ssiiisssisd", // ลบ 's' สุดท้ายออก (สำหรับ Phone_Number)
+                    "ssiiisssisd",
                     $reservation_id, $guest_name, $num_rooms, $num_adults, $num_children,
-                    $checkin_date, $checkout_date, $generic_email_member, $current_province_id, $status_id_checked_in, // สถานะเป็น เช็คอินแล้ว (6) ทันที
-                    $total_price
+                    $checkin_date, $checkout_date, $generic_email_member, $current_province_id, $status_id_pending_payment, // สถานะเป็น รอชำระเงิน (1)
+                    $calculated_total_price // ใช้ราคาที่คำนวณ
                 );
                 
                 $stmt_insert_reservation->execute();
                 if ($stmt_insert_reservation->affected_rows === 0) { throw new Exception("ไม่สามารถสร้างรายการจอง Walk-in ได้."); }
                 $stmt_insert_reservation->close();
 
-                // 3. สร้างรายการเข้าพักในตาราง stay
-                $stay_id = generateUniqueId($conn, 'stay', 'Stay_id');
-                $checkin_time = date('H:i:s');
-                $stmt_insert_stay = $conn->prepare(
-                    "INSERT INTO stay (Stay_id, Room_id, Guest_name, Check_in_date, Check_in_time, 
-                                    Check_out_date, Check_out_time, Reservation_Id, Email_member, Receipt_Id) 
-                    VALUES (?, ?, ?, ?, ?, NULL, NULL, ?, ?, NULL)" // Receipt_Id เป็น NULL สำหรับ walk-in
-                );
-                if ($stmt_insert_stay === false) { throw new Exception("Failed to prepare stay insert statement: " . $conn->error); }
-                $stmt_insert_stay->bind_param(
-                    "sssssss", // Stay_id, Room_id, Guest_name, Check_in_date, Check_in_time, Reservation_Id, Email_member (Receipt_Id เป็น NULL จึงไม่นับ)
-                    $stay_id, $selected_room_id, $guest_name, $checkin_date, $checkin_time,
-                    $reservation_id, $generic_email_member // <--- ใช้ email นี้สำหรับ stay ด้วย
-                );
-                $stmt_insert_stay->execute();
-                if ($stmt_insert_stay->affected_rows === 0) { throw new Exception("ไม่สามารถสร้างรายการเข้าพักสำหรับ Walk-in ได้."); }
-                $stmt_insert_stay->close();
-
-                // 4. อัปเดตสถานะห้องในตาราง room เป็น 'OCC' (Occupied)
-                $stmt_update_room = $conn->prepare("UPDATE room SET Status = 'OCC' WHERE Room_ID = ? AND Province_id = ? AND Status = 'AVL'");
-                if ($stmt_update_room === false) { throw new Exception("Failed to prepare room status update statement: " . $conn->error); }
-                $stmt_update_room->bind_param("si", $selected_room_id, $current_province_id);
-                $stmt_update_room->execute();
-                if ($stmt_update_room->affected_rows === 0) { throw new Exception("ห้องพัก " . htmlspecialchars($selected_room_id) . " ไม่ว่างหรือไม่ถูกต้อง (หรือไม่อยู่ในสาขา)."); }
-                $stmt_update_room->close();
+                // *** ณ จุดนี้ เราจะยังไม่สร้างรายการเข้าพัก (stay) และยังไม่เปลี่ยนสถานะห้องพัก
+                // การดำเนินการเหล่านี้จะเกิดขึ้นหลังจากลูกค้าชำระเงินในหน้า payment_walkin.php
 
                 $conn->commit();
-                $_SESSION['message'] = "เช็คอินลูกค้า Walk-in สำเร็จแล้ว! รหัสการจอง: #" . htmlspecialchars($reservation_id);
+                $_SESSION['message'] = "สร้างรายการจอง Walk-in สำเร็จแล้ว! โปรดดำเนินการชำระเงิน";
+                
+                // เปลี่ยนเส้นทางไปยังหน้าชำระเงิน Walk-in
+                $redirect_url = "payment_walkin.php?reservation_id=" . urlencode($reservation_id) . 
+                                "&amount=" . urlencode($calculated_total_price) .
+                                "&room_id=" . urlencode($selected_room_id); // ส่ง room_id ไปด้วย
                 break;
 
             case 'record_no_show_adjustment':
@@ -372,6 +366,9 @@ if ($stmt_avail_rooms === false) {
 }
 
 $conn->close();
+
+// กำหนดวันที่ปัจจุบันสำหรับ PHP เพื่อส่งไปใช้ใน JavaScript
+$today_date = date('Y-m-d');
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -752,11 +749,11 @@ $conn->close();
                 <div class="form-row">
                     <div class="form-group">
                         <label for="checkin_date">วันที่เช็คอิน: <span style="color:red;">*</span></label>
-                        <input type="date" id="checkin_date" name="checkin_date" value="<?= date('Y-m-d') ?>" required>
+                        <input type="date" id="checkin_date" name="checkin_date" value="<?= $today_date ?>" min="<?= $today_date ?>" required>
                     </div>
                     <div class="form-group">
                         <label for="checkout_date">วันที่เช็คเอาท์ (คาดการณ์): <span style="color:red;">*</span></label>
-                        <input type="date" id="checkout_date" name="checkout_date" value="<?= date('Y-m-d', strtotime('+1 day')) ?>" required>
+                        <input type="date" id="checkout_date" name="checkout_date" value="<?= date('Y-m-d', strtotime('+1 day')) ?>" min="<?= date('Y-m-d', strtotime('+1 day')) ?>" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -790,7 +787,7 @@ $conn->close();
         <div id="adjustments" class="tab-content">
             <h3>แจ้งปรับ</h3>
 
-            <h4>(6.1) แจ้งปรับผู้เข้าพักไม่มาเช็คอิน (No-show Penalty)</h4>
+            <h4>แจ้งปรับผู้เข้าพักที่มาเช็คอินล่าช้า</h4>
             <form action="counter_operations.php" method="POST">
                 <input type="hidden" name="action" value="record_no_show_adjustment">
                 <div class="form-group">
@@ -805,10 +802,10 @@ $conn->close();
                     <label for="description_no_show">รายละเอียด (ไม่จำเป็น):</label>
                     <textarea id="description_no_show" name="description_no_show" rows="2">ผู้เข้าพักไม่มาเช็คอินตามกำหนด</textarea>
                 </div>
-                <button type="submit">บันทึกปรับ No-show</button>
+                <button type="submit">บันทึกปรับ</button>
             </form>
 
-            <h4 style="margin-top: 30px;">(6.2) แจ้งปรับความเสียหายในห้องพัก</h4>
+            <h4 style="margin-top: 30px;">แจ้งปรับความเสียหายในห้องพัก</h4>
             <form action="counter_operations.php" method="POST">
                 <input type="hidden" name="action" value="record_damage_adjustment">
                 <div class="form-group">
@@ -853,6 +850,38 @@ $conn->close();
         // Default open first tab on load
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelector('.tab-button').click(); // Clicks the first tab
+
+            // --- Date Picker Logic for Walk-in Check-in ---
+            const checkinDateInput = document.getElementById('checkin_date');
+            const checkoutDateInput = document.getElementById('checkout_date');
+
+            const today = new Date();
+            const todayFormatted = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+            // Ensure check-in date cannot be in the past
+            checkinDateInput.setAttribute('min', todayFormatted);
+
+            // Set initial min for checkout date (at least tomorrow)
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            const tomorrowFormatted = tomorrow.toISOString().split('T')[0];
+            checkoutDateInput.setAttribute('min', tomorrowFormatted);
+
+            // Update checkout min date when check-in date changes
+            checkinDateInput.addEventListener('change', function() {
+                let selectedCheckinDate = new Date(this.value);
+                let nextDay = new Date(selectedCheckinDate);
+                nextDay.setDate(selectedCheckinDate.getDate() + 1);
+                
+                const nextDayFormatted = nextDay.toISOString().split('T')[0];
+                checkoutDateInput.setAttribute('min', nextDayFormatted);
+
+                // If current checkout date is before the new minimum checkout date, update it
+                if (checkoutDateInput.value < nextDayFormatted) {
+                    checkoutDateInput.value = nextDayFormatted;
+                }
+            });
+            // --- End Date Picker Logic ---
         });
 
         // Update hidden room details for walk-in form

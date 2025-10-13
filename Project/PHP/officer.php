@@ -223,16 +223,18 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
         <a href="counter_operations.php" class="card">
             <div class="icon">🏨</div> <!-- ไอคอนเงิน/ปรับ -->
             <span>รับลูกค้า-walkin</span>
+            
         </a>
+            <a href="customer_reception.php" class="card">
+            <div class="icon">🛎️</div> <!-- ไอคอนโรงแรม/รับลูกค้า -->
+            <span>เข้าพักออนไลน์</span>
+        </a>
+
         <a href="occupancy_stats.php" class="card">
             <div class="icon">📈</div> <!-- ไอคอนโรงแรม/รับลูกค้า -->
             <span>สรุปรายงานแต่ละเดือน</span>
         </a>
 
-        <a href="customer_reception.php" class="card">
-            <div class="icon">🛎️</div> <!-- ไอคอนโรงแรม/รับลูกค้า -->
-            <span>เข้าพักออนไลน์</span>
-        </a>
           <a href="officer_add_room.php" class="card">
             <div class="icon">🛌</div> <!-- ไอคอนโรงแรม/รับลูกค้า -->
             <span>เพิ่มห้องพักใหม่</span>
