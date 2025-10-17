@@ -748,7 +748,7 @@ if (isset($conn) && $conn->ping()) {
             color: white;
         }
         /* Danger red */
-        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม. { /* Fix for exact match */
+        .status-ยกเลิกการจองเนื่องจากไม่ชำระเงินภายใน-24-ชม{ /* Fix for exact match */
             background-color: #dc3545;
             color: white;
         }
@@ -758,7 +758,7 @@ if (isset($conn) && $conn->ping()) {
             color: white;
         }
         /* Danger red */
-        .status-ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน-24-ชม. { /* Fix for exact match */
+        .status-ยกเลิกการจองเนื่องจากชำระเงินไม่ครบภายใน-24-ชม{ /* Fix for exact match */
             background-color: #dc3545;
             color: white;
         }
