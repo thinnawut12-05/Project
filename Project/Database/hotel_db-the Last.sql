@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 11, 2025 at 08:01 PM
+-- Generation Time: Oct 17, 2025 at 09:35 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -97,8 +97,7 @@ INSERT INTO `member` (`Email_member`, `Password`, `Title_name`, `First_name`, `L
 ('user5@gmail.com', '$2y$10$Pioef5EG5GXm2OdHAlm1cuehycxLYUrfENaU6DawnjIDE8oUU9ZRy', 'นาย', 'สมหญิง', 'ใจเกร่ง', 'ชาย', '0981112222'),
 ('user6@gmail.com', '$2y$10$/wB9TOTk/DGhtuFxIsWEMOmwzIfnE3ZkscMijmxPLqwC0HHpcRM5K', 'นาง', 'ฮาอิน', 'ปาร์ค', 'หญิง', '0982317777'),
 ('user7@gmail.com', '$2y$10$VmRA1XEtuHrg35qPmmsE5O/zyge2WXy17rSU4JKS2K5wtQ9Srl0fK', 'นางสาว', 'สมชาย', 'คนดี', 'อื่น', '0951725416'),
-('user8@gmail.com', '$2y$10$47dtAJYnPGgUAx0dvGa7/uuEUzwVeFMaXOO/4eGtYmJSUy9CJYbOC', 'นาง', 'จงกอน', 'ใจเกร่ง', 'หญิง', '0981112222'),
-('user9@gmail.com', '$2y$10$7kBPpvG8PyA/67CFEPLwrOI7/WKcLylSN9I7PtRmiYS2vPiItgERu', 'นาย', 'สมห่าง', 'สีดี', 'ชาย', '0987654323'),
+('user8@gmail.com', '$2y$10$v1Bqoy/2h9oNn5MnIIE2IOQUbHRkTiBgsiE6soK6kcLb8ZJchkdTW', 'นาย', 'กิตติพงศ์', 'ศรีสวัสดิ์', 'ชาย', '0984562371'),
 ('walkin@example.com', '$2y$10$abcdefghijklmnopqrstuvwxyza.hash', NULL, 'ลูกค้า', 'Walk-in', NULL, '0000000000');
 
 -- --------------------------------------------------------
@@ -125,6 +124,7 @@ CREATE TABLE `officer` (
 
 INSERT INTO `officer` (`Email_Officer`, `Password`, `Title_name`, `First_name`, `Last_name`, `Gender`, `Phone_number`, `Email_Admin`, `Province_Id`) VALUES
 ('officer10@example.com', '$2a$12$wd6ZuosEbFHZR2NXuSCWg.v35bmQwrBBXJC1gIGGlAuCXTcfWjeN.', 'นางสาว', 'ศิรินทร์', 'รุ่งแสง', 'หญิง', '0810101010', 'admin1@example.com', '10'),
+('officer1111@example.com', '$2y$10$PvnUYd0KkK48hg/FjBsgh.GNX6p.2vsefSAWG2BN2wyocqfdivbVW', 'นาย', 'ภูวเดช', 'รัตนากุล', 'ชาย', '0987654321', 'admin1@example.com', '1'),
 ('officer1@example.com', '$2a$12$dKlXGT5xy9vY2aDLI4UbMuuT7Wdoi3jF6HRxSPo3xLYBGAcJd40cm', 'นาย', 'สมชาย', 'ใจดี', 'ชาย', '0811111111', 'admin1@example.com', '1'),
 ('officer2@example.com', '$2a$12$3YzBLf2JktGECgprpy6wZuC4o93Y/GILOUCMxF6n4dlbKjF0nE2Pe', 'นางสาว', 'สุดา', 'สุขใจ', 'หญิง', '0822222222', 'admin1@example.com', '2'),
 ('officer3@example.com', '$2a$12$8jMePcMorBfAcLzYsL9PIOrU7or61VGmuyzJAcShoN8nv9lPSFMBu', 'นาย', 'มนตรี', 'รุ่งเรือง', 'ชาย', '0833333333', 'admin1@example.com', '3'),
@@ -187,18 +187,25 @@ CREATE TABLE `receipt` (
 --
 
 INSERT INTO `receipt` (`Receipt_Id`, `Guest_name`, `Receipt_date`, `Receipt_time`, `Phone_number`, `Payment_image_file`, `Email_Admin`, `Status`) VALUES
+(185277788, 'สมดี สองใจ', '2025-10-15', '13:42:19', '0981111111', 'receipt_68ef424b9c2667.39575719.jpg', NULL, 'Yes'),
 (220810188, 'สมดี ผกดเหกเ', '2025-10-04', '15:18:55', '0981234567', 'receipt_68e0d86f6c51c4.70369506.jpg', NULL, 'Yes'),
+(244664874, 'กิตติพงศ์ ศรีสวัสดิ์', '2025-10-15', '13:14:12', '0984562371', 'receipt_68ef3bb4409db6.68527662.jpg', NULL, 'Yes'),
+(460861183, 'สมดี สองใจ', '2025-10-14', '20:18:17', '0981111111', 'receipt_68ee4d99ac6f43.74919511.jpg', NULL, 'Yes'),
+(477669803, 'สมดี สองใจ', '2025-10-15', '13:28:43', '0981111111', 'receipt_68ef3f1ba09654.48494566.jpg', NULL, 'Yes'),
 (598059857, 'สมห่าง สีดี', '2025-10-10', '15:09:58', '0987654323', 'receipt_68e8bf5648a054.30150543.jpg', 'admin1@example.com', 'Yes'),
 (782488248, 'สมดี สองใจ', '2025-10-03', '12:31:53', '0981111111', 'receipt_68dfa619c552a8.80083345.jpg', NULL, 'Yes'),
 (835982992, 'สมดี สองใจ', '2025-10-07', '13:56:54', '0981111111', 'receipt_68e4b9b66c9b31.73226137.jpg', NULL, 'Yes'),
 (1152201616, 'สมดี สองใจ', '2025-10-06', '01:14:59', '0981111111', 'receipt_68e2b5a3242357.06690481.jpg', NULL, 'Yes'),
+(1317375777, 'สมดี สองใจ', '2025-10-15', '11:04:51', '0981111111', 'receipt_68ef1d63365271.71155349.jpg', NULL, 'Yes'),
 (1346657723, 'สมดี สองใจ', '2025-10-08', '00:52:58', '0981111111', 'receipt_68e5537a9afec9.74738888.jpg', NULL, 'Yes'),
 (1474355690, 'สมดี ผกดเหกเ', '2025-10-04', '15:15:31', '0981234567', 'receipt_68e0d7a3a9c436.16724458.jpg', NULL, 'Yes'),
 (1676909116, 'สมดี สองใจ', '2025-10-07', '13:37:09', '0981111111', 'receipt_68e4b515ce7e53.07278391.jpg', NULL, 'Yes'),
 (1717557356, 'สมห่าง สีดี', '2025-10-10', '14:44:56', '0987654323', 'receipt_68e8b978807af7.14149403.jpg', NULL, 'Yes'),
+(1722183189, 'สมชาย ใจดี', '2025-10-14', '15:30:21', '0981111111', 'receipt_68ee0a1d12b3e9.37835691.jpg', NULL, 'No'),
 (1808977654, 'สมดี สองใจ', '2025-10-03', '10:30:54', '0981111111', 'receipt_68df89be400f68.50475446.jpg', NULL, 'No'),
 (1878536775, 'สมหญิง ใจเกร่ง', '2025-10-03', '17:30:01', '0981112222', 'receipt_68dfebf956e416.25467523.jpg', NULL, 'Yes'),
 (1879926656, 'สมดี สองใจ', '2025-10-07', '13:44:54', '0981111111', 'receipt_68e4b6e65dd5f7.94267575.jpg', NULL, 'Yes'),
+(1984275185, 'สมดี สองใจ', '2025-10-15', '23:55:52', '0981111111', 'receipt_68efd218d53ff5.71998143.jpg', NULL, 'Yes'),
 (1991303828, 'สมดี สองใจ', '2025-10-07', '14:04:08', '0981111111', 'receipt_68e4bb68789d78.30218000.jpg', NULL, 'Yes'),
 (1999543796, 'สมดี สองใจ', '2025-10-03', '10:44:15', '0981111111', 'receipt_68df8cdf104953.19192619.jpg', NULL, 'No'),
 (2015333900, 'สมดี ผกดเหกเ', '2025-10-09', '01:20:08', '0981234567', 'receipt_68e6ab58176393.26364441.jpg', NULL, 'Yes'),
@@ -252,14 +259,10 @@ CREATE TABLE `reservation` (
   `Province_Id` varchar(2) DEFAULT NULL,
   `Email_member` varchar(30) DEFAULT NULL,
   `Booking_status_Id` varchar(5) DEFAULT NULL,
-  `stars` int(1) DEFAULT NULL CHECK (`stars` >= 1 and `stars` <= 5),
+  `stars` decimal(2,1) DEFAULT NULL,
   `comment` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `Receipt_Id` int(10) DEFAULT NULL,
   `Total_price` int(100) NOT NULL,
-  `Penalty_amount` decimal(10,2) DEFAULT 0.00,
-  `Penalty_reason` text DEFAULT NULL,
-  `Penalty_officer_email` varchar(255) DEFAULT NULL,
-  `Penalty_date` datetime DEFAULT NULL,
   `rating_timestamp` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -267,23 +270,18 @@ CREATE TABLE `reservation` (
 -- Dumping data for table `reservation`
 --
 
-INSERT INTO `reservation` (`Reservation_Id`, `Guest_name`, `Number_of_rooms`, `Booking_time`, `Number_of_adults`, `Number_of_children`, `Booking_date`, `Check_out_date`, `Email_Admin`, `Province_Id`, `Email_member`, `Booking_status_Id`, `stars`, `comment`, `Receipt_Id`, `Total_price`, `Penalty_amount`, `Penalty_reason`, `Penalty_officer_email`, `Penalty_date`, `rating_timestamp`) VALUES
-('2798138596', 'สมดี สองใจ', 1, '2025-10-08 00:52:54', 1, 0, '2025-10-08', '2025-10-09', NULL, '1', 'user1@gmail.com', '7', 5, 'พนักงานตอนรับดีมาก', 1346657723, 930, 0.00, NULL, NULL, NULL, '2025-10-11 15:23:13'),
-('3221608819', 'สมดี ผกดเหกเ', 1, '2025-10-04 15:18:50', 1, 0, '2025-10-09', '2025-10-16', NULL, '4', 'user4@gmail.com', '7', 5, 'ดีมากๆ', 220810188, 6510, 0.00, NULL, NULL, NULL, NULL),
-('3414807537', 'สมชาย ใจดี', 1, '2025-10-03 17:22:24', 1, 0, '2025-10-03', '2025-10-04', NULL, '5', 'user1@gmail.com', '7', 5, 'ดีๆๆๆ', NULL, 930, 0.00, NULL, NULL, NULL, NULL),
-('3481460768', 'สมห่าง สีดี', 1, '2025-10-10 14:44:09', 2, 1, '2025-10-10', '2025-10-24', NULL, '1', 'user9@gmail.com', '7', 5, 'ห้องพักสะบายมาก', 1717557356, 13020, 0.00, NULL, NULL, NULL, NULL),
-('3857117982', 'สมดี สองใจ', 1, '2025-10-03 17:31:47', 1, 0, '2025-10-03', '2025-10-04', NULL, '6', 'user1@gmail.com', '7', 5, 'ห้องพัก นอนสบาย อากาศเป็นมิยตมาก', 782488248, 930, 0.00, NULL, NULL, NULL, NULL),
-('3957973095', 'สมดี ผกดเหกเ', 1, '2025-10-04 15:15:24', 1, 0, '2025-10-16', '2025-10-31', NULL, '7', 'user4@gmail.com', '7', 5, 'ดีมากๆ', 1474355690, 13950, 0.00, NULL, NULL, NULL, NULL),
-('4796539595', 'ลูกค้า', 1, '2025-10-07 13:01:19', 1, 0, '2025-10-07', '2025-10-08', NULL, '1', 'walkin@example.com', '7', NULL, NULL, NULL, 930, 0.00, NULL, NULL, NULL, NULL),
-('5590606712', 'สมดี สองใจ', 1, '2025-10-07 12:45:21', 1, 0, '2025-10-07', '2025-10-08', NULL, '1', 'user1@gmail.com', '7', NULL, NULL, 2142182290, 930, 0.00, NULL, NULL, NULL, NULL),
-('6764878888', 'สมดี สองใจ', 1, '2025-10-07 13:56:47', 1, 0, '2025-11-01', '2025-11-30', NULL, '1', 'user1@gmail.com', '7', 5, 'ห้องพักนอนสบายมากเลย', 835982992, 26970, 50.00, 'ผู้เข้าพักไม่มาเช็คอินตามกำหนด', '0', '2025-10-07 13:57:57', NULL),
-('7239216485', 'ลูกค้า', 1, '2025-10-07 01:24:48', 1, 0, '2025-10-07', '2025-10-08', NULL, '1', 'walkin@example.com', '7', NULL, NULL, NULL, 930, 0.00, NULL, NULL, NULL, NULL),
-('7875211484', 'ลูกค้า', 1, '2025-10-08 22:12:48', 1, 0, '2025-10-08', '2025-10-09', NULL, '1', 'walkin@example.com', '7', NULL, NULL, NULL, 930, 0.00, NULL, NULL, NULL, NULL),
-('8662151554', 'สมดี สองใจ', 1, '2025-10-07 13:37:04', 1, 0, '2025-10-15', '2025-10-18', NULL, '1', 'user1@gmail.com', '7', 5, 'ดีๆๆๆๆๆๆๆ', 1676909116, 2790, 50.00, 'ผู้เข้าพักไม่มาเช็คอินตามกำหนด', '0', '2025-10-07 13:40:23', '2025-10-11 15:19:36'),
-('9016202198', 'สมดี สองใจ', 1, '2025-10-06 01:14:54', 1, 0, '2025-10-06', '2025-10-07', NULL, '1', 'user1@gmail.com', '7', NULL, NULL, 1152201616, 930, 0.00, NULL, NULL, NULL, NULL),
-('9591783061', 'ลูกค้า', 1, '2025-10-09 02:29:35', 1, 0, '2025-10-09', '2025-10-10', NULL, '1', 'walkin@example.com', '7', NULL, NULL, NULL, 930, 0.00, NULL, NULL, NULL, NULL),
-('9904392982', 'จงกอน ปาร์ต', 1, '2025-10-07 19:08:49', 1, 0, '2025-10-14', '2025-10-15', NULL, '1', 'user3@gmail.com', '7', NULL, NULL, 2122076433, 930, 0.00, NULL, NULL, NULL, NULL),
-('9995660847', 'สมดี ผกดเหกเ', 1, '2025-10-09 01:06:59', 1, 0, '2025-10-09', '2025-10-13', NULL, '1', 'user4@gmail.com', '7', NULL, NULL, 2015333900, 3720, 50.00, 'ผู้เข้าพักไม่มาเช็คอินตามกำหนด', 'officer1@example.com', '2025-10-09 02:40:50', NULL);
+INSERT INTO `reservation` (`Reservation_Id`, `Guest_name`, `Number_of_rooms`, `Booking_time`, `Number_of_adults`, `Number_of_children`, `Booking_date`, `Check_out_date`, `Email_Admin`, `Province_Id`, `Email_member`, `Booking_status_Id`, `stars`, `comment`, `Receipt_Id`, `Total_price`, `rating_timestamp`) VALUES
+('2607053576', 'สมดี สองใจ', 1, '2025-10-15 23:55:47', 1, 0, '2025-10-15', '2025-10-23', NULL, '2', 'user1@gmail.com', '7', 5.0, 'ดีมากๆ', 1984275185, 7440, '2025-10-16 00:33:33'),
+('2798138596', 'สมดี สองใจ', 1, '2025-10-08 00:52:54', 1, 0, '2025-10-08', '2025-10-09', NULL, '1', 'user1@gmail.com', '7', 5.0, 'พนักงานตอนรับดีมาก', 1346657723, 930, '2025-10-11 15:23:13'),
+('4016008165', 'สมดี สองใจ', 1, '2025-10-15 13:28:38', 1, 0, '2025-10-15', '2025-10-16', NULL, '1', 'user1@gmail.com', '7', 4.0, '5555', 477669803, 930, '2025-10-15 13:29:13'),
+('5590606712', 'สมดี สองใจ', 1, '2025-10-07 12:45:21', 1, 0, '2025-10-07', '2025-10-08', NULL, '1', 'user1@gmail.com', '7', 5.0, 'ห้องพักนอนสบายมาก', 2142182290, 930, '2025-10-13 16:46:17'),
+('7510422320', 'สมดี สองใจ', 1, '2025-10-15 13:42:13', 1, 0, '2025-11-01', '2025-11-30', NULL, '1', 'user1@gmail.com', '7', 2.0, 'ห้องน้ำไม่สะอาด', 185277788, 26970, '2025-10-17 13:35:35'),
+('7640779295', 'ลูกค้า', 1, '2025-10-15 13:34:36', 1, 0, '2025-10-15', '2025-10-16', NULL, '1', 'walkin@example.com', '7', NULL, NULL, NULL, 930, NULL),
+('8261976144', 'ลูกค้า', 1, '2025-10-13 15:54:23', 1, 0, '2025-10-13', '2025-10-14', NULL, '1', 'walkin@example.com', '7', NULL, NULL, NULL, 930, NULL),
+('8662151554', 'สมดี สองใจ', 1, '2025-10-07 13:37:04', 1, 0, '2025-10-15', '2025-10-18', NULL, '1', 'user1@gmail.com', '7', 5.0, 'ดีๆๆๆๆๆๆๆ', 1676909116, 2790, '2025-10-11 15:19:36'),
+('9016202198', 'สมดี สองใจ', 1, '2025-10-06 01:14:54', 1, 0, '2025-10-06', '2025-10-07', NULL, '1', 'user1@gmail.com', '7', 5.0, 'พนักงานเป็นกันเองสุดๆ', 1152201616, 930, '2025-10-13 16:46:26'),
+('9904392982', 'จงกอน ปาร์ต', 1, '2025-10-07 19:08:49', 1, 0, '2025-10-14', '2025-10-15', NULL, '1', 'user3@gmail.com', '7', NULL, NULL, 2122076433, 930, NULL),
+('9995660847', 'สมดี ผกดเหกเ', 1, '2025-10-09 01:06:59', 1, 0, '2025-10-09', '2025-10-13', NULL, '1', 'user4@gmail.com', '7', NULL, NULL, 2015333900, 3720, NULL);
 
 -- --------------------------------------------------------
 
@@ -356,10 +354,8 @@ INSERT INTO `room_damages` (`Damage_Id`, `Stay_Id`, `Room_Id`, `Damage_item`, `D
 (5, '2539655131', 'R00001', 'ประตู', '0', 100.00, '2025-10-07 13:03:32', 'officer1@example.com'),
 (6, '2539655131', 'R00001', 'ประตู', '0', 1000.00, '2025-10-07 13:25:35', 'officer1@example.com'),
 (7, '2539655131', 'R00001', 'ประตู', '0', 1000.00, '2025-10-07 13:28:03', 'officer1@example.com'),
-(8, '2539655131', 'R00001', 'ประตู', '0', 100.00, '2025-10-07 13:28:33', 'officer1@example.com'),
-(9, '5380910951', 'R00002', 'ประตู', '0', 100.00, '2025-10-07 13:57:51', 'officer1@example.com'),
-(10, '2357910925', 'R00001', 'ประตู', '0', 10000.00, '2025-10-08 00:54:07', 'officer1@example.com'),
-(11, '9966790663', 'R00002', 'ประตู', '0', 1500.00, '2025-10-09 02:45:15', 'officer1@example.com');
+(14, '1004902848', 'R00001', 'ประตู', '0', 450.00, '2025-10-13 16:05:04', 'officer1@example.com'),
+(15, '1807078760', 'R00002', 'กระจก', '0', 1500.00, '2025-10-15 13:39:17', 'officer1@example.com');
 
 -- --------------------------------------------------------
 
@@ -404,25 +400,14 @@ CREATE TABLE `stay` (
 --
 
 INSERT INTO `stay` (`Stay_Id`, `Check_in_date`, `Check_in_time`, `Check_out_date`, `Check_out_time`, `Guest_name`, `Room_Id`, `Receipt_Id`, `Reservation_Id`, `Email_member`) VALUES
+('1004902848', '2025-10-13', '15:54:23', '2025-10-13', '16:07:41', 'ลูกค้า', 'R00001', NULL, '8261976144', 'walkin@example.com'),
+('1807078760', '2025-10-15', '13:34:38', '2025-10-15', '13:39:23', 'ลูกค้า', 'R00002', NULL, '7640779295', 'walkin@example.com'),
+('1924131534', '2025-10-15', '23:57:24', '2025-10-15', '23:57:25', 'สมดี สองใจ', 'R00004', 1984275185, '2607053576', 'user1@gmail.com'),
 ('2357910925', '2025-10-08', '00:53:28', '2025-10-08', '20:36:14', 'สมดี สองใจ', 'R00001', 1346657723, '2798138596', 'user1@gmail.com'),
 ('2539655131', '2025-10-07', '12:45:00', '2025-10-07', '14:04:54', 'สมดี สองใจ', 'R00001', 2142182290, '5590606712', 'user1@gmail.com'),
 ('3859760845', '2025-10-06', '21:08:00', '2025-10-07', '01:33:41', 'สมดี สองใจ', 'R00001', 1152201616, '9016202198', 'user1@gmail.com'),
-('5380910951', '2025-10-07', '13:01:19', '2025-10-07', '14:04:53', 'ลูกค้า', 'R00002', NULL, '4796539595', 'walkin@example.com'),
-('7687020358', '2025-10-06', '10:33:00', '2025-10-06', '00:00:00', 'สมชาย ใจดี', 'R00009', NULL, '3414807537', 'user1@gmail.com'),
-('7989158888', '2025-10-08', '22:12:48', '2025-10-08', '22:13:41', 'ลูกค้า', 'R00002', NULL, '7875211484', 'walkin@example.com'),
-('8007460863', '2025-10-07', '17:17:00', '2025-10-07', '12:17:49', '', 'R00001', 835982992, '6764878888', 'user1@gmail.com'),
-('8701152812', '2025-10-14', '14:09:34', '2025-10-07', '19:15:34', 'จงกอน ปาร์ต', 'R00001', 2122076433, '9904392982', 'user3@gmail.com'),
-('9966790663', '2025-10-09', '02:29:35', '2025-10-11', '14:56:00', 'ลูกค้า', 'R00002', NULL, '9591783061', 'walkin@example.com'),
-('S008606248', '2025-10-06', '18:57:00', '2025-10-08', NULL, 'สมห่างส', 'R00002', NULL, NULL, NULL),
-('S064822385', '2025-10-07', '19:18:00', '2025-10-08', NULL, 'www', 'R00001', NULL, NULL, NULL),
-('S079718333', '2025-10-06', '18:20:00', '2025-10-15', NULL, 'สมห่าง', 'R00002', NULL, NULL, NULL),
-('S081457064', '2025-10-07', '19:18:00', '2025-10-08', NULL, 'หกฟหดฟหด', 'R00001', NULL, NULL, NULL),
-('S104262993', '2025-10-06', '17:51:00', '2025-10-09', NULL, 'ku', 'R00002', NULL, NULL, NULL),
-('S155198598', '2025-10-06', '18:08:00', '2025-10-14', NULL, 'สมห่างส', 'R00002', NULL, NULL, NULL),
-('S227537670', '2025-10-08', '19:12:00', '2025-10-09', NULL, 'sdsadfsd', 'R00001', NULL, NULL, NULL),
-('S285365291', '2025-10-07', '19:12:00', '2025-10-09', NULL, 'ssasa', 'R00001', NULL, NULL, NULL),
-('S404746413', '2025-10-06', '18:51:00', '2025-10-08', NULL, 'สส', 'R00002', NULL, NULL, NULL),
-('S56568', '2025-10-06', '17:43:00', '2025-10-10', '00:00:00', 'สส', 'R00002', NULL, NULL, NULL);
+('6864642904', '2025-11-01', '12:55:36', '2025-10-17', '12:55:38', 'สมดี สองใจ', 'R00001', 185277788, '7510422320', 'user1@gmail.com'),
+('8316819208', '2025-10-15', '13:29:00', '2025-10-15', '13:29:02', 'สมดี สองใจ', 'R00001', 477669803, '4016008165', 'user1@gmail.com');
 
 --
 -- Indexes for dumped tables
@@ -527,7 +512,7 @@ ALTER TABLE `stay`
 -- AUTO_INCREMENT for table `room_damages`
 --
 ALTER TABLE `room_damages`
-  MODIFY `Damage_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `Damage_Id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- Constraints for dumped tables

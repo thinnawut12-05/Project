@@ -325,7 +325,7 @@ if ($is_officer && $user_province_id_filter !== null) {
 
 // Apply date filter to room damages query
 if ($filter_type == 'today') {
-    $damage_sql_conditions_array[] = "rd.Damage_date = CURDATE()";
+    $damage_sql_conditions_array[] = "DATE(rd.Damage_date) = CURDATE()"; // ใช้ DATE() เพื่อเปรียบเทียบเฉพาะวันที่
 } elseif ($filter_type == 'this_month') {
     $damage_sql_conditions_array[] = "MONTH(rd.Damage_date) = MONTH(CURDATE()) AND YEAR(rd.Damage_date) = YEAR(CURDATE())";
 } elseif ($filter_type == 'this_year') {
@@ -628,10 +628,14 @@ $chart_data = [
             background-color: #0056b3;
         }
 
+        /* START - MODIFIED CSS for horizontal radio buttons */
         .filter-buttons {
             display: flex;
+            flex-direction: row; /* Make radio buttons horizontal */
+            flex-wrap: nowrap; /* Prevent wrapping */
             gap: 10px;
             margin-bottom: 10px;
+            align-items: center; /* Vertically align items in the row */
         }
 
         .filter-buttons label {
@@ -643,7 +647,12 @@ $chart_data = [
             cursor: pointer;
             transition: background-color 0.2s;
             border: 1px solid #ddd;
+            /* Ensure the label itself is not stretching vertically */
+            height: auto;
+            white-space: nowrap; /* Keep text on one line */
         }
+        /* END - MODIFIED CSS */
+
 
         .filter-buttons label:hover {
             background-color: #e0e0e0;

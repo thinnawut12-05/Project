@@ -18,6 +18,9 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// กำหนด charset เป็น utf8 เพื่อรองรับภาษาไทย
+$conn->set_charset("utf8");
+
 // 3. ดึงข้อมูลเจ้าหน้าที่ที่เข้าสู่ระบบจาก session
 $loggedInOfficerEmail = $_SESSION['Email_Officer'];
 $officerProvinceId = $_SESSION['Province_id'];
@@ -69,22 +72,68 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room_confirmed']))
         $error = "กรุณากรอกข้อมูลให้ครบถ้วน: รหัสห้องพัก, หมายเลขห้อง, จำนวนคนเข้าพัก, ประเภทห้องพัก และ ราคา.";
     } elseif (!preg_match('/^R\d{5}$/', $roomId)) { // ตรวจสอบรูปแบบ Room_id เช่น R00001
         $error = "รหัสห้องพักต้องเริ่มต้นด้วย 'R' ตามด้วยตัวเลข 5 หลัก (เช่น R00001).";
-    } elseif (!is_numeric($roomNumber) || $roomNumber <= 0) {
+    } elseif (!filter_var($roomNumber, FILTER_VALIDATE_INT) || $roomNumber <= 0) { // ใช้ filter_var เพื่อความถูกต้อง
         $error = "หมายเลขห้องไม่ถูกต้อง ต้องเป็นตัวเลขบวก.";
-    } elseif (!is_numeric($numOfPeople) || $numOfPeople <= 0) {
+    } elseif (!filter_var($numOfPeople, FILTER_VALIDATE_INT) || $numOfPeople <= 0) { // ใช้ filter_var เพื่อความถูกต้อง
         $error = "จำนวนคนเข้าพักไม่ถูกต้อง ต้องเป็นตัวเลขบวก.";
     } elseif (!is_numeric($price) || $price <= 0) { // ตรวจสอบ price
         $error = "ราคาไม่ถูกต้อง ต้องเป็นตัวเลขบวก.";
     } else {
-        // ตรวจสอบ Room_id ซ้ำกัน
-        $stmtCheck = $conn->prepare("SELECT Room_id FROM room WHERE Room_id = ? AND Province_id = ?");
-        $stmtCheck->bind_param("si", $roomId, $officerProvinceId);
+        // --- ตรวจสอบ Room_id ซ้ำกันทั่วทั้งระบบ ---
+        $stmtCheck = $conn->prepare("SELECT Room_id FROM room WHERE Room_id = ?"); // Removed Province_id check
+        $stmtCheck->bind_param("s", $roomId); // Only bind Room_id
         $stmtCheck->execute();
         $stmtCheck->store_result();
         if ($stmtCheck->num_rows > 0) {
-            $error = "ไม่สามารถเพิ่มห้องพักได้: รหัสห้องพัก <strong>" . htmlspecialchars($roomId) . "</strong> มีอยู่ในระบบแล้วสำหรับสาขานี้.";
+            $error = "ไม่สามารถเพิ่มห้องพักได้: รหัสห้องพัก <strong>" . htmlspecialchars($roomId) . "</strong> มีอยู่ในระบบแล้ว.";
+
+            // --- Generate Room_id suggestions (globally unique) ---
+            $maxNumericId = 0;
+            // ดึงค่าตัวเลขสูงสุดจาก Room_id ทั่วทั้งระบบ
+            $stmtGetMax = $conn->prepare("SELECT MAX(CAST(SUBSTRING(Room_id, 2) AS UNSIGNED)) AS max_id FROM room"); // Removed WHERE clause
+            $stmtGetMax->execute();
+            $resultMax = $stmtGetMax->get_result();
+            if ($resultMax->num_rows > 0) {
+                $rowMax = $resultMax->fetch_assoc();
+                if ($rowMax['max_id'] !== null) {
+                    $maxNumericId = (int)$rowMax['max_id'];
+                }
+            }
+            $stmtGetMax->close();
+
+            $suggestedRoomIds = [];
+            $startSuggestNum = $maxNumericId + 1; // เริ่มต้นเสนอแนะจาก ID ถัดไป
+            $suggestionsCount = 0;
+            $maxSuggestions = 3; // จำนวนข้อเสนอแนะที่ต้องการ
+
+            while ($suggestionsCount < $maxSuggestions) {
+                $potentialRoomId = sprintf('R%05d', $startSuggestNum);
+
+                // ตรวจสอบว่า potentialRoomId นี้มีอยู่แล้วหรือไม่ในระบบ (ทั่วโลก)
+                $stmtCheckExists = $conn->prepare("SELECT Room_id FROM room WHERE Room_id = ?"); // Removed Province_id check
+                $stmtCheckExists->bind_param("s", $potentialRoomId);
+                $stmtCheckExists->execute();
+                $stmtCheckExists->store_result();
+                
+                if ($stmtCheckExists->num_rows == 0) { // ถ้ายังไม่มีในระบบ
+                    $suggestedRoomIds[] = $potentialRoomId;
+                    $suggestionsCount++;
+                }
+                $stmtCheckExists->close(); // ปิด statement ทุกครั้งที่ใช้เสร็จ
+
+                $startSuggestNum++;
+                if ($startSuggestNum > 99999) { // ป้องกัน loop ไม่สิ้นสุด หากรหัสเต็ม
+                    break;
+                }
+            }
+
+            if (!empty($suggestedRoomIds)) {
+                $error .= " คุณอาจลองใช้รหัสห้องพักที่ยังว่างอยู่ เช่น: " . implode(", ", $suggestedRoomIds) . ".";
+            }
+            // --- End: Generate Room_id suggestions ---
+
         }
-        $stmtCheck->close();
+        $stmtCheck->close(); // Ensure this is closed after the first check
     }
 
     if (empty($error)) { // หากไม่มีข้อผิดพลาดจากการตรวจสอบ
@@ -94,6 +143,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_room_confirmed']))
 
         if ($stmt->execute()) {
             $message = "เพิ่มห้องพัก <strong>" . htmlspecialchars($roomId) . "</strong> สำเร็จแล้ว!";
+            // Clear form data after successful submission
+            $_POST = array();
         } else {
             $error = "เกิดข้อผิดพลาดในการเพิ่มห้องพัก: " . $stmt->error;
         }
@@ -240,7 +291,7 @@ $conn->close();
             background-color: #0056b3;
         }
 
-        /* Modal styles (from previous task) */
+        /* Modal styles */
         .modal {
             display: none; /* Hidden by default */
             position: fixed; /* Stay in place */

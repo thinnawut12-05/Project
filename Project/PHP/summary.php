@@ -1,5 +1,5 @@
 <?php
-session_start(); // *** เพิ่ม: เริ่ม session สำหรับเช็คสมาชิก (จำเป็นสำหรับ navbar ที่มีการเปลี่ยนสถานะ) ***
+session_start();
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -8,54 +8,67 @@ session_start(); // *** เพิ่ม: เริ่ม session สำหรั
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="../src/images/logo.png" />
     <title>คะแนน</title>
-    <!-- เดิม: <link rel="stylesheet" href="../CSS/css/style.css"> -->
-    <!-- *** เพิ่ม: ลิงก์ไปยัง ino.css สำหรับสไตล์ของ Header *** -->
+    <!-- Corrected Font Awesome CDN Link -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+          integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="../CSS/css/ino.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
-      integrity="sha384-k6RqeWeci5ZR/Lv4MR0sA0FfDOM7z4j8e+Q1z5l5x5l5x5l5x5l5x5l5x5l5x"
-      crossorigin="anonymous" />
-    <link rel="stylesheet" href="../CSS/css/summary.css"> <!-- เก็บ style.css เดิมไว้ หากมีสไตล์เฉพาะหน้าที่สำคัญ -->
+    <link rel="stylesheet" href="../CSS/css/summary.css">
     <style>
-        /* เพิ่ม CSS สำหรับตารางและดาว หากยังไม่มีใน style.css */
         body {
-            font-family: 'Kanit', sans-serif; /* ตัวอย่างการใช้ font Kanit */
+            font-family: 'Kanit', sans-serif;
             background-color: #f0f2f5;
-            display: flex; /* เปลี่ยนเป็น flex เพื่อให้ header อยู่ด้านบน */
-            flex-direction: column; /* จัดเรียงองค์ประกอบในแนวตั้ง */
-            align-items: center; /* จัดให้อยู่กึ่งกลางแนวนอน */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             min-height: 100vh;
             margin: 0;
+            padding-bottom: 50px; /* เพิ่มพื้นที่ด้านล่างของ body */
         }
 
-        /* ปรับ margin-top ของ .container เพื่อไม่ให้ชนกับ header */
         .container {
-            margin-top: 20px; /* หรือค่าที่เหมาะสม */
+            margin-top: 30px; /* เพิ่มระยะห่างด้านบน */
             background-color: #ffffff;
             padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 800px;
+            max-width: 900px; /* เพิ่ม max-width เล็กน้อยเพื่อรองรับเนื้อหา */
             text-align: center;
+            margin-bottom: 30px;
         }
 
         h1 {
             color: #333;
-            margin-bottom: 25px;
-            font-size: 2.2em;
+            margin-bottom: 30px; /* เพิ่มระยะห่างด้านล่าง */
+            margin-top: 15px; /* เพิ่มระยะห่างด้านบน */
+            font-size: 2.4em; /* เพิ่มขนาดฟอนต์ */
+            border-bottom: 3px solid #007bff; /* เพิ่มเส้นใต้ */
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 45px; /* เพิ่มระยะห่างด้านบน */
+            margin-bottom: 25px; /* เพิ่มระยะห่างด้านล่าง */
+            font-size: 2em; /* เพิ่มขนาดฟอนต์ */
+            text-align: left;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
         }
 
         .summary-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 25px; /* เพิ่มระยะห่างด้านบน */
+            margin-bottom: 40px; /* เพิ่มระยะห่างด้านล่างระหว่างตาราง */
         }
 
         .summary-table th,
         .summary-table td {
             border: 1px solid #e0e0e0;
-            padding: 12px 15px;
+            padding: 14px 18px; /* เพิ่ม padding เพื่อให้มีพื้นที่มากขึ้น */
             text-align: left;
+            font-size: 1.1em; /* เพิ่มขนาดฟอนต์ในเซลล์ */
         }
 
         .summary-table th {
@@ -63,6 +76,7 @@ session_start(); // *** เพิ่ม: เริ่ม session สำหรั
             color: white;
             font-weight: bold;
             text-transform: uppercase;
+            font-size: 1.2em; /* เพิ่มขนาดฟอนต์ในหัวตาราง */
         }
 
         .summary-table tr:nth-child(even) {
@@ -73,20 +87,38 @@ session_start(); // *** เพิ่ม: เริ่ม session สำหรั
             background-color: #f1f1f1;
         }
 
-        .star {
-            color: #ffcc00; /* สีเหลืองทองสำหรับดาว */
-            font-size: 1.2em;
+        /* Star styling for summary.php */
+        .star, .star-empty {
+            font-size: 1.3em; /* เพิ่มขนาดดาว */
+            margin: 0 2px; /* เพิ่มระยะห่างระหว่างดาว */
+            display: inline-block;
+        }
+        .star i {
+            color: #ffcc00;
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 900 !important;
+            font-style: normal !important;
+            vertical-align: middle;
+        }
+        .star-empty i {
+            color: #bbb;
+            font-family: "Font Awesome 6 Free" !important;
+            font-weight: 400 !important;
+            font-style: normal !important;
+            vertical-align: middle;
         }
 
         .no-data {
             color: #777;
-            font-size: 1.1em;
-            margin-top: 20px;
+            font-size: 1.2em; /* เพิ่มขนาดฟอนต์ */
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #e9ecef;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <!-- *** แทรก Header จาก index.php *** -->
     <header>
       <section class="logo">
         <a href="./index.php">
@@ -97,7 +129,7 @@ session_start(); // *** เพิ่ม: เริ่ม session สำหรั
         <a href="./index-type.php">ประเภทห้องพัก</a>
         <a href="./branch.php">สาขาโรงแรมดอม อินน์</a>
         <a href="./details.php">รายละเอียดต่างๆ</a>
-        <a href="#">การจองของฉัน</a> <!-- หากมีหน้านี้ ให้เปลี่ยน # เป็น path ที่ถูกต้อง -->
+        <a href="#">การจองของฉัน</a>
         <a href="./summary.php">คะแนน</a>
       </nav>
       <nav>
@@ -105,10 +137,9 @@ session_start(); // *** เพิ่ม: เริ่ม session สำหรั
         <a href="./login.php">เข้าสู่ระบบ</a>
       </nav>
     </header>
-    <!-- *** สิ้นสุด Header ที่แทรกเข้ามา *** -->
 
     <div class="container">
-        <h1>คะแนนโรงแรมของเรา</h1>
+        <h1>คะแนนเฉลี่ยโรงแรมของเราตามสาขา</h1>
 
         <?php
         // ตั้งค่าการเชื่อมต่อฐานข้อมูล
@@ -128,54 +159,133 @@ session_start(); // *** เพิ่ม: เริ่ม session สำหรั
         // กำหนด charset เป็น utf8 เพื่อรองรับภาษาไทย
         $conn->set_charset("utf8");
 
-        // ดึงข้อมูล rating_timestamp, stars, comment
-        // โดยใช้ rating_timestamp ใน SELECT และ ORDER BY
-        $sql = "SELECT rating_timestamp, stars, comment
-                FROM reservation
-                WHERE rating_timestamp IS NOT NULL AND stars IS NOT NULL
-                ORDER BY rating_timestamp DESC"; // เรียงตามวันที่คอมเมนต์ล่าสุด
-        $result = $conn->query($sql);
+        // ดึงข้อมูลคะแนนเฉลี่ยสำหรับแต่ละสาขา
+        $sql_avg = "SELECT
+                        p.Province_id,
+                        p.Province_name,
+                        AVG(r.stars) AS average_stars
+                    FROM
+                        reservation r
+                    JOIN
+                        province p ON r.Province_id = p.Province_id
+                    WHERE
+                        r.stars IS NOT NULL
+                    GROUP BY
+                        p.Province_id, p.Province_name
+                    ORDER BY
+                        p.Province_name ASC";
+        $result_avg = $conn->query($sql_avg);
 
-        if ($result->num_rows > 0) {
+        $provinces_data = [];
+        if ($result_avg->num_rows > 0) {
             echo "<table class='summary-table'>";
             echo "<thead>";
             echo "<tr>";
-            echo "<th>วันที่คอมเมนต์</th>";
-            echo "<th>คะแนน (ดาว)</th>";
-            echo "<th>คอมเมนต์</th>";
+            echo "<th>สาขา</th>";
+            echo "<th>คะแนนเฉลี่ย (ตัวเลข)</th>";
+            echo "<th>คะแนนเฉลี่ย (ดาว)</th>";
             echo "</tr>";
             echo "</thead>";
             echo "<tbody>";
 
-            while($row = $result->fetch_assoc()) {
-                // แปลง rating_timestamp เป็นรูปแบบไทย (วัน/เดือน/พ.ศ.)
-                // ตรวจสอบให้แน่ใจว่า rating_timestamp ไม่เป็น NULL ก่อนแปลง
-                $thaiDate = "-";
-                if ($row["rating_timestamp"] !== NULL) {
-                    $date = date_create($row["rating_timestamp"]);
-                    $thaiDate = date_format($date, 'd/m/') . (date_format($date, 'Y') + 543);
-                }
-
+            while($row_avg = $result_avg->fetch_assoc()) {
+                $provinces_data[] = $row_avg; // เก็บข้อมูลสาขาไว้ใช้ในส่วนถัดไป
+                $provinceName = htmlspecialchars($row_avg["Province_name"]);
+                $averageStars = (float)$row_avg["average_stars"];
 
                 echo "<tr>";
-                echo "<td>" . htmlspecialchars($thaiDate) . "</td>";
+                echo "<td>" . $provinceName . "</td>";
+                echo "<td>" . number_format($averageStars, 2) . "</td>"; // แสดงทศนิยม 2 ตำแหน่ง
                 echo "<td>";
-                if ($row["stars"] !== NULL) {
-                    for ($i = 0; $i < $row["stars"]; $i++) {
-                        echo "<span class='star'>&#9733;</span>";
+                // ลูปเพื่อแสดงดาว
+                $temp_stars = $averageStars; // ใช้ตัวแปรชั่วคราวเพื่อไม่ให้ค่า original ถูกเปลี่ยน
+                for ($i = 0; $i < 5; $i++) {
+                    if ($temp_stars >= 1) {
+                        echo "<span class='star'><i class='fas fa-star'></i></span>"; // ดาวเต็ม
+                        $temp_stars -= 1;
+                    } elseif ($temp_stars >= 0.5) {
+                        echo "<span class='star'><i class='fas fa-star-half-alt'></i></span>"; // ดาวครึ่ง
+                        $temp_stars -= 0.5;
+                    } else {
+                        echo "<span class='star-empty'><i class='far fa-star'></i></span>"; // ดาวเปล่า
                     }
-                } else {
-                    echo "-";
                 }
                 echo "</td>";
-                echo "<td>" . htmlspecialchars($row["comment"] ?? "-") . "</td>";
                 echo "</tr>";
             }
-
             echo "</tbody>";
             echo "</table>";
         } else {
-            echo "<p class='no-data'>ไม่พบข้อมูลคะแนนหรือคอมเมนต์.</p>";
+            echo "<p class='no-data'>ไม่พบข้อมูลคะแนนรีวิวสำหรับสาขาใดๆ</p>";
+        }
+
+        // --- ส่วนที่ 2: แสดงรายละเอียดรีวิว 5 รายการล่าสุดแยกตามสาขา ---
+        if (!empty($provinces_data)) {
+            echo "<h1>รายละเอียดรีวิวล่าสุดแยกตามสาขา</h1>";
+            foreach ($provinces_data as $province) {
+                $province_id = $province['Province_id'];
+                $province_name = htmlspecialchars($province['Province_name']);
+
+                echo "<h2>สาขา: " . $province_name . "</h2>";
+
+                // ดึงข้อมูล rating_timestamp, stars, comment 5 รายการล่าสุดสำหรับสาขาปัจจุบัน
+                $sql_details = "SELECT rating_timestamp, stars, comment
+                                FROM reservation
+                                WHERE Province_id = $province_id
+                                  AND rating_timestamp IS NOT NULL
+                                  AND stars IS NOT NULL
+                                ORDER BY rating_timestamp DESC
+                                LIMIT 5";
+                $result_details = $conn->query($sql_details);
+
+                if ($result_details->num_rows > 0) {
+                    echo "<table class='summary-table'>";
+                    echo "<thead>";
+                    echo "<tr>";
+                    echo "<th>วันที่คอมเมนต์</th>";
+                    echo "<th>คะแนน (ดาว)</th>";
+                    echo "<th>คอมเมนต์</th>";
+                    echo "</tr>";
+                    echo "</thead>";
+                    echo "<tbody>";
+
+                    while($row_details = $result_details->fetch_assoc()) {
+                        $thaiDate = "-";
+                        if ($row_details["rating_timestamp"] !== NULL) {
+                            $date = date_create($row_details["rating_timestamp"]);
+                            $thaiDate = date_format($date, 'd/m/') . (date_format($date, 'Y') + 543);
+                        }
+
+                        echo "<tr>";
+                        echo "<td>" . htmlspecialchars($thaiDate) . "</td>";
+                        echo "<td>";
+                        if ($row_details["stars"] !== NULL) {
+                            $num_stars = (float)$row_details["stars"]; // แปลงเป็น float
+                            $temp_detail_stars = $num_stars; // ใช้ตัวแปรชั่วคราว
+                            for ($i = 0; $i < 5; $i++) {
+                                if ($temp_detail_stars >= 1) {
+                                    echo "<span class='star'><i class='fas fa-star'></i></span>"; // ดาวเต็ม
+                                    $temp_detail_stars -= 1;
+                                } elseif ($temp_detail_stars >= 0.5) {
+                                    echo "<span class='star'><i class='fas fa-star-half-alt'></i></span>"; // ดาวครึ่ง
+                                    $temp_detail_stars -= 0.5;
+                                } else {
+                                    echo "<span class='star-empty'><i class='far fa-star'></i></span>"; // ดาวเปล่า
+                                }
+                            }
+                        } else {
+                            echo "-";
+                        }
+                        echo "</td>";
+                        echo "<td>" . htmlspecialchars($row_details["comment"] ?? "-") . "</td>";
+                        echo "</tr>";
+                    }
+                    echo "</tbody>";
+                    echo "</table>";
+                } else {
+                    echo "<p class='no-data'>ไม่พบข้อมูลรีวิวสำหรับสาขา " . $province_name . ".</p>";
+                }
+            }
         }
 
         // ปิดการเชื่อมต่อ

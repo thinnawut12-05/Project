@@ -93,7 +93,7 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
 
 // เตรียมข้อมูลสำหรับแสดงผล
 $hotel_name = $receipt_data['Province_name'] ?? 'ไม่ระบุสาขา';
-$hotel_address = $receipt_data['Province_Address'] ?? 'ไม่ระบุที่อยู่';
+$hotel_address = $receipt_data['Province_Address'] ?? 'ไม่ระระบุที่อยู่';
 $hotel_phone = $receipt_data['Province_Phone'] ?? 'ไม่ระบุเบอร์โทร';
 $guest_name_display = $receipt_data['Res_Guest_name'] ?? $receipt_data['Receipt_Guest_name'] ?? 'ไม่ระบุ';
 $guest_email_display = $receipt_data['Email_member'] ?? 'ไม่ระบุ';
@@ -139,13 +139,22 @@ $guest_phone_display = $receipt_data['Member_Phone_number'] ?? $receipt_data['Re
             padding-bottom: 20px;
         }
 
-        .header-section .dom-inn-logo {
-            /* เปลี่ยนชื่อ class */
-            font-size: 3em;
+        /* Styles for the new logo in the header */
+        .header-section .company-info .header-dom-inn-logo {
+            width: 100px; /* Adjust size as needed */
+            height: auto;
+            display: block; /* Ensures it takes its own line */
+            margin-bottom: 5px; /* Spacing between logo and hotel name */
+        }
+
+        .header-section .company-info .header-hotel-name {
+            font-size: 1.8em; /* Adjust font size as needed */
             font-weight: bold;
             color: #008489;
-            /* สีตามต้องการ */
+            margin-top: 0;
+            margin-bottom: 10px; /* Spacing between hotel name and address */
         }
+
 
         .header-section .company-info {
             text-align: left;
@@ -258,23 +267,22 @@ $guest_phone_display = $receipt_data['Member_Phone_number'] ?? $receipt_data['Re
             padding-top: 20px;
         }
 
-        .signature-section .left-signature,
-        .signature-section .right-signature {
+        .signature-section .left-signature {
             text-align: center;
             width: 45%;
         }
+
+        /* The right-signature will now be empty of the logo, so we can adjust its styling or remove it if not needed */
+        .signature-section .right-signature {
+             width: 45%; /* Keep its width for alignment if left-signature is still there */
+             /* Remove any specific logo styling from here */
+        }
+
 
         .signature-section .stamp-image {
             max-width: 150px;
             height: auto;
             margin-bottom: 10px;
-        }
-
-        .signature-section .dom-inn-logo-small {
-            /* เปลี่ยนชื่อ class */
-            width: 100px;
-            /* Adjust size as needed */
-            height: auto;
         }
 
         .payment-slip-image {
@@ -316,7 +324,9 @@ $guest_phone_display = $receipt_data['Member_Phone_number'] ?? $receipt_data['Re
     <div class="receipt-container">
         <div class="header-section">
             <div class="company-info">
-                <div class="dom-inn-logo">Dom Inn</div> <!-- เปลี่ยนเป็นชื่อโรงแรมของคุณ -->
+                <!-- โลโก้และชื่อโรงแรมถูกย้ายมาที่นี่ -->
+                <img src="../src/images/4.png" alt="Dom Inn Logo" class="header-dom-inn-logo">
+                <p class="header-hotel-name">Dom Inn Hotel</p>
                 <p><strong>Address:</strong><br>
                     <?= htmlspecialchars($hotel_address) ?><br>
                     <?= htmlspecialchars($hotel_name) ?>, Thailand</p>
@@ -396,8 +406,7 @@ $guest_phone_display = $receipt_data['Member_Phone_number'] ?? $receipt_data['Re
                 <p>.......................................</p>
             </div>
             <div class="right-signature">
-                <img src="../src/images/4.png" alt="Dom Inn Logo" class="dom-inn-logo-small"> <!-- โลโก้โรงแรมของคุณ -->
-                <p>Dom Inn Hotel</p>
+                <!-- โลโก้ถูกย้ายไปด้านบนแล้ว จึงว่างไว้ หรือจะเอา div นี้ออกไปเลยก็ได้ถ้าไม่ใช้งาน -->
             </div>
         </div>
 

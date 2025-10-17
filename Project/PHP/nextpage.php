@@ -37,7 +37,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       }
     ?>
     <hr>
-    <a href="./admin_login.php"><button type="button">เข้าสู่ระบบแอดมิน</button></a>
+    <a href="./admin_login.php"><button type="button">เข้าสู่ระบบผู้ดูแลระบบ</button></a>
     <a href="./officer_login.php"><button type="button">เข้าสู่ระบบเจ้าหน้าที่</button></a>
 
   </div>

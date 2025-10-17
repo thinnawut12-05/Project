@@ -16,15 +16,17 @@ if (!isset($_SESSION['email'])) {
 // ตรวจสอบว่าเป็น method POST และมีข้อมูลที่จำเป็นหรือไม่
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reservation_id'], $_POST['stars'])) {
     $reservation_id = $_POST['reservation_id'];
-    $stars = $_POST['stars'];
+    // แปลงค่า stars เป็น float ทันทีเพื่อการตรวจสอบที่แม่นยำ
+    $stars = (float)$_POST['stars'];
     $comment = isset($_POST['comment']) ? trim($_POST['comment']) : NULL; // คอมเมนต์อาจจะว่างเปล่าได้, trim() เพื่อลบช่องว่างหัวท้าย
 
     // *** เพิ่ม: ดึงเวลาปัจจุบันเพื่อบันทึกเป็น rating_timestamp ***
     $rating_timestamp = date('Y-m-d H:i:s');
 
-    // ตรวจสอบให้แน่ใจว่าค่าดาวอยู่ในช่วงที่ถูกต้อง (1-5) และเป็นตัวเลข
-    if (!filter_var($stars, FILTER_VALIDATE_INT, array("options" => array("min_range"=>1, "max_range"=>5)))) {
-        $_SESSION['message'] = "ค่าคะแนนไม่ถูกต้อง กรุณาเลือกดาว 1-5 ดาว";
+    // ตรวจสอบให้แน่ใจว่าค่าดาวอยู่ในช่วงที่ถูกต้อง (0.5-5.0) และเป็นตัวเลขในหน่วย 0.5
+    // Database column 'stars' is decimal(2,1), so values like 0.5, 1.0, 1.5, ..., 5.0 are expected.
+    if (!is_numeric($stars) || $stars < 0.5 || $stars > 5.0 || (($stars * 10) % 5 !== 0 && $stars !== (float)floor($stars))) {
+        $_SESSION['message'] = "ค่าคะแนนไม่ถูกต้อง กรุณาเลือกดาว 0.5 ถึง 5.0 ดาวในหน่วย 0.5";
         $_SESSION['message_type'] = "danger";
         header('Location: score.php'); // กลับไปหน้าให้คะแนน
         exit();
@@ -37,9 +39,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reservation_id'], $_PO
     $stmt = $conn->prepare($sql);
 
     if ($stmt) {
-        // ผูกค่าพารามิเตอร์ (i: integer, s: string, s: string (for datetime), s: string (for reservation_id), s: string (for email))
-        // *** แก้ไข: เพิ่ม $rating_timestamp เข้าไปใน bind_param ***
-        $stmt->bind_param("issss", $stars, $comment, $rating_timestamp, $reservation_id, $_SESSION['email']);
+        // ผูกค่าพารามิเตอร์:
+        // d: double (สำหรับ stars ที่เป็น float)
+        // s: string (สำหรับ comment)
+        // s: string (สำหรับ rating_timestamp)
+        // s: string (สำหรับ reservation_id)
+        // s: string (สำหรับ email_member)
+        // *** แก้ไข: เปลี่ยน 'i' เป็น 'd' สำหรับ $stars ***
+        $stmt->bind_param("dssss", $stars, $comment, $rating_timestamp, $reservation_id, $_SESSION['email']);
         
         if ($stmt->execute()) {
             $_SESSION['message'] = "บันทึกคะแนนเรียบร้อยแล้ว!";

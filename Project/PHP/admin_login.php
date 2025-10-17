@@ -59,7 +59,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 <body>
     <div class="login-box">
-        <h2>เข้าสู่ระบบแอดมิน</h2>
+        <h2>เข้าสู่ระบบผู้ดูแลระบบ</h2>
         <?php if ($error): ?>
             <div class="error"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>

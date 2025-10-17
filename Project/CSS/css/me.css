@@ -60,18 +60,51 @@ body {
   font-size: 1em;
 }
 
-.input-group input {
+.input-group input[type="text"],
+.input-group input[type="email"],
+.input-group input[type="tel"],
+.input-group input[type="password"],
+.input-group select { /* รวม input text, email, tel, password และ select */
   padding: 0.8em;
   border: 1px solid #E5E5E5;
   border-radius: 8px;
   font-size: 1em;
   outline: none;
   transition: border-color 0.2s;
+  background-color: #fff; /* ตรวจสอบให้แน่ใจว่าพื้นหลังเป็นสีขาว */
 }
 
-.input-group input:focus {
+/* เพิ่มสไตล์สำหรับ select โดยเฉพาะเพื่อลูกศร */
+.input-group select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232B8BC9%22%20d%3D%22M287%20197.6L155.1%2065.7c-4.4-4.4-11.4-4.4-15.8%200L5.3%20197.6c-4.4%204.4-4.4%2011.4%200%2015.8l15.8%2015.8c4.4%204.4%2011.4%204.4%2015.8%200L147.2%20120.9l109.1%20109.1c4.4%204.4%2011.4%204.4%2015.8%200l15.8-15.8c4.4-4.4%204.4-11.4%200-15.8z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 0.8em center;
+  background-size: 0.8em;
+  padding-right: 2.5em; /* เพิ่ม padding ขวาเพื่อให้ไอคอนไม่ทับข้อความ */
+}
+
+
+.input-group input:focus,
+.input-group select:focus {
   border-color: #2B8BC9;
 }
+
+/* สไตล์สำหรับ Radio Buttons (ถ้ามี) - ไม่ได้ใช้แล้วสำหรับ Title_name */
+.input-group .radio-label {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 15px;
+  margin-bottom: 0.5em;
+  font-weight: normal;
+}
+
+.input-group .radio-label input[type="radio"] {
+  margin-right: 8px;
+}
+
 
 .btn-register {
   background: #FFD600;

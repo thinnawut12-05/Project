@@ -171,55 +171,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 "&room_id=" . urlencode($selected_room_id); // ส่ง room_id ไปด้วย
                 break;
 
-            case 'record_no_show_adjustment':
-                $reservation_id_no_show = trim($_POST['reservation_id_no_show'] ?? '');
-                $amount_no_show = (float)($_POST['amount_no_show'] ?? 0);
-                $description_no_show = trim($_POST['description_no_show'] ?? 'ผู้เข้าพักไม่มาเช็คอินตามกำหนด');
-                $adjustment_date = date('Y-m-d H:i:s'); // วันที่เวลาปัจจุบันที่บันทึกการปรับ
-
-                if (empty($reservation_id_no_show) || $amount_no_show <= 0) {
-                    throw new Exception("กรุณากรอกรหัสการจองและค่าปรับไม่มาเช็คอินให้ถูกต้อง.");
-                }
-
-                $conn->begin_transaction();
-
-                // 1. อัปเดตสถานะการจองเป็นยกเลิก (no-show) (ใช้ ID 8)
-                // และบันทึกข้อมูลการปรับ No-show ในตาราง reservation
-                $stmt_update_reservation_no_show = $conn->prepare(
-                    "UPDATE reservation SET 
-                        Booking_status_Id = ?, 
-                        Penalty_amount = ?, 
-                        Penalty_reason = ?, 
-                        Penalty_officer_email = ?, 
-                        Penalty_date = ?
-                    WHERE Reservation_Id = ? AND Province_Id = ? AND Booking_status_Id IN (?, ?, ?)" // ID 1, 2, 3
-                );
-                if ($stmt_update_reservation_no_show === false) { throw new Exception("Failed to prepare no-show reservation status update statement: " . $conn->error); }
-                
-                $stmt_update_reservation_no_show->bind_param(
-                    "idsissiiii", // Booking_status_Id (i), amount (d), reason (s), officer_email (s), date (s), Reservation_Id (s), Province_Id (i), old_status_ids (iii)
-                    $status_id_no_show_penalized, // ใช้สถานะใหม่สำหรับ No-Show (ID 8)
-                    $amount_no_show, 
-                    $description_no_show, 
-                    $officer_email, 
-                    $adjustment_date,
-                    $reservation_id_no_show, 
-                    $current_province_id,
-                    $status_id_pending_payment, $status_id_payment_pending_review, $status_id_payment_confirmed
-                );
-                $stmt_update_reservation_no_show->execute();
-                if ($stmt_update_reservation_no_show->affected_rows === 0) {
-                    throw new Exception("ไม่พบการจอง หรือสถานะไม่ถูกต้องสำหรับ No-show (ต้องเป็นสถานะ 'ยืนยันการจองและรอชำระเงิน', 'ชำระเงินสำเร็จรอการตรวจสอบ' หรือ 'ชำระเงินสำเร็จ').");
-                }
-                $stmt_update_reservation_no_show->close();
-
-                $conn->commit();
-                $_SESSION['message'] = "บันทึกการปรับ No-show สำหรับการจอง #" . htmlspecialchars($reservation_id_no_show) . " สำเร็จแล้ว. ค่าปรับ: ฿" . number_format($amount_no_show, 2);
-                
-                // --- Redirect ไปหน้าจ่ายเงินค่าปรับ ---
-                $redirect_url = "payment_adjustment.php?type=penalty&reservation_id=" . urlencode($reservation_id_no_show) . "&amount=" . urlencode($amount_no_show);
-                break;
-
             case 'record_damage_adjustment':
                 $room_id_damage = trim($_POST['room_id_damage'] ?? '');
                 $amount_damage = (float)($_POST['amount_damage'] ?? 0);
@@ -786,24 +737,6 @@ $today_date = date('Y-m-d');
         <!-- Tab Content: Adjustments -->
         <div id="adjustments" class="tab-content">
             <h3>แจ้งปรับ</h3>
-
-            <h4>แจ้งปรับผู้เข้าพักที่มาเช็คอินล่าช้า</h4>
-            <form action="counter_operations.php" method="POST">
-                <input type="hidden" name="action" value="record_no_show_adjustment">
-                <div class="form-group">
-                    <label for="reservation_id_no_show">รหัสการจอง (ที่ No-show): <span style="color:red;">*</span></label>
-                    <input type="text" id="reservation_id_no_show" name="reservation_id_no_show" required>
-                </div>
-                <div class="form-group">
-                    <label for="amount_no_show">จำนวนเงินค่าปรับ (฿): <span style="color:red;">*</span></label>
-                    <input type="number" id="amount_no_show" name="amount_no_show" step="0.01" min="0.01" required>
-                </div>
-                <div class="form-group">
-                    <label for="description_no_show">รายละเอียด (ไม่จำเป็น):</label>
-                    <textarea id="description_no_show" name="description_no_show" rows="2">ผู้เข้าพักไม่มาเช็คอินตามกำหนด</textarea>
-                </div>
-                <button type="submit">บันทึกปรับ</button>
-            </form>
 
             <h4 style="margin-top: 30px;">แจ้งปรับความเสียหายในห้องพัก</h4>
             <form action="counter_operations.php" method="POST">

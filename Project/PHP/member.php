@@ -5,8 +5,10 @@ $error = '';
 $success = '';
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-  $Title_name  = trim($_POST["Title_name"]);
-  $Gender  = trim($_POST["Gender"]);
+  // ตอนนี้ทั้ง Title_name และ Gender เป็น dropdowns แล้ว จึงสามารถใช้ ?? '' ได้เลย
+  $Title_name  = trim($_POST["Title_name"] ?? '');
+  $Gender  = trim($_POST["Gender"] ?? '');
+
   $First_name = trim($_POST["First_name"]);
   $Last_name = trim($_POST["Last_name"]);
   $Email_member = trim($_POST["Email_member"]);
@@ -14,15 +16,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   $Password = $_POST["password"];
   $confirmPassword = $_POST["confirm-password"];
   
-  // ======== ✨ โค้ดที่แก้ไขแล้ว ========
-  // เงื่อนไขเพศ: อนุญาตให้ นาย, นาง, นางสาว เลือกเพศ "อื่นๆ" ได้
-  if (
-    ($Title_name === 'นาย' && $Gender === 'หญิง') ||
-    (($Title_name === 'นาง' || $Title_name === 'นางสาว') && $Gender === 'ชาย')
-  ) {
-    $error = "คำนำหน้า {$Title_name} ไม่สามารถเลือกเพศ {$Gender} ได้";
+  // ตรวจสอบว่ามีการเลือกคำนำหน้าชื่อหรือไม่
+  if (empty($Title_name)) {
+      $error = "กรุณาเลือกคำนำหน้าชื่อ";
+  } 
+  // ตรวจสอบว่ามีการเลือกเพศหรือไม่
+  if (empty($error) && empty($Gender)) { // ตรวจสอบหลังจาก Title_name
+      $error = "กรุณาเลือกเพศ";
   }
-  // ======== จบส่วนที่แก้ไข ========
+  
+  // ======== ส่วนที่เคยจำกัดการเลือกเพศตามคำนำหน้าชื่อ ได้ถูกนำออกไปแล้วตามคำขอของคุณ ========
+  // คุณสมบัติของ "นายสามารถใช่หญิงได้ นางนางสาว สามารถใช้ชาย ได้" จึงเป็นไปตามที่ต้องการแล้ว
+  // ======== จบส่วนที่ถูกนำออก ========
 
   // เงื่อนไขอื่น ๆ ...
   if (empty($error) && (!preg_match("/^[ก-๙\s]+$/u", $First_name) || !preg_match("/^[ก-๙\s]+$/u", $Last_name))) {
@@ -33,7 +38,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $error = "รหัสผ่านไม่ตรงกัน";
   }
 
-  // ✨ ตรวจสอบว่ามี error หรือไม่ก่อน insert
+  // ตรวจสอบว่ามี error หรือไม่ก่อน insert
   if (empty($error)) {
     // เช็คอีเมลซ้ำ
     $stmt_check = $conn->prepare("SELECT Email_member FROM member WHERE Email_member = ?");
@@ -51,10 +56,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       $stmt->bind_param("sssssss", $First_name, $Last_name, $Email_member, $Phone_Number, $Title_name, $Gender, $hashedPassword);
 
       if ($stmt->execute()) {
-        // *** ส่วนที่แก้ไข: Redirect ไป login.php พร้อมส่ง message ***
         $successMessage = "สมัครสมาชิกสำเร็จแล้ว! กรุณาเข้าสู่ระบบ";
         header("Location: ./login.php?status=success&message=" . urlencode($successMessage));
-        exit; // สำคัญมาก: ต้องเรียก exit หลังจาก header redirect
+        exit;
       } else {
         $error = "เกิดข้อผิดพลาด: " . $stmt->error;
       }
@@ -63,7 +67,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
     $conn->close();
   }
-
 }
 ?>
 
@@ -118,43 +121,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
           </script>
         <?php endif; ?>
-        <!-- ไม่ต้องมี elseif ($success) ที่นี่แล้ว เพราะ PHP header redirect จะทำงานก่อน -->
       </div>
 
       <div class="input-group">
-        <label>คำนำหน้าชื่อ</label><br>
-        <label>
-          <input type="radio" name="Title_name" value="นาย"
-            <?= (($_POST['Title_name'] ?? '') == 'นาย') ? 'checked' : '' ?> required> นาย
-        </label>
-        <label>
-          <input type="radio" name="Title_name" value="นาง"
-            <?= (($_POST['Title_name'] ?? '') == 'นาง') ? 'checked' : '' ?> required> นาง
-        </label>
-        <label>
-          <input type="radio" name="Title_name" value="นางสาว"
-            <?= (($_POST['Title_name'] ?? '') == 'นางสาว') ? 'checked' : '' ?> required> นางสาว
-        </label>
+        <label for="Title_name">คำนำหน้าชื่อ <span style="color: red;">*</span></label>
+        <select id="Title_name" name="Title_name" required>
+            <option value="">-- เลือก --</option>
+            <option value="นาย" <?= (($_POST['Title_name'] ?? '') == 'นาย') ? 'selected' : '' ?>>นาย</option>
+            <option value="นาง" <?= (($_POST['Title_name'] ?? '') == 'นาง') ? 'selected' : '' ?>>นาง</option>
+            <option value="นางสาว" <?= (($_POST['Title_name'] ?? '') == 'นางสาว') ? 'selected' : '' ?>>นางสาว</option>
+        </select>
       </div>
 
       <div class="input-group">
-        <label>เพศ</label><br>
-        <label>
-          <input type="radio" name="Gender" value="ชาย"
-            <?= (($_POST['Gender'] ?? '') == 'ชาย') ? 'checked' : '' ?> required> ชาย
-        </label>
-        <label>
-          <input type="radio" name="Gender" value="หญิง"
-            <?= (($_POST['Gender'] ?? '') == 'หญิง') ? 'checked' : '' ?> required> หญิง
-        </label>
-        <label>
-          <input type="radio" name="Gender" value="อื่นๆ"
-            <?= (($_POST['Gender'] ?? '') == 'อื่นๆ') ? 'checked' : '' ?> required> อื่นๆ
-        </label>
+        <label for="Gender">เพศ <span style="color: red;">*</span></label>
+        <select id="Gender" name="Gender" required>
+            <option value="">-- เลือก --</option>
+            <option value="ชาย" <?= (($_POST['Gender'] ?? '') == 'ชาย') ? 'selected' : '' ?>>ชาย</option>
+            <option value="หญิง" <?= (($_POST['Gender'] ?? '') == 'หญิง') ? 'selected' : '' ?>>หญิง</option>
+            <option value="อื่นๆ" <?= (($_POST['Gender'] ?? '') == 'อื่นๆ') ? 'selected' : '' ?>>อื่นๆ</option>
+        </select>
       </div>
 
       <div class="input-group">
-        <label for="First_name">ชื่อ</label>
+        <label for="First_name">ชื่อ <span style="color: red;">*</span></label>
         <input
           type="text"
           id="First_name"
@@ -167,7 +157,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       </div>
 
       <div class="input-group">
-        <label for="Last_name">นามสกุล</label>
+        <label for="Last_name">นามสกุล <span style="color: red;">*</span></label>
         <input
           type="text"
           id="Last_name"
@@ -180,7 +170,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       </div>
 
       <div class="input-group">
-        <label for="Email_member">อีเมล</label>
+        <label for="Email_member">อีเมล <span style="color: red;">*</span></label>
         <input
           type="Email_member"
           id="Email_member"
@@ -194,7 +184,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       </div>
 
       <div class="input-group">
-        <label for="Phone_Number">เบอร์โทรศัพท์</label>
+        <label for="Phone_Number">เบอร์โทรศัพท์ <span style="color: red;">*</span></label>
         <input
           type="tel"
           id="Phone_Number"
@@ -202,13 +192,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           value="<?= htmlspecialchars($_POST['Phone_Number'] ?? '') ?>"
           required
           placeholder="เช่น 0812345678"
-          pattern="^[0-9]+$"
-          title="กรุณากรอกเฉพาะตัวเลขเท่านั้น"
+          pattern="^[0-9]{10}$"
+          title="เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลักเท่านั้น"
           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
       </div>
 
       <div class="input-group">
-        <label for="Password">รหัสผ่าน</label>
+        <label for="password">รหัสผ่าน <span style="color: red;">*</span></label>
         <div style="display: flex; align-items: center;">
           <input
             type="password"
@@ -233,7 +223,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
    
 
       <div class="input-group">
-        <label for="confirm-password">ยืนยันรหัสผ่าน</label>
+        <label for="confirm-password">ยืนยันรหัสผ่าน <span style="color: red;">*</span></label>
         <div style="display: flex; align-items: center;">
           <input
             type="password"
