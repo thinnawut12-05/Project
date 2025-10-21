@@ -166,11 +166,11 @@ function changeGuest(button, type, delta) {
   // (สมมติ ผู้ใหญ่สูงสุด 2 คน, เด็กสูงสุด 1 คนต่อห้อง)
   if (type === 'adult') {
     if (newCount < 1) newCount = 1;
-    if (newCount > 2) newCount = 2; 
+    if (newCount > 200) newCount = 200; 
   }
   if (type === 'child') {
     if (newCount < 0) newCount = 0;
-    if (newCount > 1) newCount = 1; 
+    if (newCount > 200) newCount = 200; 
   }
 
   countElement.textContent = newCount;

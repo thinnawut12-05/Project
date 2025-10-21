@@ -54,7 +54,7 @@ if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in']) {
 
 
 // --- ตรรกะการกรองข้อมูลและดึงสถิติ ---
-$chart_title = "สรุปจำนวนเงินที่จอง"; // **แก้ไข: หัวข้อกราฟเริ่มต้น**
+$chart_title = "สรุปยอดเข้าพักและจำนวนห้องที่จอง";
 $filter_type = $_GET['filter_type'] ?? 'this_month'; // ตัวกรองเริ่มต้น
 
 // ตัวแปรสำหรับ Custom Date Filter
@@ -101,7 +101,6 @@ if ($is_officer && $user_province_id_filter !== null) {
     $reservation_sql_bind_params_values[] = (int)$selected_province_id;
 }
 
-// **แก้ไข: ปรับ chart_title ตาม filter_type**
 if ($filter_type == 'today') {
     $chart_title .= " วันนี้ (" . date('d/m/Y') . ")";
     $reservation_sql_conditions_array[] = "r.Booking_date = CURDATE()";
@@ -122,7 +121,7 @@ if ($filter_type == 'today') {
     $sql_order_by_date = "ORDER BY MONTH(r.Booking_date) ASC, p.Province_name ASC";
 } elseif ($filter_type == 'custom') {
     if (!empty($custom_year) && !empty($custom_month)) {
-        $chart_title .= " เดือน " . $month_names_full[(int)$custom_month] . " ปี " . $custom_year; // **แก้ไข month_name_full**
+        $chart_title .= " เดือน " . $custom_month . " ปี " . $custom_year;
         $reservation_sql_conditions_array[] = "YEAR(r.Booking_date) = ? AND MONTH(r.Booking_date) = ?";
         $reservation_sql_bind_types_string .= "ii";
         $reservation_sql_bind_params_values[] = (int)$custom_year;
@@ -139,7 +138,7 @@ if ($filter_type == 'today') {
         $sql_group_by_date = "GROUP BY MONTH(r.Booking_date), p.Province_name, r.Province_Id";
         $sql_order_by_date = "ORDER BY MONTH(r.Booking_date) ASC, p.Province_name ASC";
     } elseif (!empty($custom_month)) {
-        $month_name_for_title = $month_names_full[(int)$custom_month] ?? $custom_month; // **แก้ไข: ใช้ $month_names_full**
+        $month_name_for_title = (new DateTime('2000-' . $custom_month . '-01'))->format('F');
         $chart_title .= " เดือน " . $month_name_for_title . " (ทุกปี)";
         $reservation_sql_conditions_array[] = "MONTH(r.Booking_date) = ?";
         $reservation_sql_bind_types_string .= "i";
@@ -149,7 +148,7 @@ if ($filter_type == 'today') {
         $sql_order_by_date = "ORDER BY YEAR(r.Booking_date) ASC, p.Province_name ASC";
     } else {
         $filter_type = 'this_month'; // Fallback
-        $chart_title = "สรุปจำนวนเงินที่จอง เดือนนี้ (" . date('m/Y') . ")"; // **แก้ไข: หัวข้อ Fallback**
+        $chart_title = "สรุปยอดเข้าพักและจำนวนห้องที่จอง เดือนนี้ (" . date('m/Y') . ")";
         $reservation_sql_conditions_array[] = "MONTH(r.Booking_date) = MONTH(CURDATE()) AND YEAR(r.Booking_date) = YEAR(CURDATE())";
         $sql_select_date_part = "DAY(r.Booking_date) AS label_period_day, p.Province_name, r.Province_Id";
         $sql_group_by_date = "GROUP BY DAY(r.Booking_date), p.Province_name, r.Province_Id";
@@ -189,10 +188,11 @@ $grand_total_amount = $overall_summary_data_reservation['grand_total_amount'] ??
 $grand_total_guests = $overall_summary_data_reservation['grand_total_guests'] ?? 0;
 
 
-// --- **แก้ไข: ดึงข้อมูลสำหรับกราฟ (per period - reservation) - ใช้ Total_price** ---
+// --- ดึงข้อมูลสำหรับกราฟ (per period - reservation) ---
 $sql_summary_chart_reservation = "SELECT
                     " . $sql_select_date_part . ",
-                    SUM(r.Total_price) AS total_money_booked
+                    SUM(r.Number_of_adults + r.Number_of_children) AS total_occupancy,
+                    SUM(r.Number_of_rooms) AS total_rooms
                 FROM reservation r
                 LEFT JOIN province p ON r.Province_Id = p.Province_Id
                 WHERE " . $reservation_sql_conditions . "
@@ -219,7 +219,8 @@ $stmt_summary_chart_reservation->execute();
 $result_summary_chart_reservation = $stmt_summary_chart_reservation->get_result();
 
 $chart_labels = [];
-$chart_money_data = []; // **แก้ไข: ใช้สำหรับเงินที่จอง**
+$chart_occupancy_data = [];
+$chart_rooms_data = [];
 
 $month_names_for_chart = [
     1 => "ม.ค.", 2 => "ก.พ.", 3 => "มี.ค.", 4 => "เม.ย.", 5 => "พ.ค.", 6 => "มิ.ย.",
@@ -232,7 +233,8 @@ $month_names_full = [
 
 
 while ($row = $result_summary_chart_reservation->fetch_assoc()) {
-    $money_booked = $row['total_money_booked'] ?? 0; // **แก้ไข: ดึง total_money_booked**
+    $occupancy_count = $row['total_occupancy'] ?? 0;
+    $rooms_count = $row['total_rooms'] ?? 0;
 
     $label_text = '';
     if (isset($row['label_period_day'])) {
@@ -254,7 +256,8 @@ while ($row = $result_summary_chart_reservation->fetch_assoc()) {
     }
 
     $chart_labels[] = $full_label;
-    $chart_money_data[] = $money_booked; // **แก้ไข: เพิ่มข้อมูลเงิน**
+    $chart_occupancy_data[] = $occupancy_count;
+    $chart_rooms_data[] = $rooms_count;
 }
 $stmt_summary_chart_reservation->close();
 
@@ -479,16 +482,23 @@ if (isset($conn) && $conn->ping()) {
 }
 
 
-// **แก้ไข: แปลงข้อมูล PHP เป็น JSON เพื่อส่งให้ JavaScript - สำหรับกราฟเงินที่จอง**
+// แปลงข้อมูล PHP เป็น JSON เพื่อส่งให้ JavaScript
 $chart_data = [
     'labels' => $chart_labels,
     'datasets' => [
         [
-            'label' => 'จำนวนเงินที่จอง (บาท)', // **แก้ไข: label ของ dataset**
-            'backgroundColor' => 'rgba(75, 192, 192, 0.6)', // **แก้ไข: เปลี่ยนสีเป็น teal**
-            'borderColor' => 'rgba(75, 192, 192, 1)',
+            'label' => 'จำนวนผู้เข้าพัก',
+            'backgroundColor' => 'rgba(54, 162, 235, 0.6)',
+            'borderColor' => 'rgba(54, 162, 235, 1)',
             'borderWidth' => 1,
-            'data' => $chart_money_data, // **แก้ไข: ใช้ข้อมูลเงินที่จอง**
+            'data' => $chart_occupancy_data,
+        ],
+        [
+            'label' => 'จำนวนห้องที่จอง',
+            'backgroundColor' => 'rgba(255, 99, 132, 0.6)',
+            'borderColor' => 'rgba(255, 99, 132, 1)',
+            'borderWidth' => 1,
+            'data' => $chart_rooms_data,
         ]
     ]
 ];
@@ -918,15 +928,16 @@ $chart_data = [
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'จำนวนเงิน (บาท)', // **แก้ไข: ชื่อแกน Y**
+                            text: 'จำนวน',
                             font: {
                                 family: 'Kanit' // ใช้ font Kanit
                             }
                         },
                         ticks: {
                             callback: function(value) {
-                                // **แก้ไข: จัดรูปแบบเป็นสกุลเงิน**
-                                return value.toLocaleString() + ' บาท';
+                                if (value % 1 === 0) { // แสดงเฉพาะตัวเลขเต็ม
+                                    return value;
+                                }
                             },
                             font: {
                                 family: 'Kanit' // ใช้ font Kanit

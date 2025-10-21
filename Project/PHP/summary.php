@@ -107,6 +107,11 @@ session_start();
             font-style: normal !important;
             vertical-align: middle;
         }
+        /* Specific styling for half-star icon */
+        .star i.fa-star-half-alt {
+            font-weight: 900 !important; /* Ensure solid style for half star */
+        }
+
 
         .no-data {
             color: #777;
@@ -197,18 +202,35 @@ session_start();
                 echo "<td>" . $provinceName . "</td>";
                 echo "<td>" . number_format($averageStars, 2) . "</td>"; // แสดงทศนิยม 2 ตำแหน่ง
                 echo "<td>";
-                // ลูปเพื่อแสดงดาว
-                $temp_stars = $averageStars; // ใช้ตัวแปรชั่วคราวเพื่อไม่ให้ค่า original ถูกเปลี่ยน
-                for ($i = 0; $i < 5; $i++) {
-                    if ($temp_stars >= 1) {
-                        echo "<span class='star'><i class='fas fa-star'></i></span>"; // ดาวเต็ม
-                        $temp_stars -= 1;
-                    } elseif ($temp_stars >= 0.5) {
-                        echo "<span class='star'><i class='fas fa-star-half-alt'></i></span>"; // ดาวครึ่ง
-                        $temp_stars -= 0.5;
-                    } else {
-                        echo "<span class='star-empty'><i class='far fa-star'></i></span>"; // ดาวเปล่า
-                    }
+                
+                // Logic to display average stars including fractional part using Font Awesome icons
+                $fullStars = floor($averageStars);
+                $halfStarDisplayed = false;
+                $remainder = $averageStars - $fullStars;
+
+                // Determine if a half star should be displayed based on remainder
+                if ($remainder >= 0.25 && $remainder < 0.75) {
+                    $halfStarDisplayed = true;
+                } elseif ($remainder >= 0.75) {
+                    $fullStars++; // Round up to a full star
+                }
+
+                // Display full stars
+                for ($i = 0; $i < $fullStars; $i++) {
+                    echo "<span class='star'><i class='fas fa-star'></i></span>";
+                }
+
+                // Display half star if applicable
+                if ($halfStarDisplayed) {
+                    echo "<span class='star'><i class='fas fa-star-half-alt'></i></span>";
+                }
+
+                // Calculate and display empty stars
+                $starsCurrentlyDisplayed = $fullStars + ($halfStarDisplayed ? 1 : 0);
+                $emptyStars = 5 - $starsCurrentlyDisplayed;
+
+                for ($i = 0; $i < $emptyStars; $i++) {
+                    echo "<span class='star-empty'><i class='far fa-star'></i></span>";
                 }
                 echo "</td>";
                 echo "</tr>";
@@ -261,16 +283,18 @@ session_start();
                         echo "<td>";
                         if ($row_details["stars"] !== NULL) {
                             $num_stars = (float)$row_details["stars"]; // แปลงเป็น float
-                            $temp_detail_stars = $num_stars; // ใช้ตัวแปรชั่วคราว
+                            // Individual review stars typically come as whole or half numbers.
+                            // The original logic handles this sufficiently.
+                            $temp_detail_stars = $num_stars; 
                             for ($i = 0; $i < 5; $i++) {
                                 if ($temp_detail_stars >= 1) {
-                                    echo "<span class='star'><i class='fas fa-star'></i></span>"; // ดาวเต็ม
+                                    echo "<span class='star'><i class='fas fa-star'></i></span>"; // Full star
                                     $temp_detail_stars -= 1;
                                 } elseif ($temp_detail_stars >= 0.5) {
-                                    echo "<span class='star'><i class='fas fa-star-half-alt'></i></span>"; // ดาวครึ่ง
+                                    echo "<span class='star'><i class='fas fa-star-half-alt'></i></span>"; // Half star
                                     $temp_detail_stars -= 0.5;
                                 } else {
-                                    echo "<span class='star-empty'><i class='far fa-star'></i></span>"; // ดาวเปล่า
+                                    echo "<span class='star-empty'><i class='far fa-star'></i></span>"; // Empty star
                                 }
                             }
                         } else {

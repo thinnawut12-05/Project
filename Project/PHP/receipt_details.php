@@ -93,7 +93,7 @@ $conn->close(); // ปิดการเชื่อมต่อฐานข้�
 
 // เตรียมข้อมูลสำหรับแสดงผล
 $hotel_name = $receipt_data['Province_name'] ?? 'ไม่ระบุสาขา';
-$hotel_address = $receipt_data['Province_Address'] ?? 'ไม่ระระบุที่อยู่';
+$hotel_address = $receipt_data['Province_Address'] ?? 'ไม่ระบุที่อยู่';
 $hotel_phone = $receipt_data['Province_Phone'] ?? 'ไม่ระบุเบอร์โทร';
 $guest_name_display = $receipt_data['Res_Guest_name'] ?? $receipt_data['Receipt_Guest_name'] ?? 'ไม่ระบุ';
 $guest_email_display = $receipt_data['Email_member'] ?? 'ไม่ระบุ';
@@ -325,52 +325,52 @@ $guest_phone_display = $receipt_data['Member_Phone_number'] ?? $receipt_data['Re
         <div class="header-section">
             <div class="company-info">
                 <!-- โลโก้และชื่อโรงแรมถูกย้ายมาที่นี่ -->
-                <img src="../src/images/4.png" alt="Dom Inn Logo" class="header-dom-inn-logo">
-                <p class="header-hotel-name">Dom Inn Hotel</p>
-                <p><strong>Address:</strong><br>
+                <img src="../src/images/4.png" alt="โลโก้ Dom Inn" class="header-dom-inn-logo">
+                <p class="header-hotel-name">โรงแรมดอมอินน์</p>
+                <p><strong>ที่อยู่:</strong><br>
                     <?= htmlspecialchars($hotel_address) ?><br>
-                    <?= htmlspecialchars($hotel_name) ?>, Thailand</p>
+                    <?= htmlspecialchars($hotel_name) ?>, ประเทศไทย</p>
             </div>
             <div class="contact-info">
-                <p><strong>Contact Us/Mailing Address:</strong><br>
-                    Dom Inn Hotel (Regional Operating Headquarters)<br>
-                    Branch: <?= htmlspecialchars($hotel_name) ?><br>
-                    Phone: <?= htmlspecialchars($hotel_phone) ?></p>
+                <p><strong>ติดต่อเรา/ที่อยู่สำหรับส่งจดหมาย:</strong><br>
+                    โรงแรมดอมอินน์ (สำนักงานใหญ่ภาคพื้น)<br>
+                    สาขา: <?= htmlspecialchars($hotel_name) ?><br>
+                    โทรศัพท์: <?= htmlspecialchars($hotel_phone) ?></p>
             </div>
         </div>
 
-        <div class="receipt-title">RECEIPT</div>
+        <div class="receipt-title">ใบเสร็จ</div>
 
         <div class="customer-address-section">
-            <h3>Customer Details</h3>
-            <p><strong>Name:</strong> <?= htmlspecialchars($guest_name_display) ?></p>
-            <p><strong>Email Address:</strong> <?= htmlspecialchars($guest_email_display) ?></p>
-            <p><strong>Phone Number:</strong> <?= htmlspecialchars($guest_phone_display) ?></p>
-            <p><strong>Booking ID:</strong> #<?= htmlspecialchars($receipt_data['Reservation_Id'] ?? 'N/A') ?></p>
-            <p><strong>Receipt ID:</strong> #<?= htmlspecialchars($receipt_data['Receipt_Id']) ?></p>
-            <p><strong>Charge Date:</strong> <?= htmlspecialchars($receipt_data['Receipt_date'] ?? 'N/A') ?> <?= htmlspecialchars($receipt_data['Receipt_time'] ?? 'N/A') ?></p>
+            <h3>รายละเอียดลูกค้า</h3>
+            <p><strong>ชื่อ:</strong> <?= htmlspecialchars($guest_name_display) ?></p>
+            <p><strong>อีเมล:</strong> <?= htmlspecialchars($guest_email_display) ?></p>
+            <p><strong>เบอร์โทรศัพท์:</strong> <?= htmlspecialchars($guest_phone_display) ?></p>
+            <p><strong>รหัสการจอง:</strong> #<?= htmlspecialchars($receipt_data['Reservation_Id'] ?? 'N/A') ?></p>
+            <p><strong>รหัสใบเสร็จ:</strong> #<?= htmlspecialchars($receipt_data['Receipt_Id']) ?></p>
+            <p><strong>วันที่ออกใบเสร็จ:</strong> <?= htmlspecialchars($receipt_data['Receipt_date'] ?? 'N/A') ?> <?= htmlspecialchars($receipt_data['Receipt_time'] ?? 'N/A') ?></p>
         </div>
 
         <div class="description-section">
-            <h3>Booking Details</h3>
+            <h3>รายละเอียดการจอง</h3>
             <table class="description-table">
                 <thead>
                     <tr>
-                        <th>Hotel Branch</th>
-                        <th>Period</th>
-                        <th>Room Type</th> <!-- สามารถดึง Room_type_Id จาก reservation มาแล้วใช้ JOIN กับ room_type_name เพื่อแสดงได้ถ้ามี -->
-                        <th># of Rms.</th>
-                        <th># of Guests</th>
-                        <th>Total Amount</th>
+                        <th>สาขาโรงแรม</th>
+                        <th>ช่วงเวลา</th>
+                        <th>ประเภทห้อง</th> <!-- สามารถดึง Room_type_Id จาก reservation มาแล้วใช้ JOIN กับ room_type_name เพื่อแสดงได้ถ้ามี -->
+                        <th>จำนวนห้อง</th>
+                        <th>จำนวนแขก</th>
+                        <th>ยอดรวม</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <td><?= htmlspecialchars($hotel_name) ?></td>
-                        <td><?= htmlspecialchars($receipt_data['Booking_date'] ?? 'N/A') ?> - <?= htmlspecialchars($receipt_data['Check_out_date'] ?? 'N/A') ?> (<?= htmlspecialchars($receipt_data['Num_Nights']) ?> Nights)</td>
-                        <td>Standard Room</td> <!-- ตรงนี้อาจต้องดึงข้อมูลประเภทห้องจริงจากตาราง room_type มาแสดง -->
+                        <td><?= htmlspecialchars($receipt_data['Booking_date'] ?? 'N/A') ?> - <?= htmlspecialchars($receipt_data['Check_out_date'] ?? 'N/A') ?> (<?= htmlspecialchars($receipt_data['Num_Nights']) ?> คืน)</td>
+                        <td>ห้องสแตนดาร์ด</td> <!-- ตรงนี้อาจต้องดึงข้อมูลประเภทห้องจริงจากตาราง room_type มาแสดง -->
                         <td><?= htmlspecialchars($receipt_data['Number_of_rooms'] ?? 'N/A') ?></td>
-                        <td><?= htmlspecialchars($receipt_data['Number_of_adults'] ?? 0) ?> Adult(s), <?= htmlspecialchars($receipt_data['Number_of_children'] ?? 0) ?> Child(ren)</td>
+                        <td>ผู้ใหญ่ <?= htmlspecialchars($receipt_data['Number_of_adults'] ?? 0) ?> ท่าน, เด็ก <?= htmlspecialchars($receipt_data['Number_of_children'] ?? 0) ?> ท่าน</td>
                         <td>฿ <?= number_format($receipt_data['Total_price'] ?? 0, 2) ?></td>
                     </tr>
                 </tbody>
@@ -380,15 +380,15 @@ $guest_phone_display = $receipt_data['Member_Phone_number'] ?? $receipt_data['Re
         <div class="amount-section">
             <table>
                 <tr>
-                    <th>Total Room Charges</th>
+                    <th>ค่าห้องพักรวม</th>
                     <td>฿ <?= number_format($receipt_data['Total_price'] ?? 0, 2) ?></td>
                 </tr>
                 <tr>
-                    <th>Total Extra Charges</th>
+                    <th>ค่าบริการเพิ่มเติม</th>
                     <td>฿ 0.00</td> <!-- ไม่มีข้อมูลนี้ จึงใส่ 0 -->
                 </tr>
                 <tr class="grand-total">
-                    <th>GRAND TOTAL</th>
+                    <th>ยอดรวมสุทธิ</th>
                     <td><span>฿ <?= number_format($receipt_data['Total_price'] ?? 0, 2) ?></span></td>
                 </tr>
             </table>
@@ -402,7 +402,7 @@ $guest_phone_display = $receipt_data['Member_Phone_number'] ?? $receipt_data['Re
             <div class="left-signature">
                 <!-- คุณสามารถใส่รูปภาพลายเซ็นหรือตราประทับตรงนี้ได้ -->
                 <!-- <img src="path/to/company_stamp.png" alt="Company Stamp" class="stamp-image"> -->
-                <p>Authorized Stamp & Signature</p>
+                <p>ตราประทับและลายเซ็นผู้มีอำนาจ</p>
                 <p>.......................................</p>
             </div>
             <div class="right-signature">

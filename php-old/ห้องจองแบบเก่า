@@ -212,7 +212,7 @@ if ($province_id) {
             <div id="rooms-container">
                 <div class="room-input-group">
                     <label for="num-rooms">จำนวนห้อง:</label>
-                    <input type="number" id="num-rooms" value="<?= htmlspecialchars($num_rooms) ?>" min="1" max="50" onchange="updateRoomsFromInput()">
+                    <input type="number" id="num-rooms" value="<?= htmlspecialchars($num_rooms) ?>" min="1" max="5" onchange="updateRoomsFromInput()">
                 </div>
                 <?php
                 for ($r = 1; $r <= $num_rooms; $r++):
