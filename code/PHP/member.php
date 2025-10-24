@@ -15,16 +15,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   $Phone_Number = trim($_POST["Phone_Number"]);
   $Password = $_POST["password"];
   $confirmPassword = $_POST["confirm-password"];
-  
+
   // ตรวจสอบว่ามีการเลือกคำนำหน้าชื่อหรือไม่
   if (empty($Title_name)) {
-      $error = "กรุณาเลือกคำนำหน้าชื่อ";
-  } 
+    $error = "กรุณาเลือกคำนำหน้าชื่อ";
+  }
   // ตรวจสอบว่ามีการเลือกเพศหรือไม่
   if (empty($error) && empty($Gender)) { // ตรวจสอบหลังจาก Title_name
-      $error = "กรุณาเลือกเพศ";
+    $error = "กรุณาเลือกเพศ";
   }
-  
+
   // ======== ส่วนที่เคยจำกัดการเลือกเพศตามคำนำหน้าชื่อ ได้ถูกนำออกไปแล้วตามคำขอของคุณ ========
   // คุณสมบัติของ "นายสามารถใช่หญิงได้ นางนางสาว สามารถใช้ชาย ได้" จึงเป็นไปตามที่ต้องการแล้ว
   // ======== จบส่วนที่ถูกนำออก ========
@@ -76,7 +76,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <head>
   <meta charset="UTF-8">
   <title>สมัครสมาชิก | Dom inn</title>
-   <link rel="icon" type="image/png" href="../src/images/logo.png" />
+  <link rel="icon" type="image/png" href="../src/images/logo.png" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../CSS/css/me.css">
   <script>
@@ -114,7 +114,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <h2>สมัครสมาชิก</h2>
 
       <div id="php-alert">
-        <?php if ($error): // แสดง popup error หากมี ?>
+        <?php if ($error): // แสดง popup error หากมี 
+        ?>
           <script>
             window.onload = function() {
               showPopup("<?= addslashes($error) ?>", "red");
@@ -126,20 +127,20 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <div class="input-group">
         <label for="Title_name">คำนำหน้าชื่อ <span style="color: red;">*</span></label>
         <select id="Title_name" name="Title_name" required>
-            <option value="">-- เลือก --</option>
-            <option value="นาย" <?= (($_POST['Title_name'] ?? '') == 'นาย') ? 'selected' : '' ?>>นาย</option>
-            <option value="นาง" <?= (($_POST['Title_name'] ?? '') == 'นาง') ? 'selected' : '' ?>>นาง</option>
-            <option value="นางสาว" <?= (($_POST['Title_name'] ?? '') == 'นางสาว') ? 'selected' : '' ?>>นางสาว</option>
+          <option value="">-- เลือก --</option>
+          <option value="นาย" <?= (($_POST['Title_name'] ?? '') == 'นาย') ? 'selected' : '' ?>>นาย</option>
+          <option value="นาง" <?= (($_POST['Title_name'] ?? '') == 'นาง') ? 'selected' : '' ?>>นาง</option>
+          <option value="นางสาว" <?= (($_POST['Title_name'] ?? '') == 'นางสาว') ? 'selected' : '' ?>>นางสาว</option>
         </select>
       </div>
 
       <div class="input-group">
         <label for="Gender">เพศ <span style="color: red;">*</span></label>
         <select id="Gender" name="Gender" required>
-            <option value="">-- เลือก --</option>
-            <option value="ชาย" <?= (($_POST['Gender'] ?? '') == 'ชาย') ? 'selected' : '' ?>>ชาย</option>
-            <option value="หญิง" <?= (($_POST['Gender'] ?? '') == 'หญิง') ? 'selected' : '' ?>>หญิง</option>
-            <option value="อื่นๆ" <?= (($_POST['Gender'] ?? '') == 'อื่นๆ') ? 'selected' : '' ?>>อื่นๆ</option>
+          <option value="">-- เลือก --</option>
+          <option value="ชาย" <?= (($_POST['Gender'] ?? '') == 'ชาย') ? 'selected' : '' ?>>ชาย</option>
+          <option value="หญิง" <?= (($_POST['Gender'] ?? '') == 'หญิง') ? 'selected' : '' ?>>หญิง</option>
+          <option value="อื่นๆ" <?= (($_POST['Gender'] ?? '') == 'อื่นๆ') ? 'selected' : '' ?>>อื่นๆ</option>
         </select>
       </div>
 
@@ -172,7 +173,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <div class="input-group">
         <label for="Email_member">อีเมล <span style="color: red;">*</span></label>
         <input
-          type="Email_member"
+          type="email"
           id="Email_member"
           name="Email_member"
           value="<?= htmlspecialchars($_POST['Email_member'] ?? '') ?>"
@@ -220,7 +221,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           </button>
         </div>
       </div>
-   
+
 
       <div class="input-group">
         <label for="confirm-password">ยืนยันรหัสผ่าน <span style="color: red;">*</span></label>
@@ -245,7 +246,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
           </button>
         </div>
       </div>
-    
+
 
       <button type="submit" class="btn-register">สมัครสมาชิก</button>
       <div class="register-footer">
