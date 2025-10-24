@@ -22,11 +22,10 @@
 ##  🚀ขั้นตอนการติดตั้ง 
 
 1. **โคลนโปรเจค**  📂
-2. ```git clone https://github.com/thinnawut12-05/Projectcd```
-```git clone https://github.com/thinnawut12-05/Projectcd```
-```cd Project```
-```cd code .```
-3.  **Import ฐานข้อมูล**  🗃️   
+- ```git clone https://github.com/thinnawut12-05/Projectcd```
+-```cd Project```
+-```cd code .```
+2.  **Import ฐานข้อมูล**  🗃️   
  -   เปิด  `phpmyadmin`   
  -   สร้างฐานข้อมูลใหม่ ที่มีชื่อ hotel_db    
  -   Import ไฟล์  `database/hotel_db.sql`  เข้าไปในฐานข้อมูลนั้น 
