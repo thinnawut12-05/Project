@@ -101,7 +101,7 @@ $qr_url = "https://promptpay.io/$phone/$total_price.png";
 // ในโค้ดเดิมของคุณตั้งไว้ 30 วินาทีเพื่อทดสอบ
 // ควรตั้งเป็น (24 * 60 * 60) สำหรับ 24 ชั่วโมงใน Production
 if (!isset($_SESSION['expire_time'])) {
-    $_SESSION['expire_time'] = time() + 40; //(24 * 60 * 60); // 24 ชั่วโมง
+    $_SESSION['expire_time'] = time() + (24 * 60 * 60); // 24 ชั่วโมง
 }
 $expire_time = $_SESSION['expire_time'];
 
