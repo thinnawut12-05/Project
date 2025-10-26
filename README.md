@@ -25,7 +25,7 @@
 
 1. **โคลนโปรเจค**  📂
 - ```git clone https://github.com/thinnawut12-05/Projectcd```
-- ```cd Project```
+- ```cd Thinnawut```
 - ```cd code .```
 2.  **Import ฐานข้อมูล**  🗃️   
  -   เปิด  `phpmyadmin`   
