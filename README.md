@@ -24,7 +24,7 @@
 ##  🚀ขั้นตอนการติดตั้ง 
 
 1. **โคลนโปรเจค**  📂
-- ```git clone https://github.com/thinnawut12-05/Projectcd```
+- ```git clone https://github.com/thinnawut12-05/Thinnawut```
 - ```cd Thinnawut```
 - ```cd code .```
 2.  **Import ฐานข้อมูล**  🗃️   
