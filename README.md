@@ -36,7 +36,7 @@
 
 1. **เปิด XAMPP Control Panel**  (หากไม่มี  [ติดตั้ง Xampp ที่นี่](https://www.apachefriends.org/download.html))
 2.   กด  **Start**  ที่  `Apache`  และ  `MySQL`
-3.   เปิดเบราว์เซอร์ของคุณและไปที่:  [http://localhost/Thinnawut/code/PHP/index.php](http://localhost/Project/code/PHP/index.php) 
+3.   เปิดเบราว์เซอร์ของคุณและไปที่:  [http://localhost/Thinnawut/code/PHP/index.php](http://localhost/Thinnawut/code/PHP/index.php) 
 
 ## 📹คลิปวิดีโอแนะนำระบบ
 รับชมวิดีโอการสอนที่นี้ ⬇️⬇️
